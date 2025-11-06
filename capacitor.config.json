@@ -1,0 +1,30 @@
+{
+  "appId": "com.caredroid.clinical",
+  "appName": "CareDroid",
+  "webDir": "dist",
+  "server": {
+    "url": "http://localhost:5173",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true,
+    "useLegacyBridge": false,
+    "backgroundColor": "#1e40af"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#1e40af",
+      "androidSplashResourceName": "splash",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "light",
+      "backgroundColor": "#1e40af"
+    },
+    "Keyboard": {
+      "resize": "ionic",
+      "style": "dark"
+    }
+  }
+}

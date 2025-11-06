@@ -1,0 +1,86 @@
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToOne,
+  OneToMany,
+} from 'typeorm';
+import { Exclude } from 'class-transformer';
+import { UserProfile } from './user-profile.entity';
+import { OAuthAccount } from './oauth-account.entity';
+import { TwoFactor } from '../../two-factor/entities/two-factor.entity';
+import { Subscription } from '../../subscriptions/entities/subscription.entity';
+import { AuditLog } from '../../audit/entities/audit-log.entity';
+
+export enum UserRole {
+  PHYSICIAN = 'physician',
+  NURSE = 'nurse',
+  STUDENT = 'student',
+  ADMIN = 'admin',
+}
+
+@Entity('users')
+export class User {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column({ type: 'varchar', length: 255, unique: true })
+  email: string; // Will be encrypted at rest
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Exclude()
+  passwordHash: string;
+
+  @Column({ type: 'boolean', default: false })
+  emailVerified: boolean;
+
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  @Exclude()
+  emailVerificationToken: string;
+
+  @Column({ type: 'datetime', nullable: true })
+  emailVerificationExpiry: Date;
+
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  @Exclude()
+  passwordResetToken: string;
+
+  @Column({ type: 'datetime', nullable: true })
+  passwordResetExpiry: Date;
+
+  @Column({ type: 'boolean', default: true })
+  isActive: boolean;
+
+  @Column({ type: 'simple-enum', enum: UserRole, default: UserRole.STUDENT })
+  role: UserRole;
+
+  @Column({ type: 'datetime', nullable: true })
+  lastLoginAt: Date;
+
+  @Column({ type: 'varchar', length: 45, nullable: true })
+  lastLoginIp: string;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+
+  // Relations
+  @OneToOne(() => UserProfile, (profile) => profile.user, { cascade: true })
+  profile: UserProfile;
+
+  @OneToMany(() => OAuthAccount, (account) => account.user, { cascade: true })
+  oauthAccounts: OAuthAccount[];
+
+  @OneToOne(() => TwoFactor, (twoFactor) => twoFactor.user, { cascade: true })
+  twoFactor: TwoFactor;
+
+  @OneToOne(() => Subscription, (subscription) => subscription.user)
+  subscription: Subscription;
+
+  @OneToMany(() => AuditLog, (log) => log.user)
+  auditLogs: AuditLog[];
+}

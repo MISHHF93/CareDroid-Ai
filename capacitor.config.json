@@ -1,6 +1,6 @@
 {
   "appId": "com.caredroid.clinical",
-  "appName": "CareDroid",
+  "appName": "care-droid-app",
   "webDir": "dist",
   "server": {
     "url": "http://localhost:5173",

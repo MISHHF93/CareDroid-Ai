@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Pill, Search, X, CloudOff, Download, RefreshCw, CheckCircle } from "lucide-react";
 import DrugDetailModal from "../components/drugs/DrugDetailModal";
-import { entities } from "../utils/services";
+import { api } from "@/api/apiClient";
 
 export default function DrugDatabase() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -18,11 +18,20 @@ export default function DrugDatabase() {
     loadDrugs();
   }, []);
 
-  const loadDrugs = () => {
-    setIsLoading(true);
-    const allDrugs = entities.Drug.list();
-    setDrugs(allDrugs);
-    setIsLoading(false);
+  const loadDrugs = async () => {
+    try {
+      setIsLoading(true);
+      const allDrugs = await api.entities.drugs.list();
+      const normalized = (allDrugs || []).map(d => ({
+        ...d,
+        drug_class: d.drug_class ?? d.class ?? d.category,
+      }));
+      setDrugs(normalized);
+    } catch (e) {
+      console.error('Failed to load drugs:', e);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const filteredDrugs = drugs.filter((drug) => {

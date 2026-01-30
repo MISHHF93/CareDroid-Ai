@@ -1,0 +1,68 @@
+{"text": "What causes hypertension?", "intent": "general_query"}
+{"text": "Low albumin and protein levels - clinical significance?", "intent": "lab_query"}
+{"text": "View system logs and errors", "intent": "admin_function"}
+{"text": "Generate compliance report", "intent": "admin_function"}
+{"text": "Configure system backup settings", "intent": "admin_function"}
+{"text": "What is the drug interaction between warfarin and aspirin?", "intent": "clinical_tool"}
+{"text": "Multiple trauma from motor vehicle accident", "intent": "emergency", "subcategory": "trauma"}
+{"text": "Interpret cardiac biomarkers and troponin", "intent": "clinical_tool"}
+{"text": "Use SOFA calculator on this patient data", "intent": "clinical_tool"}
+{"text": "Interpret these lab results for me", "intent": "clinical_tool"}
+{"text": "Tell me about diabetes management", "intent": "general_query"}
+{"text": "High BUN and creatinine ratio - what's going on?", "intent": "lab_query"}
+{"text": "Acute onset slurred speech and facial drooping", "intent": "emergency", "subcategory": "neurological"}
+{"text": "Does metformin interact with lisinopril?", "intent": "clinical_tool"}
+{"text": "Protocol for managing acute renal failure", "intent": "protocol_search"}
+{"text": "Use the tool to assess organ dysfunction", "intent": "clinical_tool"}
+{"text": "Show the standard operating procedure for patient handoff", "intent": "protocol_search"}
+{"text": "Acute stroke symptoms, time-critical intervention needed", "intent": "emergency", "subcategory": "neurological"}
+{"text": "Export patient labs for last month", "intent": "patient_data"}
+{"text": "Run the sepsis screening tool", "intent": "clinical_tool"}
+{"text": "Advanced cardiac life support guidelines", "intent": "protocol_search"}
+{"text": "Severe burn injury, airway compromise", "intent": "emergency", "subcategory": "trauma"}
+{"text": "What are the recent values for this patient's labs?", "intent": "patient_data"}
+{"text": "ATLS protocol for trauma assessment", "intent": "protocol_search"}
+{"text": "What are the institutional protocols for acute stroke?", "intent": "protocol_search"}
+{"text": "Altered mental status and confusion", "intent": "emergency", "subcategory": "neurological"}
+{"text": "Tell me about chronic obstructive pulmonary disease", "intent": "general_query"}
+{"text": "How does insulin work in the body?", "intent": "general_query"}
+{"text": "Configure HIPAA compliance settings", "intent": "admin_function"}
+{"text": "What is the clinical meaning of these values?", "intent": "lab_query"}
+{"text": "Interpret these laboratory values", "intent": "lab_query"}
+{"text": "Patient presenting with severe chest pain, diaphoresis, and shortness of breath", "intent": "emergency", "subcategory": "cardiac"}
+{"text": "Fever 40\u00c2\u00b0C, tachycardia, hypotension, altered mental status", "intent": "emergency", "subcategory": "sepsis"}
+{"text": "Pull up patient records", "intent": "patient_data"}
+{"text": "How do I use this app?", "intent": "general_query"}
+{"text": "Check drug interaction database", "intent": "clinical_tool"}
+{"text": "Interpret ABG values: pH 7.28, pCO2 50, pO2 60", "intent": "lab_query"}
+{"text": "Show recent imaging results for this patient", "intent": "patient_data"}
+{"text": "I need to access patient previous hospitalizations", "intent": "patient_data"}
+{"text": "Severe dyspnea, oxygen saturation dropping", "intent": "emergency", "subcategory": "respiratory"}
+{"text": "What medical schools teach this condition?", "intent": "general_query"}
+{"text": "Help me understand the coagulation study results", "intent": "lab_query"}
+{"text": "View system health and performance metrics", "intent": "admin_function"}
+{"text": "Explain the pathophysiology of sepsis", "intent": "general_query"}
+{"text": "What do elevated liver enzymes indicate?", "intent": "lab_query"}
+{"text": "What are the symptoms of acute coronary syndrome?", "intent": "general_query"}
+{"text": "Can you explain these abnormal lab findings?", "intent": "lab_query"}
+{"text": "Check if these medications are contraindicated", "intent": "clinical_tool"}
+{"text": "Calculate SOFA score for this patient", "intent": "clinical_tool"}
+{"text": "Show medication history for this patient", "intent": "patient_data"}
+{"text": "Manage API keys and authentication", "intent": "admin_function"}
+{"text": "What is the significance of low platelet count?", "intent": "lab_query"}
+{"text": "Access patient discharge summary", "intent": "patient_data"}
+{"text": "Institutional antibiotic protocol for pneumonia", "intent": "protocol_search"}
+{"text": "Please run a full drug interaction check", "intent": "clinical_tool"}
+{"text": "View audit logs for system access", "intent": "admin_function"}
+{"text": "Septic shock with multi-organ failure", "intent": "emergency", "subcategory": "sepsis"}
+{"text": "Manage user access permissions", "intent": "admin_function"}
+{"text": "What is the sepsis protocol?", "intent": "protocol_search"}
+{"text": "What's the clinical significance of this INR value?", "intent": "clinical_tool"}
+{"text": "Patient having seizure, loss of consciousness", "intent": "emergency", "subcategory": "neurological"}
+{"text": "Explain the renin-angiotensin system", "intent": "general_query"}
+{"text": "What does elevated creatinine mean?", "intent": "lab_query"}
+{"text": "What protocol should we use for difficult airway management?", "intent": "protocol_search"}
+{"text": "What's the guideline for managing hypertensive crisis?", "intent": "protocol_search"}
+{"text": "Chest pain radiating to left arm, ST elevation on EKG", "intent": "emergency", "subcategory": "cardiac"}
+{"text": "Patient coding, starting chest compressions", "intent": "emergency", "subcategory": "cardiac"}
+{"text": "Show patient allergy information", "intent": "patient_data"}

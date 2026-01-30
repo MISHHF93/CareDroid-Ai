@@ -16,6 +16,8 @@ import { AuditLog } from '../audit/entities/audit-log.entity';
 import { jwtConfig } from '../../config/auth.config';
 import { UsersModule } from '../users/users.module';
 import { AuditModule } from '../audit/audit.module';
+import { TwoFactorModule } from '../two-factor/two-factor.module';
+import { AuthorizationGuard } from './guards/authorization.guard';
 
 @Module({
   imports: [
@@ -38,9 +40,32 @@ import { AuditModule } from '../audit/audit.module';
     }),
     UsersModule,
     AuditModule,
+    TwoFactorModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, GoogleStrategy, LinkedInStrategy],
-  exports: [AuthService, JwtStrategy, PassportModule],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    AuthorizationGuard,
+    {
+      provide: GoogleStrategy,
+      useFactory: (configService: ConfigService, authService: AuthService) => {
+        const clientId = configService.get<string>('GOOGLE_CLIENT_ID');
+        if (!clientId) return null;
+        return new GoogleStrategy(configService, authService);
+      },
+      inject: [ConfigService, AuthService],
+    },
+    {
+      provide: LinkedInStrategy,
+      useFactory: (configService: ConfigService, authService: AuthService) => {
+        const clientId = configService.get<string>('LINKEDIN_CLIENT_ID');
+        if (!clientId) return null;
+        return new LinkedInStrategy(configService, authService);
+      },
+      inject: [ConfigService, AuthService],
+    },
+  ].filter(Boolean),
+  exports: [AuthService, JwtStrategy, PassportModule, AuthorizationGuard],
 })
 export class AuthModule {}

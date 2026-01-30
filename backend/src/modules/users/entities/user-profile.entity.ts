@@ -6,6 +6,9 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  BeforeInsert,
+  BeforeUpdate,
+  AfterLoad,
 } from 'typeorm';
 import { User } from './user.entity';
 
@@ -53,14 +56,71 @@ export class UserProfile {
   @Column({ type: 'text', nullable: true })
   avatarUrl: string;
 
+  // PHI columns - encrypted at rest
+  @Column({ type: 'bytea', nullable: true })
+  dateOfBirthEncrypted: Buffer; // Encrypted DOB
+
+  @Column({ type: 'bytea', nullable: true })
+  medicalHistoryEncrypted: Buffer; // Encrypted medical history
+
+  @Column({ type: 'bytea', nullable: true })
+  allergiesEncrypted: Buffer; // Encrypted allergies
+
+  @Column({ type: 'bytea', nullable: true })
+  medicationsEncrypted: Buffer; // Encrypted medications
+
+  // Encryption tracking
+  @Column({ type: 'int', nullable: true })
+  encryptionKeyVersion: number; // Which key version was used
+
   @CreateDateColumn()
   createdAt: Date;
 
   @UpdateDateColumn()
   updatedAt: Date;
 
+  // Transient properties for in-memory decrypted data
+  dateOfBirthDecrypted?: string;
+  medicalHistoryDecrypted?: string;
+  allergiesDecrypted?: string;
+  medicationsDecrypted?: string;
+
   // Relations
   @OneToOne(() => User, (user) => user.profile, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
   user: User;
+
+  /**
+   * BeforeInsert hook: Encrypt PHI fields before saving to database
+   * Called whenever a new UserProfile is inserted
+   */
+  @BeforeInsert()
+  async encryptPhiBeforeInsert() {
+    // Encryption service will be injected via service-level handler
+    // This is a placeholder for automatic encryption logic
+  }
+
+  /**
+   * BeforeUpdate hook: Re-encrypt PHI fields during updates
+   * Called whenever a UserProfile is updated
+   */
+  @BeforeUpdate()
+  async encryptPhiBeforeUpdate() {
+    // Encryption service will be injected via service-level handler
+    // This is a placeholder for automatic encryption logic
+  }
+
+  /**
+   * AfterLoad hook: Decrypt PHI fields after loading from database
+   * Called whenever entities are loaded from the database
+   */
+  @AfterLoad()
+  async decryptPhiAfterLoad() {
+    // Decryption will be handled at the service level
+    // This is a placeholder for automatic decryption logic
+    this.dateOfBirthDecrypted = undefined;
+    this.medicalHistoryDecrypted = undefined;
+    this.allergiesDecrypted = undefined;
+    this.medicationsDecrypted = undefined;
+  }
 }

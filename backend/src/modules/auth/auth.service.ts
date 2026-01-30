@@ -11,6 +11,7 @@ import { OAuthAccount, OAuthProvider } from '../users/entities/oauth-account.ent
 import { Subscription, SubscriptionTier, SubscriptionStatus } from '../subscriptions/entities/subscription.entity';
 import { AuditService } from '../audit/audit.service';
 import { AuditAction } from '../audit/entities/audit-log.entity';
+import { TwoFactorService } from '../two-factor/two-factor.service';
 import { jwtConfig } from '../../config/auth.config';
 
 @Injectable()
@@ -27,6 +28,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly auditService: AuditService,
+    private readonly twoFactorService: TwoFactorService,
   ) {}
 
   async register(registerDto: {
@@ -274,6 +276,82 @@ export class AuthService {
     });
 
     return { success: true };
+  }
+
+  async verifyTwoFactorLogin(
+    userId: string,
+    token: string,
+    ipAddress: string,
+    userAgent: string,
+  ) {
+    // Find user
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['profile', 'subscription', 'twoFactor'],
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid user');
+    }
+
+    // Check if 2FA is enabled
+    if (!user.twoFactor?.enabled) {
+      throw new UnauthorizedException('2FA is not enabled for this user');
+    }
+
+    // Verify token
+    const isValid = await this.twoFactorService.verifyToken(userId, token);
+    if (!isValid) {
+      // Audit failed 2FA attempt
+      await this.auditService.log({
+        userId,
+        action: AuditAction.TWO_FACTOR_VERIFY_FAILED,
+        resource: 'auth',
+        ipAddress,
+        userAgent,
+        metadata: { reason: 'invalid_token' },
+      });
+
+      throw new UnauthorizedException('Invalid 2FA token');
+    }
+
+    // Audit successful 2FA verification
+    await this.auditService.log({
+      userId,
+      action: AuditAction.TWO_FACTOR_VERIFY,
+      resource: 'auth',
+      ipAddress,
+      userAgent,
+    });
+
+    // Generate tokens
+    const tokens = await this.generateTokens(user);
+
+    return {
+      ...tokens,
+      user: this.sanitizeUser(user),
+    };
+  }
+
+  async requestMagicLink(email: string) {
+    if (!email) {
+      throw new BadRequestException('Email is required');
+    }
+
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (!user) {
+      throw new BadRequestException('No account found for this email');
+    }
+
+    await this.auditService.log({
+      userId: user.id,
+      action: AuditAction.LOGIN,
+      resource: 'auth:magic-link',
+      ipAddress: '0.0.0.0',
+      userAgent: 'system',
+    });
+
+    return { status: 'sent' };
   }
 
   private sanitizeUser(user: User) {

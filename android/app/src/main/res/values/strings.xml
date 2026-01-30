@@ -1,7 +1,8 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">care-droid-app</string>
-    <string name="title_activity_main">care-droid-app</string>
+    <string name="app_name">CareDroid</string>
+    <string name="title_activity_main">CareDroid Clinical Companion</string>
     <string name="package_name">com.caredroid.clinical</string>
     <string name="custom_url_scheme">com.caredroid.clinical</string>
+    <string name="app_description">AI-Powered 3D Holographic Clinical Assistant</string>
 </resources>

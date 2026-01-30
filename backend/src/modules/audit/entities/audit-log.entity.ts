@@ -17,6 +17,10 @@ export enum AuditAction {
   EMAIL_VERIFICATION = 'email_verification',
   TWO_FACTOR_ENABLE = 'two_factor_enable',
   TWO_FACTOR_DISABLE = 'two_factor_disable',
+  TWO_FACTOR_VERIFY = 'two_factor_verify',
+  TWO_FACTOR_VERIFY_FAILED = 'two_factor_verify_failed',
+  PERMISSION_GRANTED = 'permission_granted',
+  PERMISSION_DENIED = 'permission_denied',
   SUBSCRIPTION_CHANGE = 'subscription_change',
   DATA_EXPORT = 'data_export',
   DATA_DELETION = 'data_deletion',
@@ -58,6 +62,17 @@ export class AuditLog {
   @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   @Index()
   timestamp: Date;
+
+  // Cryptographic integrity fields (blockchain-style chaining)
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  @Index()
+  hash: string; // SHA-256 hash of this log entry
+
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  previousHash: string; // SHA-256 hash of previous log entry (chain validation)
+
+  @Column({ type: 'boolean', default: false })
+  integrityVerified: boolean; // Flag to indicate if hash chain is valid
 
   // Relations
   @ManyToOne(() => User, (user) => user.auditLogs, { onDelete: 'SET NULL' })

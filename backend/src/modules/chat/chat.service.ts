@@ -1,0 +1,759 @@
+import { Injectable, Logger } from '@nestjs/common';
+import { AIService } from '../ai/ai.service';
+import { IntentClassifierService } from '../medical-control-plane/intent-classifier/intent-classifier.service';
+import { ToolOrchestratorService } from '../medical-control-plane/tool-orchestrator/tool-orchestrator.service';
+import { AuditService } from '../audit/audit.service';
+import { AuditAction } from '../audit/entities/audit-log.entity';
+import { PrimaryIntent, EmergencySeverity } from '../medical-control-plane/intent-classifier/dto/intent-classification.dto';
+import { RAGService } from '../rag/rag.service';
+import { MedicalSource } from '../rag/dto/medical-source.dto';
+import {
+  buildClinicalQueryPrompt,
+  buildMedicalReferencePrompt,
+  buildDrugInformationPrompt,
+  buildClinicalProtocolPrompt,
+  formatCitations,
+  addConfidenceDisclaimer,
+} from '../ai/prompts/clinical-query.prompt';
+import { calculateConfidence, getConfidenceDisclaimer } from '../ai/utils/confidence-scorer';
+
+interface QueryResponse {
+  text: string;
+  suggestions?: string[];
+  visualizations?: any[];
+  intentClassification?: any;
+  emergencyAlert?: {
+    severity: EmergencySeverity;
+    message: string;
+    requiresEscalation: boolean;
+  };
+  toolResult?: any;
+  citations?: MedicalSource[];
+  confidence?: number;
+  ragContext?: any;
+}
+
+@Injectable()
+export class ChatService {
+  private readonly logger = new Logger(ChatService.name);
+
+  constructor(
+    private readonly aiService: AIService,
+    private readonly intentClassifier: IntentClassifierService,
+    private readonly toolOrchestrator: ToolOrchestratorService,
+    private readonly auditService: AuditService,
+    private readonly ragService: RAGService,
+  ) {}
+
+  async processQuery(
+    patientId: string,
+    message: string,
+    context?: any
+  ): Promise<QueryResponse> {
+    console.log(`💬 Processing query for patient ${patientId}: "${message}"`);
+
+    const response = await this.generateAIResponse(message, context);
+
+    return {
+      text: response.text,
+      suggestions: response.suggestions,
+      visualizations: response.visualizations,
+    };
+  }
+
+  async processMessage(
+    message: string,
+    tool?: string,
+    feature?: string,
+    conversationId?: number,
+    userId?: string,
+  ): Promise<QueryResponse> {
+    this.logger.log(`💬 Processing chat message: "${message}"`);
+
+    // ========================================
+    // STEP 1: INTENT CLASSIFICATION
+    // ========================================
+    let classification;
+    try {
+      classification = await this.intentClassifier.classify(message, {
+        userId: userId || 'anonymous',
+        conversationId,
+        userRole: 'clinician', // TODO: Get from user context
+      });
+
+      this.logger.log(
+        `🧠 Intent: ${classification.primaryIntent} | Tool: ${classification.toolId || 'N/A'} | Confidence: ${classification.confidence.toFixed(2)} | Method: ${classification.method}`,
+      );
+
+      // Log intent classification in audit trail
+      if (userId) {
+        await this.auditService.log({
+          userId,
+          action: AuditAction.AI_QUERY,
+          resource: 'chat/intent-classification',
+          details: {
+            message: message.substring(0, 100),
+            intent: classification.primaryIntent,
+            toolId: classification.toolId,
+            confidence: classification.confidence,
+            method: classification.method,
+            isEmergency: classification.isEmergency,
+          },
+          ipAddress: '0.0.0.0',
+          userAgent: 'system',
+        });
+      }
+    } catch (error) {
+      this.logger.error(`❌ Intent classification failed: ${error instanceof Error ? error.message : String(error)}`);
+      classification = null;
+    }
+
+    // ========================================
+    // STEP 2: EMERGENCY DETECTION & ESCALATION
+    // ========================================
+    if (classification?.isEmergency) {
+      this.logger.warn(
+        `🚨 EMERGENCY DETECTED: ${classification.emergencySeverity} - ${classification.emergencyKeywords.length} keywords matched`,
+      );
+
+      const escalationMessage = this.intentClassifier.getEmergencyEscalationMessage(
+        // Reconstruct patterns from keywords (simplified)
+        classification.emergencyKeywords.map(kw => ({
+          keywords: [kw.keyword],
+          category: kw.category,
+          severity: kw.severity,
+          escalationMessage: this.getEmergencyMessage(kw.category, kw.severity),
+        })),
+      );
+
+      // Log emergency in audit trail
+      if (userId) {
+        await this.auditService.log({
+          userId,
+          action: AuditAction.SECURITY_EVENT, // Repurpose for medical emergencies
+          resource: 'chat/emergency-detected',
+          details: {
+            message: message.substring(0, 200),
+            severity: classification.emergencySeverity,
+            keywords: classification.emergencyKeywords,
+            escalationMessage,
+          },
+          ipAddress: '0.0.0.0',
+          userAgent: 'system',
+        });
+      }
+
+      // Return emergency response
+      return {
+        text: `${escalationMessage}\n\n⚠️ **This is an AI system and cannot replace emergency medical services.**\n\nI can help you review protocols and provide clinical information, but immediate action may be required. Would you like me to:\n1. Display the relevant emergency protocol\n2. Calculate relevant clinical scores\n3. Provide evidence-based management guidelines`,
+        suggestions: [
+          'Show emergency protocol',
+          'Calculate clinical scores',
+          'Review management guidelines',
+        ],
+        emergencyAlert: {
+          severity: classification.emergencySeverity,
+          message: escalationMessage,
+          requiresEscalation: this.intentClassifier.requiresEscalation(classification),
+        },
+        intentClassification: classification,
+      };
+    }
+
+    // ========================================
+    // STEP 3: ROUTE TO APPROPRIATE HANDLER
+    // ========================================
+    const context = {
+      tool,
+      feature,
+      conversationId,
+      intentClassification: classification,
+    };
+
+    // Route based on intent
+    if (classification?.primaryIntent === PrimaryIntent.CLINICAL_TOOL) {
+      return this.handleClinicalTool(message, classification, userId);
+    }
+
+    if (classification?.primaryIntent === PrimaryIntent.MEDICAL_REFERENCE) {
+      return this.handleMedicalReference(message, classification, userId);
+    }
+
+    // Default: General AI response with optional RAG
+    try {
+      // Try to retrieve relevant context even for general queries
+      let ragContext;
+      let responseText: string;
+      let citations: MedicalSource[] = [];
+      let confidence: number | undefined;
+
+      try {
+        ragContext = await this.ragService.retrieve(message, {
+          topK: 3,
+          minScore: 0.7,
+        });
+
+        if (ragContext.chunks.length > 0) {
+          this.logger.log(`📖 RAG: Retrieved ${ragContext.chunks.length} chunks for general query`);
+          
+          // Use RAG-augmented prompt
+          const retrievedContext = ragContext.chunks
+            .map((chunk, i) => `[${i + 1}] ${chunk.text}`)
+            .join('\n\n');
+
+          const prompt = buildClinicalQueryPrompt({
+            retrievedContext,
+            sources: ragContext.sources,
+            userQuery: message,
+            confidence: ragContext.confidence,
+          });
+
+          const aiResponse = await this.aiService.invokeLLM(
+            userId || 'anonymous',
+            prompt,
+            { ...context, ragEnabled: true },
+          );
+
+          responseText = aiResponse.content || 'No response returned from AI service.';
+          
+          // Add citations
+          const citationsText = formatCitations(ragContext.sources);
+          if (citationsText) {
+            responseText += '\n' + citationsText;
+          }
+
+          // Add confidence disclaimer if needed
+          const confidenceScore = calculateConfidence(ragContext);
+          const disclaimer = getConfidenceDisclaimer(confidenceScore);
+          if (disclaimer) {
+            responseText += '\n\n' + disclaimer;
+          }
+
+          citations = ragContext.sources;
+          confidence = confidenceScore.score;
+        } else {
+          // No RAG context, use direct AI response
+          const aiResponse = await this.aiService.invokeLLM(
+            userId || 'anonymous',
+            message,
+            context,
+          );
+          responseText = aiResponse.content || 'No response returned from AI service.';
+        }
+      } catch (ragError) {
+        // RAG failed, fall back to direct AI
+        this.logger.warn(`RAG retrieval failed, using direct AI: ${ragError instanceof Error ? ragError.message : String(ragError)}`);
+        
+        const aiResponse = await this.aiService.invokeLLM(
+          userId || 'anonymous',
+          message,
+          context,
+        );
+        responseText = aiResponse.content || 'No response returned from AI service.';
+      }
+
+      return {
+        text: responseText,
+        suggestions: citations.length > 0 ? ['View sources', 'Related topics'] : [],
+        visualizations: [],
+        intentClassification: classification,
+        citations,
+        confidence,
+      };
+    } catch (error) {
+      this.logger.warn('AI service unavailable, falling back to simulated response.');
+      const fallback = await this.generateAIResponse(message, context);
+
+      return {
+        ...fallback,
+        intentClassification: classification,
+      };
+    }
+  }
+
+  async suggestNextAction(patientId: string, context: any): Promise<any> {
+    const suggestions = [];
+
+    if (context.vitals?.HR > 100) {
+      suggestions.push('Check for tachycardia causes');
+    }
+
+    if (context.vitals?.BP_systolic > 140) {
+      suggestions.push('Review antihypertensive regimen');
+    }
+
+    if (context.medications?.length > 5) {
+      suggestions.push('Evaluate medication interactions');
+    }
+
+    return { suggestions, timestamp: Date.now() };
+  }
+
+  async analyzeVitals(vitals: Record<string, any>): Promise<any> {
+    const analysis = {
+      normal: [],
+      caution: [],
+      critical: [],
+    };
+
+    const vitalRanges = {
+      HR: { normal: [60, 100], caution: [50, 120], critical: [30, 180] },
+      BP_systolic: { normal: [90, 120], caution: [80, 140], critical: [0, 200] },
+      BP_diastolic: { normal: [60, 80], caution: [50, 90], critical: [0, 120] },
+      Temperature: { normal: [36.5, 37.5], caution: [36, 38], critical: [35, 39] },
+      RR: { normal: [12, 20], caution: [10, 25], critical: [5, 40] },
+      SpO2: { normal: [95, 100], caution: [90, 95], critical: [70, 90] },
+    };
+
+    for (const [metric, value] of Object.entries(vitals)) {
+      const ranges = vitalRanges[metric as keyof typeof vitalRanges];
+      if (!ranges) continue;
+
+      if (value >= ranges.normal[0] && value <= ranges.normal[1]) {
+        analysis.normal.push(metric);
+      } else if (value >= ranges.caution[0] && value <= ranges.caution[1]) {
+        analysis.caution.push(metric);
+      } else {
+        analysis.critical.push(metric);
+      }
+    }
+
+    return analysis;
+  }
+
+  /**
+   * Handle clinical tool invocation
+   */
+  private async handleClinicalTool(
+    message: string,
+    classification: any,
+    userId?: string,
+  ): Promise<QueryResponse> {
+    const toolId = classification.toolId;
+    const parameters = classification.extractedParameters || {};
+
+    this.logger.log(`🔧 Invoking clinical tool: ${toolId}`);
+
+    try {
+      // Check if we have enough parameters to execute the tool
+      const toolMetadata = this.toolOrchestrator.getToolMetadata(toolId);
+      const requiredParams = toolMetadata.parameters.filter(p => p.required);
+      const providedParams = Object.keys(parameters);
+
+      // If missing required parameters, ask AI to extract them
+      if (requiredParams.length > 0 && providedParams.length === 0) {
+        this.logger.log(`📝 Attempting to extract parameters from message with AI`);
+        
+        const extractionPrompt = `Extract the following parameters from this medical query: "${message}"
+
+Required parameters for ${toolMetadata.name}:
+${requiredParams.map(p => `- ${p.name} (${p.type}): ${p.description}`).join('\n')}
+
+Optional parameters:
+${toolMetadata.parameters.filter(p => !p.required).map(p => `- ${p.name} (${p.type}): ${p.description}`).join('\n')}
+
+Return ONLY a JSON object with the extracted values. Return null for any parameter that cannot be extracted.`;
+
+        try {
+          const extractedParams = await this.aiService.generateStructuredJSON(
+            userId || 'anonymous',
+            extractionPrompt,
+            Object.fromEntries(
+              toolMetadata.parameters.map(p => [p.name, p.type === 'number' ? 0 : p.type === 'boolean' ? false : ''])
+            )
+          );
+
+          // Filter out null values
+          Object.keys(extractedParams).forEach(key => {
+            if (extractedParams[key] !== null && extractedParams[key] !== '') {
+              parameters[key] = extractedParams[key];
+            }
+          });
+
+          this.logger.log(`✅ Extracted ${Object.keys(parameters).length} parameters`);
+        } catch (error) {
+          this.logger.warn(`Parameter extraction failed: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      }
+
+      // Validate parameters
+      const validation = await this.toolOrchestrator.validateToolExecution({
+        toolId,
+        parameters,
+        userId: userId || 'anonymous',
+        conversationId: 'chat-' + Date.now(),
+      });
+
+      // If validation fails but tool might still be useful, show what's needed
+      if (!validation.valid && Object.keys(parameters).length === 0) {
+        const toolInfo = this.getToolInfo(toolId);
+        
+        return {
+          text: `**${toolMetadata.name}**\n\n${toolMetadata.description}\n\n**To use this tool, please provide the following information:**\n${requiredParams.map(p => `- **${p.name}**: ${p.description}`).join('\n')}\n\n${toolMetadata.parameters.filter(p => !p.required).length > 0 ? `**Optional parameters:**\n${toolMetadata.parameters.filter(p => !p.required).map(p => `- ${p.name}: ${p.description}`).join('\n')}` : ''}`,
+          suggestions: ['Show example', 'View documentation'],
+          visualizations: [{
+            type: 'tool-preview',
+            data: { toolId, toolName: toolMetadata.name },
+          }],
+          intentClassification: classification,
+        };
+      }
+
+      // Execute the tool
+      const toolResult = await this.toolOrchestrator.executeInChat(
+        toolId,
+        parameters,
+        userId || 'anonymous',
+        'chat-' + Date.now(),
+      );
+
+      // Format response
+      if (!toolResult.result.success) {
+        const errors = toolResult.result.errors?.join(', ') || 'Unknown error';
+        return {
+          text: `❌ **${toolMetadata.name} Error**\n\n${errors}\n\n_Please provide the required parameters and try again._`,
+          suggestions: ['Try again with parameters', 'View documentation'],
+          intentClassification: classification,
+        };
+      }
+
+      return {
+        text: toolResult.formattedForChat,
+        suggestions: ['Calculate again', 'Export results', 'View more details'],
+        visualizations: [{
+          type: 'tool-result',
+          data: {
+            toolId,
+            toolName: toolResult.toolName,
+            result: toolResult.result.data,
+            timestamp: toolResult.result.timestamp,
+          },
+        }],
+        intentClassification: classification,
+        toolResult: toolResult.result,
+      };
+
+    } catch (error) {
+      this.logger.error(`Tool execution failed: ${error instanceof Error ? error.message : String(error)}`);
+      
+      const toolInfo = this.getToolInfo(toolId);
+      return {
+        text: `❌ **Error executing ${toolInfo.name}**\n\n${error instanceof Error ? error.message : 'An unexpected error occurred'}\n\nPlease try again or contact support if the issue persists.`,
+        suggestions: ['Try again', 'View documentation'],
+        intentClassification: classification,
+      };
+    }
+  }
+
+  /**
+   * Handle medical reference queries with RAG
+   */
+  private async handleMedicalReference(
+    message: string,
+    classification: any,
+    userId?: string,
+  ): Promise<QueryResponse> {
+    this.logger.log(`📚 Handling medical reference query with RAG`);
+
+    try {
+      // ========================================
+      // STEP 1: RETRIEVE RELEVANT CONTEXT VIA RAG
+      // ========================================
+      const ragContext = await this.ragService.retrieve(message, {
+        topK: 5,
+        minScore: 0.6,
+        documentType: 'guideline', // Prefer guidelines for medical references
+      });
+
+      this.logger.log(
+        `📖 RAG retrieved ${ragContext.chunks.length} chunks from ${ragContext.sources.length} sources (confidence: ${ragContext.confidence.toFixed(2)})`,
+      );
+
+      // Log RAG retrieval in audit trail
+      if (userId) {
+        await this.auditService.log({
+          userId,
+          action: AuditAction.AI_QUERY,
+          resource: 'chat/rag-retrieval',
+          details: {
+            query: message.substring(0, 100),
+            chunksRetrieved: ragContext.chunks.length,
+            sources: ragContext.sources.map(s => s.id),
+            confidence: ragContext.confidence,
+            latencyMs: ragContext.latencyMs,
+          },
+          ipAddress: '0.0.0.0',
+          userAgent: 'system',
+        });
+      }
+
+      // ========================================
+      // STEP 2: CALCULATE CONFIDENCE SCORE
+      // ========================================
+      const confidenceScore = calculateConfidence(ragContext);
+      this.logger.log(`🎯 Confidence: ${confidenceScore.level} (${(confidenceScore.score * 100).toFixed(0)}%)`);
+
+      // ========================================
+      // STEP 3: BUILD PROMPT WITH RAG CONTEXT
+      // ========================================
+      if (ragContext.chunks.length === 0) {
+        // No relevant context found
+        return {
+          text: `I wasn't able to find specific evidence-based resources in my knowledge base for this query.\n\n**Suggestions:**\n${confidenceScore.suggestedActions.map(a => `- ${a}`).join('\n')}\n\n${getConfidenceDisclaimer(confidenceScore) || ''}\n\n_Would you like me to provide general clinical information, or would you prefer to rephrase your query?_`,
+          suggestions: ['Rephrase query', 'General information', 'Search protocols'],
+          confidence: confidenceScore.score,
+          ragContext: {
+            chunksRetrieved: 0,
+            sourcesFound: 0,
+          },
+          intentClassification: classification,
+        };
+      }
+
+      // Combine retrieved chunks into context
+      const retrievedContext = ragContext.chunks
+        .map((chunk, i) => `[Chunk ${i + 1}] ${chunk.text}`)
+        .join('\n\n');
+
+      // Build prompt based on query type
+      let prompt: string;
+      const lowerMessage = message.toLowerCase();
+
+      if (lowerMessage.includes('drug') || lowerMessage.includes('medication') || lowerMessage.includes('pharmacology')) {
+        prompt = buildDrugInformationPrompt({
+          retrievedContext,
+          sources: ragContext.sources,
+          userQuery: message,
+          confidence: ragContext.confidence,
+        });
+      } else if (lowerMessage.includes('protocol') || lowerMessage.includes('guideline') || lowerMessage.includes('algorithm')) {
+        prompt = buildClinicalProtocolPrompt({
+          retrievedContext,
+          sources: ragContext.sources,
+          userQuery: message,
+          confidence: ragContext.confidence,
+        });
+      } else {
+        prompt = buildMedicalReferencePrompt({
+          retrievedContext,
+          sources: ragContext.sources,
+          userQuery: message,
+          confidence: ragContext.confidence,
+        });
+      }
+
+      // ========================================
+      // STEP 4: GENERATE AI RESPONSE
+      // ========================================
+      const aiResponse = await this.aiService.invokeLLM(
+        userId || 'anonymous',
+        prompt,
+        { 
+          intentType: 'medical_reference',
+          ragEnabled: true,
+          confidence: confidenceScore.score,
+        },
+      );
+
+      let responseText = aiResponse.content || 'Unable to generate response.';
+
+      // ========================================
+      // STEP 5: ADD CITATIONS AND DISCLAIMERS
+      // ========================================
+      // Add formatted citations
+      const citationsText = formatCitations(ragContext.sources);
+      if (citationsText) {
+        responseText += '\n' + citationsText;
+      }
+
+      // Add confidence disclaimer if needed
+      const disclaimer = getConfidenceDisclaimer(confidenceScore);
+      if (disclaimer) {
+        responseText += '\n\n' + disclaimer;
+      }
+
+      // Generate suggestions based on confidence
+      const suggestions: string[] = [];
+      if (confidenceScore.level === 'high') {
+        suggestions.push('View source documents', 'Related topics', 'Clinical pearls');
+      } else {
+        suggestions.push(...confidenceScore.suggestedActions.slice(0, 3));
+      }
+
+      return {
+        text: responseText,
+        suggestions,
+        citations: ragContext.sources,
+        confidence: confidenceScore.score,
+        ragContext: {
+          chunksRetrieved: ragContext.chunks.length,
+          sourcesFound: ragContext.sources.length,
+          latencyMs: ragContext.latencyMs,
+          confidenceLevel: confidenceScore.level,
+        },
+        intentClassification: classification,
+      };
+
+    } catch (error) {
+      this.logger.error(`Medical reference query with RAG failed: ${error instanceof Error ? error.message : String(error)}`);
+      
+      // Fallback to non-RAG response
+      return {
+        text: `I encountered an error retrieving evidence-based information for your query. Let me provide a general response:\n\n_Please consult current guidelines or specialists for authoritative guidance._`,
+        suggestions: ['Try again', 'Rephrase query', 'Contact support'],
+        confidence: 0,
+        intentClassification: classification,
+      };
+    }
+  }
+
+  /**
+   * Get tool information
+   */
+  private getToolInfo(toolId: string): {
+    name: string;
+    description: string;
+    requiredParams: string[];
+  } {
+    const toolMap = {
+      'sofa-calculator': {
+        name: 'SOFA Score Calculator',
+        description: 'Sequential Organ Failure Assessment for ICU patients',
+        requiredParams: ['PaO2/FiO2', 'Platelets', 'Bilirubin', 'MAP or Vasopressors', 'GCS', 'Creatinine'],
+      },
+      'drug-interactions': {
+        name: 'Drug Interaction Checker',
+        description: 'Identifies clinically significant drug-drug interactions',
+        requiredParams: ['List of medications (at least 2)'],
+      },
+      'lab-interpreter': {
+        name: 'Lab Results Interpreter',
+        description: 'Interprets laboratory values and provides clinical significance',
+        requiredParams: ['Lab test name and value'],
+      },
+      'protocol-lookup': {
+        name: 'Clinical Protocol Lookup',
+        description: 'Retrieves evidence-based clinical protocols and guidelines',
+        requiredParams: ['Clinical condition or scenario'],
+      },
+    };
+
+    return toolMap[toolId] || {
+      name: 'Clinical Tool',
+      description: 'Clinical decision support tool',
+      requiredParams: [],
+    };
+  }
+
+  /**
+   * Get emergency escalation message
+   */
+  private getEmergencyMessage(category: string, severity: EmergencySeverity): string {
+    const messages = {
+      cardiac: {
+        critical: '🚨 CRITICAL: Cardiac emergency detected. Initiate ACLS protocol immediately.',
+        urgent: '⚠️ URGENT: Cardiac event suspected. Obtain ECG and troponins STAT.',
+        moderate: '⚠️ Cardiac evaluation needed. Monitor closely.',
+      },
+      neurological: {
+        critical: '🚨 CRITICAL: Neurological emergency. Activate stroke/neuro team immediately.',
+        urgent: '⚠️ URGENT: Neurological event. Obtain CT head and assess GCS.',
+        moderate: '⚠️ Neurological assessment needed.',
+      },
+      respiratory: {
+        critical: '🚨 CRITICAL: Respiratory emergency. Secure airway immediately.',
+        urgent: '⚠️ URGENT: Respiratory distress. Administer oxygen and assess airway.',
+        moderate: '⚠️ Respiratory monitoring needed.',
+      },
+      psychiatric: {
+        critical: '🚨 CRITICAL: Psychiatric emergency. Immediate safety evaluation required.',
+        urgent: '⚠️ URGENT: Psychiatric consultation needed.',
+        moderate: '⚠️ Mental health assessment recommended.',
+      },
+      trauma: {
+        critical: '🚨 CRITICAL: Major trauma. Activate trauma team and follow ATLS protocol.',
+        urgent: '⚠️ URGENT: Traumatic injury. Assess ABC and stabilize.',
+        moderate: '⚠️ Trauma evaluation needed.',
+      },
+    };
+
+    const categoryMessages = messages[category] || {
+      critical: '🚨 CRITICAL: Medical emergency detected.',
+      urgent: '⚠️ URGENT: Medical attention required.',
+      moderate: '⚠️ Medical evaluation needed.',
+    };
+
+    return categoryMessages[severity] || categoryMessages.moderate;
+  }
+
+  private async generateAIResponse(message: string, context?: any): Promise<QueryResponse> {
+    // Simulate AI response based on message content
+    const lowerMessage = message.toLowerCase();
+
+    if (
+      lowerMessage.includes('drug') ||
+      lowerMessage.includes('interaction') ||
+      lowerMessage.includes('medication')
+    ) {
+      return {
+        text: `Analyzing drug interactions for current medications. Checking for significant interactions with the patient's regimen.`,
+        suggestions: ['View interaction network', 'Check contraindications', 'Suggest alternatives'],
+        visualizations: [
+          {
+            type: 'drug-interaction',
+            data: {
+              drugs: context?.medications || [],
+              interactions: [],
+            },
+          },
+        ],
+      };
+    }
+
+    if (lowerMessage.includes('calculator') || lowerMessage.includes('score')) {
+      return {
+        text: `Available clinical calculators: SOFA Score, APACHE-II, CHA2DS2-VASc, CURB-65, qSOFA. Which would you like to use?`,
+        suggestions: ['SOFA Score', 'APACHE-II', 'CHA2DS2-VASc'],
+        visualizations: [
+          {
+            type: 'calculator',
+            data: { available: ['SOFA', 'APACHE-II', 'CHA2DS2-VASc'] },
+          },
+        ],
+      };
+    }
+
+    if (lowerMessage.includes('protocol') || lowerMessage.includes('guideline')) {
+      return {
+        text: `Relevant clinical protocols based on patient presentation. Reviewing evidence-based guidelines for current conditions.`,
+        suggestions: ['Sepsis Protocol', 'ARDS Protocol', 'Shock Management'],
+        visualizations: [
+          {
+            type: 'protocol',
+            data: {
+              protocols: context?.activeProblems || [],
+            },
+          },
+        ],
+      };
+    }
+
+    if (lowerMessage.includes('vital')) {
+      return {
+        text: `Current vital signs analysis. Patient vitals are being monitored in real-time.`,
+        suggestions: ['Vital trends', 'Anomaly detection', 'Alert thresholds'],
+        visualizations: [
+          {
+            type: 'vitals',
+            data: context?.vitals || {},
+          },
+        ],
+      };
+    }
+
+    return {
+      text: `Clinical query processed. Patient context loaded. How can I assist with patient care decisions?`,
+      suggestions: ['Drug interactions', 'Clinical protocols', 'Lab interpretation'],
+    };
+  }
+}

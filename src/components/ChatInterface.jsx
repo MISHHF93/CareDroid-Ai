@@ -1,0 +1,541 @@
+import React, { useState, useRef, useEffect } from 'react';
+import ToolPanel from './ToolPanel';
+import ToolCard from './ToolCard';
+import Citations, { CitationModal } from './Citations';
+import ConfidenceBadge from './ConfidenceBadge';
+import { getInventoryItem } from '../data/featureInventory';
+import { featureInventory } from '../data/featureInventory';
+
+const ChatInterface = ({
+  isSidebarOpen,
+  onToggleSidebar,
+  currentTool,
+  currentFeature,
+  prefillText,
+  conversationId,
+  messages,
+  onAppendMessage,
+  onTrackEvent,
+  onAddToast,
+  authToken,
+  onToolSelect,
+  onFeatureSelect,
+  showHeader = true
+}) => {
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedCitation, setSelectedCitation] = useState(null);
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(scrollToBottom, [messages]);
+
+  useEffect(() => {
+    if (prefillText && !input.trim()) {
+      setInput(prefillText);
+    }
+  }, [prefillText]);
+
+  const handleSend = async () => {
+    if (!input.trim() || isLoading) return;
+
+    const userMessage = {
+      role: 'user',
+      content: input,
+      timestamp: new Date()
+    };
+
+    onAppendMessage?.(conversationId, userMessage);
+    onTrackEvent?.('message_sent', {
+      conversationId,
+      tool: currentTool,
+      feature: currentFeature,
+      length: input.length
+    });
+    setInput('');
+    setIsLoading(true);
+
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`;
+      }
+
+      const response = await fetch('/api/chat/message', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          message: input,
+          tool: currentTool,
+          feature: currentFeature,
+          conversationId
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status}`);
+      }
+
+      let data = {};
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        data = {};
+      }
+      
+      const assistantMessage = {
+        role: 'assistant',
+        content: data.respons,
+        citations: data.citations || [],
+        confidence: data.confidence,
+        ragContext: data.ragContext,e || 'I encountered an error processing your request.',
+        timestamp: new Date()
+      };
+
+      // Include tool result if present
+      if (data.toolResult) {
+        assistantMessage.toolResult = data.toolResult;
+      }
+
+      onAppendMessage?.(conversationId, assistantMessage);
+    } catch (error) {
+      onAppendMessage?.(conversationId, {
+        role: 'assistant',
+        content: 'I\'m having trouble connecting to the server. Please try again in a moment.',
+        timestamp: new Date()
+      });
+      onAddToast?.('Unable to reach the server. Please try again.', 'error');
+      onTrackEvent?.('message_error', {
+        conversationId,
+        tool: currentTool,
+        feature: currentFeature
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  return (
+    <div style={{
+      flex: 1,
+      display: 'flex',
+      flexDirection: 'column',
+      position: 'relative',
+      marginLeft: isSidebarOpen ? '0' : '0',
+      transition: 'margin-left 0.3s ease'
+    }}>
+      {showHeader && (
+        <div style={{
+          height: '60px',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          display: 'flex',
+          alignItems: 'center',
+          padding: '0 20px',
+          gap: '15px'
+        }}>
+          {!isSidebarOpen && (
+            <button
+              onClick={onToggleSidebar}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#fff',
+                cursor: 'pointer',
+                fontSize: '24px',
+                padding: '5px'
+              }}
+            >
+              ☰
+            </button>
+          )}
+          <div style={{ flex: 1 }}>
+            <h1 style={{
+              margin: 0,
+              fontSize: '20px',
+              fontWeight: 600,
+              background: 'linear-gradient(135deg, #00FF88, #00FFFF)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent'
+            }}>
+              CareDroid Clinical AI
+            </h1>
+          </div>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            flexWrap: 'wrap',
+            justifyContent: 'flex-end'
+          }}>
+            {authToken && (
+              <div style={{
+                padding: '6px 12px',
+                borderRadius: '16px',
+                fontSize: '12px',
+                background: 'rgba(0, 255, 136, 0.08)',
+                border: '1px solid rgba(0, 255, 136, 0.3)',
+                color: '#00FF88'
+              }}>
+                ✅ Signed In
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Tool Dock (chat-only) */}
+      <div style={{
+        padding: '20px 24px 0',
+        display: 'grid',
+        gap: '14px'
+      }}>
+        <div style={{
+          fontSize: '12px',
+          color: 'var(--muted-text)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.5px'
+        }}>
+          Clinical Tools
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+          {featureInventory.filter((item) => item.type === 'tool').map((tool) => (
+            <button
+              key={tool.id}
+              onClick={() => onToolSelect?.(tool.id === currentTool ? null : tool.id)}
+              style={{
+                padding: '8px 12px',
+                borderRadius: '10px',
+                border: currentTool === tool.id ? '1px solid rgba(0, 255, 136, 0.5)' : '1px solid var(--panel-border)',
+                background: currentTool === tool.id ? 'rgba(0, 255, 136, 0.12)' : 'transparent',
+                color: 'var(--text-color)',
+                cursor: 'pointer',
+                fontSize: '13px'
+              }}
+            >
+              {tool.icon} {tool.name}
+            </button>
+          ))}
+        </div>
+
+        <div style={{
+          fontSize: '12px',
+          color: 'var(--muted-text)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.5px',
+          marginTop: '6px'
+        }}>
+          Feature Inventory
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+          {featureInventory.filter((item) => item.type === 'feature').map((feature) => (
+            <button
+              key={feature.id}
+              onClick={() => onFeatureSelect?.(feature.id === currentFeature ? null : feature.id)}
+              style={{
+                padding: '8px 12px',
+                borderRadius: '10px',
+                border: currentFeature === feature.id ? '1px solid rgba(0, 255, 255, 0.6)' : '1px solid var(--panel-border)',
+                background: currentFeature === feature.id ? 'rgba(0, 255, 255, 0.12)' : 'transparent',
+                color: 'var(--text-color)',
+                cursor: 'pointer',
+                fontSize: '13px'
+              }}
+            >
+              {feature.icon} {feature.name}
+            </button>
+          ))}
+        </div>
+
+        {(currentTool || currentFeature) && (
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {currentTool && (
+              <div style={{
+                padding: '6px 12px',
+                background: 'rgba(0, 255, 136, 0.1)',
+                border: '1px solid #00FF88',
+                borderRadius: '20px',
+                fontSize: '12px',
+                color: '#00FF88'
+              }}>
+                🔧 {currentTool}
+              </div>
+            )}
+            {currentFeature && (
+              <div style={{
+                padding: '6px 12px',
+                background: 'rgba(0, 255, 255, 0.1)',
+                border: '1px solid rgba(0, 255, 255, 0.5)',
+                borderRadius: '20px',
+                fontSize: '12px',
+                color: '#00FFFF'
+              }}>
+                ✨ {getInventoryItem(currentFeature)?.name || currentFeature}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Messages Area */}
+      <div style={{
+        flex: 1,
+        overflowY: 'auto',
+        padding: '24px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '20px'
+      }}>
+        {messages.length === 0 && (
+          <div style={{
+            padding: '30px',
+            borderRadius: '12px',
+            border: '1px dashed var(--panel-border)',
+            color: 'var(--muted-text)',
+            textAlign: 'center'
+          }}>
+            Start a conversation to see messages here.
+          </div>
+        )}
+        {messages.map((message, index) => (
+          <div
+            key={index}
+            style={{
+              display: 'flex',
+              gap: '15px',
+              alignItems: 'flex-start',
+              maxWidth: '860px',
+              margin: message.role === 'user' ? '0 0 0 auto' : '0 auto 0 0',
+              width: '100%'
+            }}
+          >
+            {message.role === 'assistant' && (
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #00FF88, #00FFFF)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '20px',
+                flexShrink: 0
+              }}>
+                🤖
+              </div>
+            )}
+            <div style={{
+              flex: 1,
+              background: message.role === 'user'
+                ? 'rgba(0, 255, 136, 0.1)'
+                : 'var(--surface-2)',
+              padding: '16px 20px',
+              borderRadius: '16px',
+              border: message.role === 'user'
+                ? '1px solid rgba(0, 255, 136, 0.3)'
+                : '1px solid var(--panel-border)',
+              lineHeight: '1.6',
+              boxShadow: 'var(--shadow-1)'
+            }}>Confidence Badge (RAG-augmented responses) */}
+              {message.confidence !== undefined && message.role === 'assistant' && (
+                <div style={{ marginTop: '12px' }}>
+                  <ConfidenceBadge confidence={message.confidence} />
+                </div>
+              )}
+              {/* Tool Result Card */}
+              {message.toolResult && (
+                <div style={{ marginTop: '12px' }}>
+                  <ToolCard toolResult={message.toolResult} />
+                </div>
+              )}
+              {/* Citations */}
+              {message.citations && message.citations.length > 0 && message.role === 'assistant' && (
+                <Citations 
+                  citations={message.citations}
+                  onViewDetails={(citation) => setSelectedCitation(citation)}
+                />
+              )}
+              <div style={{
+                fontSize: '12px',
+                color: 'var(--muted-text)',
+                marginTop: '8px'
+              }}>
+                {message.timestamp.toLocaleTimeString()}
+                {message.ragContext && message.ragContext.sourcesFound > 0 && (
+                  <span style={{ marginLeft: '12px', opacity: 0.7 }}>
+                    • {message.ragContext.chunksRetrieved} chunks from {message.ragContext.sourcesFound} sources
+                  </span>
+                
+                color: 'var(--muted-text)',
+                marginTop: '8px'
+              }}>
+                {message.timestamp.toLocaleTimeString()}
+              </div>
+            </div>
+            {message.role === 'user' && (
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                background: 'rgba(255, 255, 255, 0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '20px',
+                flexShrink: 0
+              }}>
+                👤
+              </div>
+            )}
+          </div>
+        ))}
+        {isLoading && (
+          <div style={{
+            display: 'flex',
+            gap: '15px',
+            alignItems: 'flex-start',
+            maxWidth: '900px',
+            margin: '0 auto 0 0'
+          }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #00FF88, #00FFFF)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '20px'
+            }}>
+              🤖
+            </div>
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.05)',
+              padding: '15px 20px',
+              borderRadius: '12px',
+              border: '1px solid rgba(255, 255, 255, 0.1)'
+            }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <div className="dot-pulse">●</div>
+                <div className="dot-pulse" style={{ animationDelay: '0.2s' }}>●</div>
+                <div className="dot-pulse" style={{ animationDelay: '0.4s' }}>●</div>
+              </div>
+            </div>
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Tool Panel */}
+      {(currentTool || currentFeature) && <ToolPanel tool={currentTool} feature={currentFeature} />}
+
+      {/* Input Area */}
+      <div style={{
+        padding: '20px 24px 28px',
+        borderTop: '1px solid var(--panel-border)',
+        background: 'var(--surface-2)'
+      }}>
+        <div style={{
+          maxWidth: '900px',
+          margin: '0 auto 12px',
+          display: 'flex',
+          gap: '10px',
+          flexWrap: 'wrap'
+        }}>
+          {['Summarize a protocol', 'Check drug interaction', 'Interpret labs'].map((hint) => (
+            <button
+              key={hint}
+              onClick={() => setInput(hint)}
+              className="btn-ghost"
+              style={{ fontSize: '12px', padding: '6px 10px' }}
+            >
+              {hint}
+            </button>
+          ))}
+        </div>
+        <div style={{
+          maxWidth: '900px',
+          margin: '0 auto',
+          display: 'flex',
+          gap: '10px',
+          alignItems: 'flex-end'
+        }}>
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Ask CareDroid anything clinical..."
+            disabled={isLoading}
+            style={{
+              flex: 1,
+              background: 'var(--surface-1)',
+              border: '1px solid var(--panel-border)',
+              borderRadius: '16px',
+              padding: '16px',
+              color: 'var(--text-color)',
+              fontSize: '15px',
+              resize: 'none',
+              minHeight: '28px',
+              maxHeight: '200px',
+              fontFamily: 'inherit',
+              outline: 'none',
+              boxShadow: 'var(--shadow-1)'
+            }}
+            rows={1}
+          />
+          <button
+            onClick={handleSend}
+            disabled={!input.trim() || isLoading}
+            className="btn-primary"
+            style={{
+              padding: '14px 26px',
+              opacity: input.trim() && !isLoading ? 1 : 0.6,
+              cursor: input.trim() && !isLoading ? 'pointer' : 'not-allowed'
+            }}
+          >
+            {isLoading ? '...' : 'Send'}
+          </button>
+        </div>
+        <div style={{
+          maxWidth: '900px',
+          margin: '10px auto 0',
+          fontSize: '12px',
+          color: 'var(--muted-text)',
+          textAlign: 'center'
+        }}>
+          CareDroid can make mistakes. Verify medical information.
+        </div>
+      </div>
+
+      {/* Citation Modal */}
+      {selectedCitation && (
+        <CitationModal 
+          citation={selectedCitation}
+          onClose={() => setSelectedCitation(null)}
+        />
+      )}
+
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 1; }
+        }
+        .dot-pulse {
+          animation: pulse 1.5s infinite;
+          color: #00FF88;
+        }
+      `}</style>
+    </div>
+  );
+};
+
+export default ChatInterface;

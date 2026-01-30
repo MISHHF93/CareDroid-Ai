@@ -1,199 +1,272 @@
-import { lazy, Suspense } from 'react';
-import lazyWithRetry from '@/lib/lazyWithRetry';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import './App.css';
-import { Toaster } from "@/components/ui/toaster";
-import PWAInstallPrompt from "@/components/PWAInstallPrompt";
-import AppLayout from '@/components/layouts/AppLayout';
-import { ProtectedRoute, PublicRoute } from '@/components/routes/ProtectedRoute';
-import { Loader2 } from 'lucide-react';
-import useSessionActivity from '@/hooks/useSessionActivity';
+import ChatInterface from './components/ChatInterface';
+import ErrorBoundary from './components/ErrorBoundary';
+import Toast from './components/Toast';
+import { getInventoryItem } from './data/featureInventory';
+import Auth from './pages/Auth';
+import Onboarding from './pages/Onboarding';
+import Settings from './pages/Settings';
+import AuthCallback from './pages/AuthCallback';
+import Profile from './pages/Profile';
+import ProfileSettings from './pages/ProfileSettings';
+import AuditLogs from './pages/AuditLogs';
+import AuthShell from './layout/AuthShell';
+import AppShell from './layout/AppShell';
+import { UserProvider, useUser, Permission } from './contexts/UserContext';
+import PermissionGate from './components/PermissionGate';
 
-// Lazy load pages for code splitting
-const Welcome = lazy(() => import('@/pages/Welcome'));
-const Login = lazy(() => import('@/pages/Login'));
-const LoginEnhanced = lazy(() => import('@/pages/LoginEnhanced'));
-const Onboarding = lazy(() => import('@/pages/Onboarding'));
-const SubscriptionSelect = lazy(() => import('@/pages/SubscriptionSelect'));
-const Setup2FA = lazy(() => import('@/pages/Setup2FA'));
+const SESSION_KEY = 'caredroid_session_id';
+const AUTH_TOKEN_KEY = 'caredroid_access_token';
 
-const Home = lazy(() => import('@/pages/Home'));
-const Search = lazy(() => import('@/pages/Search'));
-const Protocols = lazy(() => import('@/pages/Protocols'));
-const Calculators = lazy(() => import('@/pages/Calculators'));
-const Profile = lazy(() => import('@/pages/Profile'));
-const DrugDatabase = lazyWithRetry(() => import('@/pages/DrugDatabase'));
-const DrugInteractions = lazy(() => import('@/pages/DrugInteractions'));
-const Algorithms = lazy(() => import('@/pages/Algorithms'));
-const Abbreviations = lazy(() => import('@/pages/Abbreviations'));
-const ScoringSystem = lazy(() => import('@/pages/ScoringSystem'));
-const ClinicalPearls = lazy(() => import('@/pages/ClinicalPearls'));
-const QuickReference = lazy(() => import('@/pages/QuickReference'));
-const Images = lazy(() => import('@/pages/Images'));
-const OfflineManager = lazy(() => import('@/pages/OfflineManager'));
-const AuditLog = lazy(() => import('@/pages/AuditLog'));
-const EncounterSummary = lazy(() => import('@/pages/EncounterSummary'));
-const JSONViewer = lazy(() => import('@/pages/JSONViewer'));
-const TechnicalSpec = lazy(() => import('@/pages/TechnicalSpec'));
-const DiagnosticTest = lazy(() => import('@/pages/DiagnosticTest'));
-const ProfileEnhanced = lazy(() => import('@/pages/ProfileEnhanced'));
-const ComplianceCenter = lazy(() => import('@/pages/ComplianceCenter'));
-const InstitutionalPortal = lazy(() => import('@/pages/InstitutionalPortal'));
-const LabImageAnalyzer = lazy(() => import('@/pages/LabImageAnalyzer'));
-const SavedQueries = lazy(() => import('@/pages/SavedQueries'));
-const Emergency = lazy(() => import('@/pages/Emergency'));
-const LabValues = lazy(() => import('@/pages/LabValues'));
-const Procedures = lazy(() => import('@/pages/Procedures'));
-const Library = lazy(() => import('@/pages/Library'));
-const AlgorithmAI = lazy(() => import('@/pages/AlgorithmAI'));
-const LabInterpreter = lazy(() => import('@/pages/LabInterpreter'));
-const DifferentialDx = lazy(() => import('@/pages/DifferentialDx'));
-const ClinicalTrials = lazy(() => import('@/pages/ClinicalTrials'));
+const getSessionId = () => {
+  if (typeof window === 'undefined') return 'session-server';
+  const existing = window.localStorage.getItem(SESSION_KEY);
+  if (existing) return existing;
+  const generated = (window.crypto?.randomUUID?.() || `session-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+  window.localStorage.setItem(SESSION_KEY, generated);
+  return generated;
+};
 
-// Loading fallback component
-const LoadingFallback = () => (
-  <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50">
-    <div className="text-center">
-      <Loader2 className="w-12 h-12 mx-auto animate-spin text-blue-600 mb-4" />
-      <p className="text-neutral-600 font-medium">Loading...</p>
-    </div>
-  </div>
-);
+const createInitialMessages = () => ([{
+  role: 'assistant',
+  content: 'Hello! I\'m CareDroid, your AI clinical assistant. How can I help you today?',
+  timestamp: new Date()
+}]);
 
-function App() {
-  // Track user activity for session management
-  useSessionActivity();
+function AppContent() {
+  const { authToken, setAuthToken, signOut: userSignOut, isAuthenticated } = useUser();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+  const [currentTool, setCurrentTool] = useState(null);
+  const [currentFeature, setCurrentFeature] = useState(null);
+  const [prefillText, setPrefillText] = useState('');
+  const [sessionId] = useState(() => getSessionId());
+  const [toasts, setToasts] = useState([]);
+  const [healthStatus, setHealthStatus] = useState('checking');
+  const [conversations, setConversations] = useState([
+    { id: 1, title: 'New Conversation', timestamp: new Date() }
+  ]);
+  const [activeConversation, setActiveConversation] = useState(1);
+  const [messagesByConversation, setMessagesByConversation] = useState({
+    1: createInitialMessages()
+  });
+  const isAuthed = isAuthenticated;
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 1024px)');
+    const handleChange = () => setIsMobile(media.matches);
+    handleChange();
+    if (media.addEventListener) {
+      media.addEventListener('change', handleChange);
+    } else {
+      media.addListener(handleChange);
+    }
+    return () => {
+      if (media.removeEventListener) {
+        media.removeEventListener('change', handleChange);
+      } else {
+        media.removeListener(handleChange);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isMobile) {
+      setIsSidebarOpen(false);
+    } else {
+      setIsSidebarOpen(true);
+    }
+  }, [isMobile]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const checkHealth = async () => {
+      try {
+        const response = await fetch('/health');
+        if (!isActive) return;
+        setHealthStatus(response.ok ? 'online' : 'offline');
+      } catch (error) {
+        if (!isActive) return;
+        setHealthStatus('offline');
+      }
+    };
+
+    checkHealth();
+    const interval = setInterval(checkHealth, 30000);
+
+    return () => {
+      isActive = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+
+  const addToast = (message, type = 'info') => {
+    const id = `toast-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((toast) => toast.id !== id));
+    }, 4000);
+  };
+
+  const dismissToast = (id) => {
+    setToasts((prev) => prev.filter((toast) => toast.id !== id));
+  };
+
+  const handleAuthSuccess = (token) => {
+    setAuthToken(token);
+    addToast('Signed in successfully.', 'success');
+  };
+
+  const handleSignOut = () => {
+    userSignOut();
+    addToast('Signed out.', 'info');
+  };
+
+  const trackEvent = (eventName, parameters = {}) => {
+    const payload = {
+      sessionId,
+      events: [{
+        eventName,
+        parameters,
+        timestamp: Date.now(),
+        sessionId,
+      }]
+    };
+
+    fetch('/api/analytics/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }).catch(() => {});
+  };
+
+  const appendMessage = (conversationId, message) => {
+    setMessagesByConversation((prev) => ({
+      ...prev,
+      [conversationId]: [...(prev[conversationId] || []), message]
+    }));
+  };
+
+  const handleToolSelect = (tool) => {
+    setCurrentTool(tool);
+    setCurrentFeature(null);
+    setPrefillText('');
+    if (tool) {
+      trackEvent('tool_selected', { tool });
+    }
+  };
+
+  const handleFeatureSelect = (featureId) => {
+    setCurrentFeature(featureId);
+    setCurrentTool(null);
+    const item = getInventoryItem(featureId);
+    setPrefillText(item?.prompt || '');
+    if (featureId) {
+      trackEvent('feature_selected', { feature: featureId });
+    }
+  };
+
+  const handleSelectConversation = (conversationId) => {
+    setActiveConversation(conversationId);
+    setMessagesByConversation((prev) => {
+      if (prev[conversationId]) return prev;
+      return { ...prev, [conversationId]: createInitialMessages() };
+    });
+  };
+
+  const handleNewConversation = () => {
+    const newId = conversations.length + 1;
+    setConversations([...conversations, {
+      id: newId,
+      title: `New Conversation`,
+      timestamp: new Date()
+    }]);
+    setActiveConversation(newId);
+    setMessagesByConversation((prev) => ({
+      ...prev,
+      [newId]: createInitialMessages()
+    }));
+    trackEvent('conversation_created', { conversationId: newId });
+  };
 
   return (
-    <AppLayout>
-      <Suspense fallback={<LoadingFallback />}>
-        <Routes>
-          {/* Public Routes - Hidden navigation */}
-          <Route path="/" element={<PublicRoute><LoginEnhanced /></PublicRoute>} />
-          <Route path="/welcome" element={<PublicRoute><Welcome /></PublicRoute>} />
-          <Route path="/login" element={<PublicRoute><LoginEnhanced /></PublicRoute>} />
-          <Route path="/login-old" element={<PublicRoute><Login /></PublicRoute>} />
-          <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/subscription-select" element={<SubscriptionSelect />} />
-          <Route path="/setup-2fa" element={<Setup2FA />} />
-
-          {/* Protected Routes - Show navigation */}
-          <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-          <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
-          <Route path="/protocols" element={<ProtectedRoute><Protocols /></ProtectedRoute>} />
-          <Route path="/calculators" element={<ProtectedRoute><Calculators /></ProtectedRoute>} />
-          <Route path="/drug-database" element={<ProtectedRoute><DrugDatabase /></ProtectedRoute>} />
-          <Route path="/drug-interactions" element={<ProtectedRoute><DrugInteractions /></ProtectedRoute>} />
-          <Route path="/emergency" element={<ProtectedRoute><Emergency /></ProtectedRoute>} />
-          <Route path="/lab-values" element={<ProtectedRoute><LabValues /></ProtectedRoute>} />
-          <Route path="/procedures" element={<ProtectedRoute><Procedures /></ProtectedRoute>} />
-          <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
-          <Route path="/saved-queries" element={<ProtectedRoute><SavedQueries /></ProtectedRoute>} />
-          <Route path="/algorithms" element={<ProtectedRoute><Algorithms /></ProtectedRoute>} />
-          <Route path="/abbreviations" element={<ProtectedRoute><Abbreviations /></ProtectedRoute>} />
-          <Route path="/scoring-system" element={<ProtectedRoute><ScoringSystem /></ProtectedRoute>} />
-          <Route path="/clinical-pearls" element={<ProtectedRoute><ClinicalPearls /></ProtectedRoute>} />
-          <Route path="/quick-reference" element={<ProtectedRoute><QuickReference /></ProtectedRoute>} />
-          <Route path="/images" element={<ProtectedRoute><Images /></ProtectedRoute>} />
-          <Route path="/offline-manager" element={<ProtectedRoute><OfflineManager /></ProtectedRoute>} />
-          <Route path="/json-viewer" element={<ProtectedRoute><JSONViewer /></ProtectedRoute>} />
-          <Route path="/encounter-summary" element={<ProtectedRoute><EncounterSummary /></ProtectedRoute>} />
-          <Route path="/technical-spec" element={<ProtectedRoute><TechnicalSpec /></ProtectedRoute>} />
-          <Route path="/diagnostic-test" element={<ProtectedRoute><DiagnosticTest /></ProtectedRoute>} />
-
-          {/* Protected + Verified Routes */}
+    <ErrorBoundary>
+      <Routes>
+        <Route element={<AuthShell isAuthed={isAuthed} />}>
+          <Route path="/auth" element={<Auth onAddToast={addToast} onAuthSuccess={handleAuthSuccess} />} />
+          <Route path="/auth/callback" element={<AuthCallback onAddToast={addToast} onAuthSuccess={handleAuthSuccess} />} />
+        </Route>
+        <Route
+          element={(
+            <AppShell
+              isAuthed={isAuthed}
+              isSidebarOpen={isSidebarOpen}
+              isMobile={isMobile}
+              onToggleSidebar={toggleSidebar}
+              conversations={conversations}
+              activeConversation={activeConversation}
+              onSelectConversation={handleSelectConversation}
+              onNewConversation={handleNewConversation}
+              onSignOut={handleSignOut}
+              authToken={authToken}
+              healthStatus={healthStatus}
+            />
+          )}
+        >
+          <Route
+            path="/"
+            element={(
+              <ChatInterface
+                isSidebarOpen={isSidebarOpen}
+                onToggleSidebar={toggleSidebar}
+                currentTool={currentTool}
+                currentFeature={currentFeature}
+                prefillText={prefillText}
+                conversationId={activeConversation}
+                messages={messagesByConversation[activeConversation] || []}
+                onAppendMessage={appendMessage}
+                onTrackEvent={trackEvent}
+                onAddToast={addToast}
+                authToken={authToken}
+                onToolSelect={handleToolSelect}
+                onFeatureSelect={handleFeatureSelect}
+                showHeader={false}
+              />
+            )}
+          />
+          <Route path="/onboarding" element={<Onboarding onAddToast={addToast} />} />
+          <Route path="/settings" element={<Settings onAddToast={addToast} />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/profile-settings" element={<ProfileSettings onAddToast={addToast} />} />
           <Route 
-            path="/profile" 
+            path="/audit-logs" 
             element={
-              <ProtectedRoute requireVerification={true}>
-                <Profile />
-              </ProtectedRoute>
+              <PermissionGate 
+                permission={Permission.VIEW_AUDIT_LOGS}
+                fallback={<Navigate to="/" replace />}
+              >
+                <AuditLogs />
+              </PermissionGate>
             } 
           />
-          <Route 
-            path="/profile-enhanced" 
-            element={
-              <ProtectedRoute requireVerification={true}>
-                <ProfileEnhanced />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/compliance-center" 
-            element={
-              <ProtectedRoute requireVerification={true}>
-                <ComplianceCenter />
-              </ProtectedRoute>
-            } 
-          />
-
-          {/* Protected + Subscription Routes */}
-          <Route 
-            path="/algorithm-ai" 
-            element={
-              <ProtectedRoute requireSubscription={true}>
-                <AlgorithmAI />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/lab-image-analyzer" 
-            element={
-              <ProtectedRoute requireSubscription={true}>
-                <LabImageAnalyzer />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/lab-interpreter" 
-            element={
-              <ProtectedRoute requireSubscription={true}>
-                <LabInterpreter />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/differential-dx" 
-            element={
-              <ProtectedRoute requireSubscription={true}>
-                <DifferentialDx />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/clinical-trials" 
-            element={
-              <ProtectedRoute requireSubscription={true}>
-                <ClinicalTrials />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/institutional-portal" 
-            element={
-              <ProtectedRoute requireSubscription={true} tier="INSTITUTIONAL">
-                <InstitutionalPortal />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/audit-log" 
-            element={
-              <ProtectedRoute requireSubscription={true} tier="INSTITUTIONAL">
-                <AuditLog />
-              </ProtectedRoute>
-            } 
-          />
-
-          {/* Catch all - redirect to home or login */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </Suspense>
-
-      <Toaster />
-      <PWAInstallPrompt />
-    </AppLayout>
+        </Route>
+        <Route path="*" element={<Navigate to={isAuthed ? '/' : '/auth'} replace />} />
+      </Routes>
+      <Toast toasts={toasts} onDismiss={dismissToast} />
+    </ErrorBoundary>
   );
 }
 
-export default App; 
+function App() {
+  return (
+    <UserProvider>
+      <AppContent />
+    </UserProvider>
+  );
+}
+
+export default App;

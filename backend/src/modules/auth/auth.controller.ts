@@ -6,9 +6,11 @@ import {
   Query,
   UseGuards,
   Req,
+  Res,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
@@ -41,6 +43,18 @@ export class AuthController {
     return this.authService.login(loginDto, ipAddress, userAgent);
   }
 
+  @Post('verify-2fa')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verify 2FA token during login' })
+  @ApiResponse({ status: 200, description: 'Successfully authenticated with 2FA' })
+  @ApiResponse({ status: 401, description: 'Invalid 2FA token' })
+  async verifyTwoFactor(@Body() body: { userId: string; token: string }, @Req() req: Request) {
+    const ipAddress = req.ip || '0.0.0.0';
+    const userAgent = req.headers['user-agent'] || 'unknown';
+
+    return this.authService.verifyTwoFactorLogin(body.userId, body.token, ipAddress, userAgent);
+  }
+
   @Get('verify-email')
   @ApiOperation({ summary: 'Verify email address with token from email' })
   @ApiResponse({ status: 200, description: 'Email successfully verified' })
@@ -59,8 +73,17 @@ export class AuthController {
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
   @ApiOperation({ summary: 'Google OAuth callback' })
-  async googleCallback(@Req() req: any) {
-    return req.user;
+  async googleCallback(@Req() req: any, @Res() res: Response) {
+    const accessToken = req.user?.accessToken;
+    if (accessToken) {
+      return res.redirect(`/auth/callback?token=${encodeURIComponent(accessToken)}`);
+    }
+    return res.json({
+      accessToken: req.user?.accessToken,
+      refreshToken: req.user?.refreshToken,
+      expiresIn: req.user?.expiresIn,
+      provider: 'google'
+    });
   }
 
   @Get('linkedin')
@@ -73,8 +96,35 @@ export class AuthController {
   @Get('linkedin/callback')
   @UseGuards(AuthGuard('linkedin'))
   @ApiOperation({ summary: 'LinkedIn OAuth callback' })
-  async linkedinCallback(@Req() req: any) {
-    return req.user;
+  async linkedinCallback(@Req() req: any, @Res() res: Response) {
+    const accessToken = req.user?.accessToken;
+    if (accessToken) {
+      return res.redirect(`/auth/callback?token=${encodeURIComponent(accessToken)}`);
+    }
+    return res.json({
+      accessToken: req.user?.accessToken,
+      refreshToken: req.user?.refreshToken,
+      expiresIn: req.user?.expiresIn,
+      provider: 'linkedin'
+    });
+  }
+
+  @Post('magic-link')
+  @ApiOperation({ summary: 'Request magic login link' })
+  async requestMagicLink(@Body() body: { email: string }) {
+    return this.authService.requestMagicLink(body.email);
+  }
+
+  @Get('oidc')
+  @ApiOperation({ summary: 'OIDC SSO entry (placeholder)' })
+  async oidcLogin() {
+    return { message: 'OIDC SSO is not configured yet.' };
+  }
+
+  @Get('saml')
+  @ApiOperation({ summary: 'SAML SSO entry (placeholder)' })
+  async samlLogin() {
+    return { message: 'SAML SSO is not configured yet.' };
   }
 
   @Get('me')

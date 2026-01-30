@@ -1,0 +1,9 @@
+{"text": "What are the risk factors for stroke?", "intent": "general_query"}
+{"text": "Calculate mortality risk using SOFA", "intent": "clinical_tool"}
+{"text": "Standard protocol for code blue response", "intent": "protocol_search"}
+{"text": "Explain elevated D-dimer results", "intent": "lab_query"}
+{"text": "Configure system security parameters", "intent": "admin_function"}
+{"text": "General information about heart failure", "intent": "general_query"}
+{"text": "Respiratory failure, unable to maintain oxygenation", "intent": "emergency", "subcategory": "respiratory"}
+{"text": "Get patient vital signs trend", "intent": "patient_data"}
+{"text": "Calculate risk scores using available tools", "intent": "clinical_tool"}

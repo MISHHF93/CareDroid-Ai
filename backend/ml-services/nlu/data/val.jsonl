@@ -1,0 +1,9 @@
+{"text": "Generate user activity report", "intent": "admin_function"}
+{"text": "Show patient medical history", "intent": "patient_data"}
+{"text": "Suicidal ideation with active plan", "intent": "emergency", "subcategory": "psychiatric"}
+{"text": "Check for interactions with this medication list", "intent": "clinical_tool"}
+{"text": "What is the normal range for blood pressure?", "intent": "general_query"}
+{"text": "What does elevated lactate mean in this context?", "intent": "lab_query"}
+{"text": "Acute myocardial infarction confirmed, ready for cath lab", "intent": "emergency", "subcategory": "cardiac"}
+{"text": "Show me the ACLS guidelines", "intent": "protocol_search"}
+{"text": "Sepsis management protocol step by step", "intent": "protocol_search"}

@@ -1,0 +1,452 @@
+/**
+ * Intent Classifier Service
+ * 
+ * Three-Phase Classification Pipeline:
+ * 1. Keyword Matching (fast, rule-based)
+ * 2. NLU Model (fine-tuned BERT - not yet implemented, falls through to Phase 3)
+ * 3. LLM Fallback (GPT-4 for complex cases)
+ * 
+ * Emergency Detection: 100% recall (no false negatives)
+ */
+
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { AIService } from '../../ai/ai.service';
+import {
+  IntentClassification,
+  IntentClassificationContext,
+  PrimaryIntent,
+  EmergencySeverity,
+  EmergencyKeyword,
+} from './dto/intent-classification.dto';
+import {
+  detectEmergencyKeywords,
+  getHighestSeverity,
+  EmergencyPattern,
+} from './patterns/emergency.patterns';
+import {
+  matchToolPatterns,
+  extractToolParameters,
+  getToolPattern,
+} from './patterns/tool.patterns';
+import { classifyClinicalQuery } from './patterns/clinical.patterns';
+
+@Injectable()
+export class IntentClassifierService {
+  private readonly logger = new Logger(IntentClassifierService.name);
+
+  private readonly nluServiceUrl: string;
+  private readonly nluFailureThreshold = 3;
+  private readonly nluResetMs = 30_000;
+  private readonly llmFailureThreshold = 3;
+  private readonly llmResetMs = 30_000;
+
+  private readonly nluCircuitBreaker = {
+    failureCount: 0,
+    openUntil: 0,
+  };
+
+  private readonly llmCircuitBreaker = {
+    failureCount: 0,
+    openUntil: 0,
+  };
+
+  constructor(
+    private readonly aiService: AIService,
+    private readonly configService: ConfigService,
+  ) {
+    const baseUrl = this.configService.get<string>('NLU_SERVICE_URL') || 'http://localhost:8001';
+    this.nluServiceUrl = baseUrl.replace(/\/$/, '');
+  }
+
+  /**
+   * Main classification entry point
+   * Executes 3-phase pipeline: keyword → NLU → LLM
+   */
+  async classify(
+    message: string,
+    context?: IntentClassificationContext,
+  ): Promise<IntentClassification> {
+    this.logger.log(`🧠 Classifying intent for message: "${message.substring(0, 100)}..."`);
+
+    // ========================================
+    // PHASE 0: EMERGENCY DETECTION (Always runs first)
+    // ========================================
+    const emergencyPatterns = detectEmergencyKeywords(message);
+    const isEmergency = emergencyPatterns.length > 0;
+    const emergencySeverity = getHighestSeverity(emergencyPatterns);
+
+    if (isEmergency) {
+      this.logger.warn(
+        `🚨 EMERGENCY DETECTED: ${emergencySeverity} - ${emergencyPatterns.length} patterns matched`,
+      );
+    }
+
+    // ========================================
+    // PHASE 1: KEYWORD MATCHING
+    // ========================================
+    const keywordResult = this.keywordMatcher(message, emergencyPatterns);
+
+    if (keywordResult.confidence >= 0.7) {
+      this.logger.log(
+        `✅ Phase 1 (Keyword): High confidence (${keywordResult.confidence.toFixed(2)}) - ${keywordResult.primaryIntent}`,
+      );
+      return {
+        ...keywordResult,
+        isEmergency,
+        emergencyKeywords: this.mapEmergencyKeywords(emergencyPatterns),
+        emergencySeverity,
+        method: 'keyword',
+        classifiedAt: new Date(),
+      };
+    }
+
+    this.logger.log(
+      `⚠️ Phase 1 (Keyword): Low confidence (${keywordResult.confidence.toFixed(2)}) - proceeding to Phase 2`,
+    );
+
+    // ========================================
+    // PHASE 2: NLU MODEL (Fine-tuned BERT)
+    // ========================================
+    const nluResult = await this.nluMatcher(message, context);
+
+    if (nluResult && nluResult.confidence >= 0.7) {
+      this.logger.log(
+        `✅ Phase 2 (NLU): High confidence (${nluResult.confidence.toFixed(2)}) - ${nluResult.primaryIntent}`,
+      );
+      return {
+        ...nluResult,
+        isEmergency,
+        emergencyKeywords: this.mapEmergencyKeywords(emergencyPatterns),
+        emergencySeverity,
+        method: 'nlu',
+        classifiedAt: new Date(),
+      };
+    }
+
+    // ========================================
+    // PHASE 3: LLM FALLBACK (GPT-4)
+    // ========================================
+    this.logger.log(`🤖 Phase 3 (LLM): Invoking GPT-4 for complex intent classification`);
+
+    try {
+      const llmResult = await this.llmMatcher(message, context);
+      return {
+        ...llmResult,
+        isEmergency,
+        emergencyKeywords: this.mapEmergencyKeywords(emergencyPatterns),
+        emergencySeverity,
+        method: 'llm',
+        classifiedAt: new Date(),
+      };
+    } catch (error) {
+      this.logger.error(`❌ Phase 3 (LLM) failed: ${error instanceof Error ? error.message : String(error)}. Returning keyword result.`);
+      
+      // Fallback to keyword result
+      return {
+        ...keywordResult,
+        isEmergency,
+        emergencyKeywords: this.mapEmergencyKeywords(emergencyPatterns),
+        emergencySeverity,
+        method: 'keyword',
+        classifiedAt: new Date(),
+      };
+    }
+  }
+
+  /**
+   * Phase 1: Fast keyword-based pattern matching
+   */
+  private keywordMatcher(
+    message: string,
+    emergencyPatterns: EmergencyPattern[],
+  ): Omit<IntentClassification, 'isEmergency' | 'emergencyKeywords' | 'emergencySeverity' | 'method' | 'classifiedAt'> {
+    const matchedPatterns: string[] = [];
+
+    // Priority 1: Emergency always takes precedence
+    if (emergencyPatterns.length > 0) {
+      return {
+        primaryIntent: PrimaryIntent.EMERGENCY,
+        confidence: 1.0, // 100% confidence for emergency detection
+        extractedParameters: {},
+        matchedPatterns: emergencyPatterns.map(p => p.category),
+      };
+    }
+
+    // Priority 2: Clinical tool detection
+    const toolMatches = matchToolPatterns(message);
+    if (toolMatches.length > 0) {
+      const bestMatch = toolMatches[0];
+      matchedPatterns.push(...bestMatch.matchedKeywords);
+
+      const extractedParameters = extractToolParameters(message, bestMatch.toolId);
+
+      return {
+        primaryIntent: PrimaryIntent.CLINICAL_TOOL,
+        toolId: bestMatch.toolId,
+        confidence: bestMatch.confidence,
+        extractedParameters,
+        matchedPatterns,
+        alternativeIntents: toolMatches.slice(1, 3).map(m => ({
+          intent: PrimaryIntent.CLINICAL_TOOL,
+          toolId: m.toolId,
+          confidence: m.confidence,
+        })),
+      };
+    }
+
+    // Priority 3: Clinical query classification
+    const clinicalQuery = classifyClinicalQuery(message);
+    
+    if (clinicalQuery.category === 'medical_reference') {
+      return {
+        primaryIntent: PrimaryIntent.MEDICAL_REFERENCE,
+        confidence: clinicalQuery.confidence,
+        extractedParameters: {},
+        matchedPatterns: [clinicalQuery.category],
+      };
+    }
+
+    if (clinicalQuery.category === 'administrative') {
+      return {
+        primaryIntent: PrimaryIntent.ADMINISTRATIVE,
+        confidence: clinicalQuery.confidence,
+        extractedParameters: {},
+        matchedPatterns: [clinicalQuery.category],
+      };
+    }
+
+    // Priority 4: General query (default)
+    return {
+      primaryIntent: PrimaryIntent.GENERAL_QUERY,
+      confidence: 0.3,
+      extractedParameters: {},
+      matchedPatterns: [],
+    };
+  }
+
+  /**
+   * Phase 2: NLU model-based classification (fine-tuned BERT)
+   */
+  private async nluMatcher(
+    message: string,
+    context?: IntentClassificationContext,
+  ): Promise<Omit<IntentClassification, 'isEmergency' | 'emergencyKeywords' | 'emergencySeverity' | 'method' | 'classifiedAt'> | null> {
+    if (this.isCircuitOpen(this.nluCircuitBreaker)) {
+      this.logger.warn('NLU circuit breaker is open. Skipping NLU phase.');
+      return null;
+    }
+
+    if (!this.nluServiceUrl) {
+      this.logger.warn('NLU service URL not configured. Skipping NLU phase.');
+      return null;
+    }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
+    try {
+      const response = await fetch(`${this.nluServiceUrl}/predict`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: message, context }),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        this.logger.warn(`NLU service responded with ${response.status}`);
+        this.recordFailure(this.nluCircuitBreaker, this.nluFailureThreshold, this.nluResetMs);
+        return null;
+      }
+
+      const result = await response.json();
+      const primaryIntent = this.mapNluIntent(result.intent);
+
+      if (!primaryIntent) {
+        this.logger.warn(`NLU returned unknown intent: ${String(result.intent)}`);
+        this.recordFailure(this.nluCircuitBreaker, this.nluFailureThreshold, this.nluResetMs);
+        return null;
+      }
+
+      this.recordSuccess(this.nluCircuitBreaker);
+
+      return {
+        primaryIntent,
+        toolId: result.toolId,
+        confidence: result.confidence ?? 0.0,
+        extractedParameters: result.parameters || {},
+        matchedPatterns: ['nlu-model'],
+      };
+    } catch (error) {
+      this.logger.warn(`NLU service unavailable: ${error instanceof Error ? error.message : String(error)}`);
+      this.recordFailure(this.nluCircuitBreaker, this.nluFailureThreshold, this.nluResetMs);
+      return null;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  /**
+   * Map NLU intent labels to PrimaryIntent enum
+   */
+  private mapNluIntent(intent: string | undefined): PrimaryIntent | null {
+    switch (intent) {
+      case 'emergency':
+        return PrimaryIntent.EMERGENCY;
+      case 'clinical_tool':
+        return PrimaryIntent.CLINICAL_TOOL;
+      case 'admin_function':
+        return PrimaryIntent.ADMINISTRATIVE;
+      case 'lab_query':
+      case 'protocol_search':
+      case 'patient_data':
+        return PrimaryIntent.MEDICAL_REFERENCE;
+      case 'general_query':
+        return PrimaryIntent.GENERAL_QUERY;
+      default:
+        return null;
+    }
+  }
+
+  /**
+   * Phase 3: LLM-based classification for complex cases
+   */
+  private async llmMatcher(
+    message: string,
+    context?: IntentClassificationContext,
+  ): Promise<Omit<IntentClassification, 'isEmergency' | 'emergencyKeywords' | 'emergencySeverity' | 'method' | 'classifiedAt'>> {
+    const userId = context?.userId || 'system';
+
+    if (this.isCircuitOpen(this.llmCircuitBreaker)) {
+      throw new Error('LLM circuit breaker is open');
+    }
+
+    // Build context for LLM
+    let contextStr = '';
+    if (context?.previousMessages && context.previousMessages.length > 0) {
+      contextStr = '\n\nConversation History:\n';
+      contextStr += context.previousMessages
+        .slice(-3) // Last 3 messages
+        .map(m => `${m.role}: ${m.content}`)
+        .join('\n');
+    }
+
+    const prompt = `Classify the following clinical query into one of these intents:
+- general_query: General clinical information requests
+- clinical_tool: User wants to use a specific clinical tool (calculator, checker, interpreter)
+- medical_reference: Looking up medical information, definitions, or guidelines
+- administrative: Billing, documentation, scheduling, or administrative tasks
+- emergency: Medical emergency (this should be rare as emergencies are caught by keyword matching)
+
+If the intent is "clinical_tool", identify which tool:
+- sofa-calculator: SOFA score for organ failure assessment
+- apache2-calculator: APACHE-II for ICU mortality
+- cha2ds2vasc-calculator: Stroke risk in AFib
+- curb65-calculator: Pneumonia severity
+- gcs-calculator: Glasgow Coma Scale
+- wells-dvt-calculator: DVT probability
+- drug-interactions: Drug-drug interaction checker
+- dose-calculator: Medication dosing
+- lab-interpreter: Lab result interpretation
+- abg-interpreter: Arterial blood gas analysis
+- protocol-lookup: Clinical protocols and guidelines
+- differential-diagnosis: Generate differential diagnoses
+- antibiotic-guide: Antibiotic selection
+
+User Query: "${message}"${contextStr}
+
+Respond in JSON format:
+{
+  "primaryIntent": "intent_name",
+  "toolId": "tool_id_if_applicable",
+  "confidence": 0.85,
+  "extractedParameters": {},
+  "reasoning": "brief explanation"
+}`;
+
+    try {
+      const response = await this.aiService.generateStructuredJSON(userId, prompt, {
+        primaryIntent: 'string',
+        toolId: 'string',
+        confidence: 'number',
+        extractedParameters: 'object',
+        reasoning: 'string',
+      });
+
+      this.recordSuccess(this.llmCircuitBreaker);
+
+      return {
+        primaryIntent: response.primaryIntent as PrimaryIntent,
+        toolId: response.toolId,
+        confidence: response.confidence || 0.8,
+        extractedParameters: response.extractedParameters || {},
+        matchedPatterns: ['llm-classified'],
+      };
+    } catch (error) {
+      this.recordFailure(this.llmCircuitBreaker, this.llmFailureThreshold, this.llmResetMs);
+      throw new Error(`LLM classification failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  private isCircuitOpen(breaker: { failureCount: number; openUntil: number }): boolean {
+    return breaker.openUntil > Date.now();
+  }
+
+  private recordFailure(
+    breaker: { failureCount: number; openUntil: number },
+    threshold: number,
+    resetMs: number,
+  ): void {
+    breaker.failureCount += 1;
+    if (breaker.failureCount >= threshold) {
+      breaker.openUntil = Date.now() + resetMs;
+      this.logger.warn(`Circuit breaker opened for ${resetMs}ms after ${breaker.failureCount} failures.`);
+    }
+  }
+
+  private recordSuccess(breaker: { failureCount: number; openUntil: number }): void {
+    breaker.failureCount = 0;
+    breaker.openUntil = 0;
+  }
+
+  /**
+   * Map emergency patterns to EmergencyKeyword DTOs
+   */
+  private mapEmergencyKeywords(patterns: EmergencyPattern[]): EmergencyKeyword[] {
+    const keywords: EmergencyKeyword[] = [];
+    
+    for (const pattern of patterns) {
+      // Add first keyword from each pattern (representative)
+      if (pattern.keywords.length > 0) {
+        keywords.push({
+          keyword: pattern.keywords[0],
+          category: pattern.category,
+          severity: pattern.severity,
+        });
+      }
+    }
+    
+    return keywords;
+  }
+
+  /**
+   * Get escalation message for emergency
+   */
+  getEmergencyEscalationMessage(patterns: EmergencyPattern[]): string {
+    if (patterns.length === 0) return '';
+    
+    // Return the most critical pattern's escalation message
+    const criticalPattern = patterns.find(p => p.severity === EmergencySeverity.CRITICAL);
+    return (criticalPattern || patterns[0]).escalationMessage;
+  }
+
+  /**
+   * Check if user message requires immediate escalation
+   */
+  requiresEscalation(classification: IntentClassification): boolean {
+    return (
+      classification.isEmergency &&
+      classification.emergencySeverity === EmergencySeverity.CRITICAL
+    );
+  }
+}

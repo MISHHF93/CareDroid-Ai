@@ -27,9 +27,12 @@ export class AIService {
     private readonly userRepository: Repository<User>,
     private readonly auditService: AuditService,
   ) {
-    this.openai = new OpenAI({
-      apiKey: this.configService.get<string>('OPENAI_API_KEY'),
-    });
+    const apiKey = this.configService.get<string>('OPENAI_API_KEY');
+    if (apiKey) {
+      this.openai = new OpenAI({
+        apiKey,
+      });
+    }
 
     // Rate limits from openai.config.ts
     this.rateLimits = new Map([
@@ -40,6 +43,9 @@ export class AIService {
   }
 
   async invokeLLM(userId: string, prompt: string, context?: any) {
+    if (!this.openai) {
+      throw new Error('OpenAI API key not configured');
+    }
     // Get user's subscription tier
     const subscription = await this.subscriptionRepository.findOne({
       where: { userId },
@@ -106,11 +112,14 @@ export class AIService {
 
       return result;
     } catch (error) {
-      throw new Error(`AI query failed: ${error.message}`);
+      throw new Error(`AI query failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
   async generateStructuredJSON(userId: string, prompt: string, schema: any) {
+    if (!this.openai) {
+      throw new Error('OpenAI API key not configured');
+    }
     // Get user's subscription tier
     const subscription = await this.subscriptionRepository.findOne({
       where: { userId },
@@ -165,7 +174,7 @@ export class AIService {
 
       return result;
     } catch (error) {
-      throw new Error(`Structured JSON generation failed: ${error.message}`);
+      throw new Error(`Structured JSON generation failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 

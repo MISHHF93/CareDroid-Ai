@@ -1,0 +1,158 @@
+version: '3.8'
+
+services:
+  # ============================================================
+  # PostgreSQL Database
+  # ============================================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: caredroid-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-caredroid}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secure123}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - caredroid
+
+  # ============================================================
+  # Redis Cache
+  # ============================================================
+  redis:
+    image: redis:7-alpine
+    container_name: caredroid-redis
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis123}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - caredroid
+
+  # ============================================================
+  # Node.js Backend Service
+  # ============================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: caredroid-backend
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-secure123}@postgres:5432/${DB_NAME:-caredroid}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redis123}@redis:6379
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
+      ENCRYPTION_MASTER_KEY: ${ENCRYPTION_MASTER_KEY:- }
+      OPENAI_API_KEY: ${OPENAI_API_KEY:- }
+      PINECONE_API_KEY: ${PINECONE_API_KEY:- }
+      NLU_SERVICE_URL: http://nlu:8001
+    ports:
+      - "8000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - caredroid
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ============================================================
+  # Python NLU Microservice (Batch 9)
+  # ============================================================
+  nlu:
+    build:
+      context: ./backend/ml-services/nlu
+      dockerfile: Dockerfile
+    container_name: caredroid-nlu
+    environment:
+      NLU_HOST: 0.0.0.0
+      NLU_PORT: 8001
+      NLU_USE_GPU: "false"
+      NLU_WORKERS: 2
+      NLU_MODEL_NAME: ${NLU_MODEL_NAME:-microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract-fulltext}
+      NLU_BATCH_SIZE: 16
+      NLU_INFERENCE_BATCH_SIZE: 32
+      NLU_LOG_LEVEL: info
+      PYTHONUNBUFFERED: 1
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./backend/ml-services/nlu:/app
+      - nlu_models:/app/models
+      - nlu_cache:/root/.cache/huggingface
+    networks:
+      - caredroid
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8001/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    # Optional: Use GPU if available
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+  # ============================================================
+  # React Frontend Service
+  # ============================================================
+  frontend:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    container_name: caredroid-frontend
+    environment:
+      VITE_API_URL: http://localhost:8000/api
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    volumes:
+      - ./src:/app/src
+      - ./index.html:/app/index.html
+      - /app/node_modules
+    networks:
+      - caredroid
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  nlu_models:
+    driver: local
+  nlu_cache:
+    driver: local
+
+networks:
+  caredroid:
+    driver: bridge

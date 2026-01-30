@@ -1,0 +1,57 @@
+import { registerAs } from '@nestjs/config';
+
+/**
+ * RAG Configuration
+ * 
+ * Configuration for the RAG (Retrieval-Augmented Generation) system.
+ * Includes settings for vector database, embeddings, and chunking.
+ */
+
+export default registerAs('rag', () => ({
+  /**
+   * Pinecone Configuration
+   */
+  pinecone: {
+    apiKey: process.env.PINECONE_API_KEY,
+    indexName: process.env.PINECONE_INDEX_NAME || 'caredroid-medical',
+    dimension: parseInt(process.env.PINECONE_DIMENSION || '1536', 10),
+    environment: process.env.PINECONE_ENVIRONMENT || 'gcp-starter',
+  },
+
+  /**
+   * Embeddings Configuration
+   */
+  embeddings: {
+    model: process.env.EMBEDDING_MODEL || 'text-embedding-ada-002',
+    dimension: parseInt(process.env.EMBEDDING_DIMENSION || '1536', 10),
+    batchSize: parseInt(process.env.EMBEDDING_BATCH_SIZE || '100', 10),
+  },
+
+  /**
+   * Chunking Configuration
+   */
+  chunking: {
+    chunkSize: parseInt(process.env.CHUNK_SIZE || '512', 10),
+    overlap: parseInt(process.env.CHUNK_OVERLAP || '50', 10),
+    respectBoundaries: process.env.CHUNK_RESPECT_BOUNDARIES !== 'false',
+  },
+
+  /**
+   * Retrieval Configuration
+   */
+  retrieval: {
+    defaultTopK: parseInt(process.env.RAG_TOP_K || '5', 10),
+    minScore: parseFloat(process.env.RAG_MIN_SCORE || '0.7'),
+    maxTokens: parseInt(process.env.RAG_MAX_TOKENS || '2000', 10),
+  },
+
+  /**
+   * Reranking Configuration (optional)
+   */
+  reranking: {
+    enabled: process.env.RERANK_ENABLED === 'true',
+    provider: process.env.RERANK_PROVIDER || 'cohere',
+    apiKey: process.env.COHERE_API_KEY,
+    model: process.env.RERANK_MODEL || 'rerank-english-v2.0',
+  },
+}));

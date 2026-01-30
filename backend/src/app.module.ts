@@ -1,12 +1,17 @@
 import { Module } from '@nestjs/common';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 
+// Controllers & Services
+import { AppController } from './app.controller';
+
 // Configuration
 import { databaseConfig } from './config/database.config';
-import { redisConfig } from './config/redis.config';
+import ragConfig from './config/rag.config';
 
 // Modules
 import { AuthModule } from './modules/auth/auth.module';
@@ -17,6 +22,11 @@ import { AiModule } from './modules/ai/ai.module';
 import { ClinicalModule } from './modules/clinical/clinical.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { ComplianceModule } from './modules/compliance/compliance.module';
+import { ChatModule } from './modules/chat/chat.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { MedicalControlPlaneModule } from './modules/medical-control-plane/medical-control-plane.module';
+import { EncryptionModule } from './modules/encryption/encryption.module';
+import { RAGModule } from './modules/rag/rag.module';
 
 @Module({
   imports: [
@@ -24,6 +34,7 @@ import { ComplianceModule } from './modules/compliance/compliance.module';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
+      load: [ragConfig],
     }),
 
     // Database (load after ConfigModule so .env is available)
@@ -55,6 +66,12 @@ import { ComplianceModule } from './modules/compliance/compliance.module';
     // Scheduled tasks
     ScheduleModule.forRoot(),
 
+    // Serve frontend static assets
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', '..', 'dist'),
+      exclude: ['/api*', '/health'],
+    }),
+
     // Feature modules
     AuthModule,
     UsersModule,
@@ -64,8 +81,19 @@ import { ComplianceModule } from './modules/compliance/compliance.module';
     ClinicalModule,
     AuditModule,
     ComplianceModule,
+    ChatModule,
+    AnalyticsModule,
+    
+    // Medical Control Plane (Intent Classification, Tool Orchestration)
+    MedicalControlPlaneModule,
+
+    // Encryption (Batch 4)
+    EncryptionModule,
+
+    // RAG Engine (Batch 6)
+    RAGModule,
   ],
-  controllers: [],
+  controllers: [AppController],
   providers: [],
 })
 export class AppModule {}

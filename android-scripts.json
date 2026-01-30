@@ -1,6 +1,0 @@
-{
-  "build-android": "npm run build && npx cap copy android && npx cap sync android",
-  "open-android": "npx cap open android",
-  "run-android": "npm run build-android && npm run open-android",
-  "android-release": "npm run build && npx cap copy android && npx cap sync android && cd android && ./gradlew assembleRelease"
-}

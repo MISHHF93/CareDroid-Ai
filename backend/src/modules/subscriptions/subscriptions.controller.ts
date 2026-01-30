@@ -81,7 +81,7 @@ export class SubscriptionsController {
         stripeConfig.webhookSecret,
       );
     } catch (err) {
-      console.error('Webhook signature verification failed:', err.message);
+      console.error('Webhook signature verification failed:', err instanceof Error ? err.message : String(err));
       return { error: 'Webhook signature verification failed' };
     }
 

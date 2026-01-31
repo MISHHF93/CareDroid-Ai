@@ -5,9 +5,10 @@ import { AIService } from './ai.service';
 import { Subscription } from '../subscriptions/entities/subscription.entity';
 import { User } from '../users/entities/user.entity';
 import { AuditModule } from '../audit/audit.module';
+import { MetricsModule } from '../metrics/metrics.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Subscription, User]), AuditModule],
+  imports: [TypeOrmModule.forFeature([Subscription, User]), AuditModule, MetricsModule],
   controllers: [AIController],
   providers: [AIService],
   exports: [AIService],

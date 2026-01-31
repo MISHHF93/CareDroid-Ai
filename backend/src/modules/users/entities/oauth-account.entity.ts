@@ -21,7 +21,7 @@ export class OAuthAccount {
   @Column({ type: 'uuid' })
   userId: string;
 
-  @Column({ type: 'simple-enum', enum: OAuthProvider })
+  @Column({ type: 'varchar', enum: OAuthProvider })
   provider: OAuthProvider;
 
   @Column({ type: 'varchar', length: 255 })

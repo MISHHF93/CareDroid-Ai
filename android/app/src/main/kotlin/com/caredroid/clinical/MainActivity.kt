@@ -46,12 +46,10 @@ class MainActivity : AppCompatActivity() {
         settings.javaScriptEnabled = true
         settings.domStorageEnabled = true
         
-        // Enable WebGL
-        settings.setAppCacheEnabled(true)
+        // Enable database and cache (setAppCacheEnabled deprecated but removed)
         settings.databaseEnabled = true
         
         // Hardware acceleration
-        settings.setRenderPriority(WebSettings.RenderPriority.HIGH)
         settings.cacheMode = WebSettings.LOAD_DEFAULT
         
         // Allow mixed content for development

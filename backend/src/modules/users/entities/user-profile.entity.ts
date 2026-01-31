@@ -57,16 +57,16 @@ export class UserProfile {
   avatarUrl: string;
 
   // PHI columns - encrypted at rest
-  @Column({ type: 'bytea', nullable: true })
+  @Column({ type: 'blob', nullable: true })
   dateOfBirthEncrypted: Buffer; // Encrypted DOB
 
-  @Column({ type: 'bytea', nullable: true })
+  @Column({ type: 'blob', nullable: true })
   medicalHistoryEncrypted: Buffer; // Encrypted medical history
 
-  @Column({ type: 'bytea', nullable: true })
+  @Column({ type: 'blob', nullable: true })
   allergiesEncrypted: Buffer; // Encrypted allergies
 
-  @Column({ type: 'bytea', nullable: true })
+  @Column({ type: 'blob', nullable: true })
   medicationsEncrypted: Buffer; // Encrypted medications
 
   // Encryption tracking

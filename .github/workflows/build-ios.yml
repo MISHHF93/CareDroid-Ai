@@ -1,0 +1,110 @@
+name: Build iOS IPA
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'ios/**'
+      - 'src/**'
+      - 'package.json'
+      - 'capacitor.config.json'
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.0'
+          bundler-cache: true
+          
+      - name: Install Fastlane
+        run: |
+          gem install fastlane
+          cd ios/App
+          fastlane install_plugins
+          
+      - name: Install CocoaPods
+        run: |
+          sudo gem install cocoapods
+          cd ios/App
+          pod install
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build web assets
+        run: npm run build
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          
+      - name: Sync Capacitor
+        run: npx cap sync ios
+        
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '15.0'
+          
+      - name: Import Code Signing Certificates
+        uses: apple-actions/import-codesign-certs@v2
+        with:
+          p12-file-base64: ${{ secrets.IOS_P12_BASE64 }}
+          p12-password: ${{ secrets.IOS_P12_PASSWORD }}
+          
+      - name: Download Provisioning Profile
+        run: |
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          echo "${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/profile.mobileprovision
+          
+      - name: Build iOS App
+        run: |
+          cd ios/App
+          fastlane build_release
+        env:
+          FASTLANE_APPLE_ID: ${{ secrets.APPLE_ID }}
+          FASTLANE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          FASTLANE_APP_IDENTIFIER: com.caredroid.app
+          
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: caredroid-ios-${{ github.sha }}
+          path: ios/App/build/*.ipa
+          retention-days: 30
+          
+      - name: Upload to TestFlight
+        if: github.ref == 'refs/heads/main'
+        run: |
+          cd ios/App
+          fastlane upload_testflight
+        env:
+          FASTLANE_APPLE_ID: ${{ secrets.APPLE_ID }}
+          FASTLANE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          
+      - name: Comment PR with IPA
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '✅ iOS IPA built successfully! Download from artifacts above.'
+            })

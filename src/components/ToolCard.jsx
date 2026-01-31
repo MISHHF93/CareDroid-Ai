@@ -6,15 +6,6 @@
  */
 
 import React from 'react';
-import { Card, Table, Badge, Alert, Typography, Divider } from 'antd';
-import {
-  ExperimentOutlined,
-  WarningOutlined,
-  InfoCircleOutlined,
-  CheckCircleOutlined,
-} from '@ant-design/icons';
-
-const { Title, Text, Paragraph } = Typography;
 
 const ToolCard = ({ toolResult }) => {
   if (!toolResult) return null;

@@ -285,7 +285,16 @@ const Auth = ({ onAddToast, onAuthSuccess }) => {
           </a>
           <Button
             onClick={() => {
-              onAuthSuccess?.(bypassToken);
+              console.log('=== Direct Sign-In clicked ===');
+              console.log('bypassToken:', bypassToken);
+              console.log('onAuthSuccess type:', typeof onAuthSuccess);
+              try {
+                onAuthSuccess?.(bypassToken);
+                console.log('=== onAuthSuccess called successfully ===');
+                // Don't redirect here - let App.jsx handle the state update and routing
+              } catch (error) {
+                console.error('Error calling onAuthSuccess:', error);
+              }
               onAddToast?.('Signed in with direct access.', 'success');
             }}
             variant="ghost"

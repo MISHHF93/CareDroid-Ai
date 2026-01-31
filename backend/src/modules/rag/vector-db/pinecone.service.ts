@@ -48,7 +48,8 @@ export class PineconeService implements IVectorDatabase, OnModuleInit {
       const apiKey = this.configService.get<string>('PINECONE_API_KEY');
 
       if (!apiKey) {
-        throw new Error('PINECONE_API_KEY is not configured');
+        this.logger.warn('PINECONE_API_KEY is not configured. Vector database functionality will be disabled.');
+        return; // Optional for development
       }
 
       this.logger.log('Initializing Pinecone client...');
@@ -68,7 +69,8 @@ export class PineconeService implements IVectorDatabase, OnModuleInit {
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
       this.logger.error(`Failed to initialize Pinecone: ${err.message}`, err.stack);
-      throw new Error(`Pinecone initialization failed: ${err.message}`);
+      this.logger.warn('Vector database functionality will be disabled.');
+      // Don't throw - allow server to continue without vector DB
     }
   }
 

@@ -1,0 +1,88 @@
+# CareDroid AI - App Store Metadata
+
+name: "CareDroid AI - Medical Assistant"
+subtitle: "Your AI-Powered Healthcare Companion"
+
+description: |
+  CareDroid AI is a comprehensive medical assistant application designed to help healthcare professionals and patients manage their health information securely and efficiently.
+
+  KEY FEATURES:
+  
+  🤖 AI-Powered Chat Assistant
+  • Get instant answers to medical questions
+  • Evidence-based responses from trusted medical databases
+  • Natural language understanding for complex queries
+  
+  💊 Medication Management
+  • Drug interaction checker
+  • Medication reminders
+  • Dosage tracking and history
+  
+  🧪 Lab Results Interpreter
+  • Understand your lab results
+  • Track trends over time
+  • Get personalized insights
+  
+  📊 SOFA Score Calculator
+  • Clinical assessment tool for healthcare providers
+  • Sepsis-related organ failure assessment
+  • Real-time scoring and tracking
+  
+  🔒 Privacy & Security
+  • HIPAA-compliant data encryption
+  • Biometric authentication (Face ID/Touch ID)
+  • Secure offline storage
+  • No data sharing without consent
+  
+  📱 Offline-First Design
+  • Works without internet connection
+  • Automatic sync when online
+  • Access your data anytime, anywhere
+  
+  🚨 Emergency Features
+  • 911 dispatch integration
+  • Emergency contact management
+  • Critical alerts and notifications
+  
+  DESIGNED FOR:
+  • Healthcare professionals
+  • Patients managing chronic conditions
+  • Caregivers and family members
+  • Medical students and researchers
+  
+  COMPLIANCE:
+  CareDroid AI is fully compliant with HIPAA, GDPR, and other healthcare data protection regulations. Your privacy is our top priority.
+  
+  DISCLAIMER:
+  This app is NOT a substitute for professional medical advice, diagnosis, or treatment. Always consult with a qualified healthcare provider for medical decisions.
+
+keywords:
+  - medical
+  - healthcare
+  - ai
+  - assistant
+  - hipaa
+  - lab results
+  - medication
+  - drug checker
+  - sofa score
+  - emergency
+  - offline
+
+category: Medical
+age_rating: 17+
+
+support_url: "https://caredroid.ai/support"
+marketing_url: "https://caredroid.ai"
+privacy_url: "https://caredroid.ai/privacy"
+
+# Release notes template
+release_notes: |
+  Bug fixes and performance improvements.
+  
+  New in this version:
+  • Enhanced offline sync capabilities
+  • Improved biometric authentication
+  • Better notification management
+  • Updated medical knowledge base
+  • UI/UX improvements

@@ -114,21 +114,40 @@ export const UserProvider = ({ children }) => {
 
   // Initialize from localStorage on mount
   useEffect(() => {
+    console.log('=== UserContext Init Starting ===');
+    
     const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
     const storedProfile = localStorage.getItem(USER_PROFILE_KEY);
 
-    if (storedToken && storedProfile) {
+    console.log('=== UserContext localStorage check ===');
+    console.log('storedToken exists:', !!storedToken);
+    console.log('storedToken value:', storedToken);
+    console.log('storedProfile exists:', !!storedProfile);
+
+    // Load token even if profile doesn't exist yet
+    if (storedToken) {
+      console.log('=== Loading token into state ===');
+      setAuthTokenState(storedToken);
+    } else {
+      console.log('=== No token found in localStorage ===');
+    }
+
+    // Load profile if it exists
+    if (storedProfile) {
       try {
         const profile = JSON.parse(storedProfile);
-        setAuthTokenState(storedToken);
+        console.log('=== Loading profile into state ===');
         setUserState(profile);
       } catch (error) {
         console.error('Failed to parse stored user profile:', error);
         localStorage.removeItem(USER_PROFILE_KEY);
       }
+    } else {
+      console.log('=== No profile found in localStorage ===');
     }
 
     setIsLoading(false);
+    console.log('=== UserContext Init Complete ===');
   }, []);
 
   // Fetch user profile when token changes

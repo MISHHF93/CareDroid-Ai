@@ -1,0 +1,234 @@
+/* PublicShell Layout Styles */
+
+.public-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--navy-bg);
+}
+
+/* Header */
+.public-header {
+  background: var(--navy-lighter);
+  border-bottom: 1px solid var(--panel-border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+}
+
+.public-header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.public-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  text-decoration: none;
+  color: var(--text-color);
+  font-weight: 600;
+  font-size: var(--font-18);
+  transition: opacity 0.2s ease;
+}
+
+.public-logo:hover {
+  opacity: 0.8;
+}
+
+.logo-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.public-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.public-nav-link {
+  color: var(--muted-text);
+  text-decoration: none;
+  font-size: var(--font-14);
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.public-nav-link:hover {
+  color: var(--accent-1);
+}
+
+.btn-public-primary {
+  padding: var(--space-2) var(--space-4);
+  background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+  color: var(--navy-bg);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-14);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-public-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 255, 136, 0.3);
+}
+
+/* Main Content */
+.public-main {
+  flex: 1;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6);
+}
+
+/* Footer */
+.public-footer {
+  background: var(--navy-ink);
+  border-top: 1px solid var(--panel-border);
+  padding: var(--space-8) var(--space-6) var(--space-6);
+}
+
+.public-footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-6);
+  margin-bottom: var(--space-6);
+}
+
+.footer-section h4 {
+  font-size: var(--font-16);
+  font-weight: 600;
+  color: var(--text-color);
+  margin: 0 0 var(--space-3) 0;
+}
+
+.footer-section p {
+  font-size: var(--font-14);
+  color: var(--muted-text);
+  line-height: 1.6;
+  margin: 0 0 var(--space-3) 0;
+}
+
+.footer-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.badge-hipaa,
+.badge-version {
+  padding: 4px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-12);
+  font-weight: 600;
+}
+
+.badge-hipaa {
+  background: rgba(0, 255, 136, 0.15);
+  color: var(--accent-1);
+  border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+.badge-version {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--muted-text);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.footer-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.footer-links a {
+  color: var(--muted-text);
+  text-decoration: none;
+  font-size: var(--font-14);
+  transition: color 0.2s ease;
+}
+
+.footer-links a:hover {
+  color: var(--accent-1);
+}
+
+.footer-bottom {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-top: var(--space-6);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  text-align: center;
+}
+
+.footer-bottom p {
+  font-size: var(--font-12);
+  color: var(--muted-text);
+  margin: var(--space-2) 0;
+}
+
+.footer-disclaimer {
+  font-style: italic;
+  color: rgba(248, 250, 252, 0.4);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .public-header-content {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .logo-text {
+    display: none;
+  }
+
+  .public-nav {
+    gap: var(--space-3);
+  }
+
+  .public-nav-link {
+    font-size: var(--font-12);
+  }
+
+  .btn-public-primary {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--font-12);
+  }
+
+  .public-main {
+    padding: var(--space-6) var(--space-4);
+  }
+
+  .public-footer-content {
+    grid-template-columns: 1fr;
+    gap: var(--space-5);
+  }
+
+  .footer-section:first-child {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding-bottom: var(--space-5);
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .public-logo,
+  .public-nav-link,
+  .btn-public-primary,
+  .footer-links a {
+    transition: none;
+  }
+}

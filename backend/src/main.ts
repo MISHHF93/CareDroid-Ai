@@ -51,8 +51,8 @@ async function bootstrap() {
   app.use(Sentry.Handlers.requestHandler());
   app.use(Sentry.Handlers.errorHandler());
 
-  // HTTP request/response logging middleware
-  app.use(LoggingMiddleware);
+  // HTTP request/response logging middleware (temporarily disabled for testing)
+  // app.use(LoggingMiddleware);
 
   // CORS configuration (allow same-origin since frontend is proxied)
   app.enableCors({

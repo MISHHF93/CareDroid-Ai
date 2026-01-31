@@ -4,7 +4,9 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
+import { BiometricController } from './biometric.controller';
 import { AuthService } from './auth.service';
+import { BiometricService } from './services/biometric.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { LinkedInStrategy } from './strategies/linkedin.strategy';
@@ -13,6 +15,7 @@ import { UserProfile } from '../users/entities/user-profile.entity';
 import { OAuthAccount } from '../users/entities/oauth-account.entity';
 import { Subscription } from '../subscriptions/entities/subscription.entity';
 import { AuditLog } from '../audit/entities/audit-log.entity';
+import { BiometricConfig } from './entities/biometric-config.entity';
 import { jwtConfig } from '../../config/auth.config';
 import { UsersModule } from '../users/users.module';
 import { AuditModule } from '../audit/audit.module';
@@ -21,7 +24,7 @@ import { AuthorizationGuard } from './guards/authorization.guard';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, UserProfile, OAuthAccount, Subscription, AuditLog]),
+    TypeOrmModule.forFeature([User, UserProfile, OAuthAccount, Subscription, AuditLog, BiometricConfig]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -42,9 +45,10 @@ import { AuthorizationGuard } from './guards/authorization.guard';
     AuditModule,
     TwoFactorModule,
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, BiometricController],
   providers: [
     AuthService,
+    BiometricService,
     JwtStrategy,
     AuthorizationGuard,
     {

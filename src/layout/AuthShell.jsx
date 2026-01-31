@@ -1,11 +1,6 @@
 import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
 
-const AuthShell = ({ isAuthed }) => {
-  if (isAuthed) {
-    return <Navigate to="/" replace />;
-  }
-
+const AuthShell = ({ children }) => {
   return (
     <div style={{
       minHeight: '100vh',
@@ -49,7 +44,7 @@ const AuthShell = ({ isAuthed }) => {
         </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Outlet />
+        {children}
       </div>
     </div>
   );

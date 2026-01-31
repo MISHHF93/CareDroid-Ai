@@ -41,10 +41,10 @@ export class Subscription {
   @Column({ type: 'varchar', length: 255, nullable: true })
   stripePriceId: string;
 
-  @Column({ type: 'simple-enum', enum: SubscriptionTier, default: SubscriptionTier.FREE })
+  @Column({ type: 'varchar', enum: SubscriptionTier, default: SubscriptionTier.FREE })
   tier: SubscriptionTier;
 
-  @Column({ type: 'simple-enum', enum: SubscriptionStatus, default: SubscriptionStatus.ACTIVE })
+  @Column({ type: 'varchar', enum: SubscriptionStatus, default: SubscriptionStatus.ACTIVE })
   status: SubscriptionStatus;
 
   @Column({ type: 'datetime', nullable: true })

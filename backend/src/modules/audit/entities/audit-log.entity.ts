@@ -43,7 +43,7 @@ export class AuditLog {
   @Column({ type: 'uuid', nullable: true })
   userId: string;
 
-  @Column({ type: 'simple-enum', enum: AuditAction })
+  @Column({ type: 'varchar', enum: AuditAction })
   action: AuditAction;
 
   @Column({ type: 'varchar', length: 255 })
@@ -58,11 +58,10 @@ export class AuditLog {
   @Column({ type: 'boolean', default: false })
   phiAccessed: boolean; // HIPAA tracking flag
 
-  @Column({ type: 'simple-json', nullable: true })
+  @Column({ type: 'text', nullable: true })
   metadata: Record<string, any>;
 
   @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
-  @Index()
   timestamp: Date;
 
   // Cryptographic integrity fields (blockchain-style chaining)

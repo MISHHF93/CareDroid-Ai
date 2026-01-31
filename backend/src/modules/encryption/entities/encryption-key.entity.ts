@@ -27,7 +27,6 @@ export class EncryptionKey {
   algorithm: string;
 
   @Column({ type: 'boolean', default: false })
-  @Index()
   isActive: boolean;
 
   @Column({ 

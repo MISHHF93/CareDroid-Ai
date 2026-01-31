@@ -21,7 +21,10 @@ export class OpenAIEmbeddingsService {
     const apiKey = this.configService.get<string>('OPENAI_API_KEY');
     
     if (!apiKey) {
-      throw new Error('OPENAI_API_KEY is not configured');
+      this.logger.warn('OPENAI_API_KEY is not configured. Embeddings service will not function.');
+      // Create a dummy OpenAI client to prevent null errors
+      this.openai = null as any;
+      return;
     }
 
     this.openai = new OpenAI({ apiKey });
@@ -31,6 +34,10 @@ export class OpenAIEmbeddingsService {
    * Generate embedding for a single text
    */
   async embed(text: string): Promise<number[]> {
+    if (!this.openai) {
+      throw new Error('OpenAI API key not configured. Cannot generate embeddings.');
+    }
+    
     try {
       const response = await this.openai.embeddings.create({
         model: this.model,

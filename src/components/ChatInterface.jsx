@@ -345,7 +345,8 @@ const ChatInterface = ({
                 : '1px solid var(--panel-border)',
               lineHeight: '1.6',
               boxShadow: 'var(--shadow-1)'
-            }}>Confidence Badge (RAG-augmented responses) */}
+            }}>
+              {/* Confidence Badge (RAG-augmented responses) */}
               {message.confidence !== undefined && message.role === 'assistant' && (
                 <div style={{ marginTop: '12px' }}>
                   <ConfidenceBadge confidence={message.confidence} />
@@ -369,7 +370,9 @@ const ChatInterface = ({
                 color: 'var(--muted-text)',
                 marginTop: '8px'
               }}>
-                {message.timestamp.toLocaleTimeString()}
+                {message.timestamp
+                  ? new Date(message.timestamp).toLocaleTimeString()
+                  : 'Unknown time'}
                 {message.ragContext && message.ragContext.sourcesFound > 0 && (
                   <span style={{ marginLeft: '12px', opacity: 0.7 }}>
                     • {message.ragContext.chunksRetrieved} chunks from {message.ragContext.sourcesFound} sources

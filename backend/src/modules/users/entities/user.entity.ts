@@ -34,7 +34,7 @@ export class User {
   @Column({ type: 'varchar', length: 255, unique: true })
   email: string; // Will be encrypted at rest
 
-  @Column({ type: 'bytea', nullable: true })
+  @Column({ type: 'blob', nullable: true })
   @Exclude()
   emailEncrypted: Buffer; // Encrypted email for at-rest encryption
 
@@ -62,7 +62,7 @@ export class User {
   @Column({ type: 'boolean', default: true })
   isActive: boolean;
 
-  @Column({ type: 'simple-enum', enum: UserRole, default: UserRole.STUDENT })
+  @Column({ type: 'varchar', enum: UserRole, default: UserRole.STUDENT })
   role: UserRole;
 
   @Column({ type: 'datetime', nullable: true })
@@ -72,11 +72,11 @@ export class User {
   lastLoginIp: string;
 
   // PHI columns - encrypted at rest
-  @Column({ type: 'bytea', nullable: true })
+  @Column({ type: 'blob', nullable: true })
   @Exclude()
   phoneEncrypted: Buffer; // Encrypted phone number
 
-  @Column({ type: 'bytea', nullable: true })
+  @Column({ type: 'blob', nullable: true })
   @Exclude()
   ssnEncrypted: Buffer; // Encrypted SSN (if collected)
 

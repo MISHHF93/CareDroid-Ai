@@ -2,6 +2,9 @@
  * Sync Service - Handles synchronization between offline storage and backend
  * NOTE: Requires dexie library - install with: npm install dexie
  */
+import { db, initializeDatabase } from '../db/offline.db';
+import offlineService from './offlineService';
+
 class SyncService {
   constructor() {
     this.isSyncing = false;

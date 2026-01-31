@@ -8,6 +8,8 @@ import './index.css';
 import CrashReportingService from './services/crashReportingService';
 import AnalyticsService from './services/analyticsService';
 import { NotificationService } from './services/NotificationService';
+import syncService from './services/syncService';
+import offlineService from './services/offlineService';
 
 // ================================
 // Initialize Crash Reporting (Sentry)
@@ -62,6 +64,29 @@ if (import.meta.env.VITE_ENABLE_PUSH_NOTIFICATIONS === 'true') {
       }
     })
     .catch(error => console.error('Failed to request notification permission:', error));
+}
+
+// ================================
+// Initialize Offline Mode (Dexie + Sync Service)
+// ================================
+if (import.meta.env.VITE_ENABLE_OFFLINE_MODE === 'true') {
+  try {
+    // Initialize offline storage
+    offlineService.initialize()
+      .then((success) => {
+        if (success) {
+          console.log('✓ Offline storage initialized');
+          // Initialize sync service for background synchronization
+          syncService.initialize();
+          console.log('✓ Sync service initialized');
+        } else {
+          console.error('Failed to initialize offline storage');
+        }
+      })
+      .catch(error => console.error('Failed to initialize offline mode:', error));
+  } catch (error) {
+    console.error('Failed to initialize offline services:', error);
+  }
 }
 
 // ================================

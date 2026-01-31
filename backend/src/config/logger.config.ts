@@ -1,4 +1,6 @@
 import * as winston from 'winston';
+import * as path from 'path';
+import * as fs from 'fs';
 
 /**
  * Winston Logger Configuration
@@ -11,8 +13,9 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 // JSON formatter for structured logging
 const jsonFormatter = winston.format.combine(
-  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+  winston.format.timestamp({ format: 'YYYY-MM-DDTHH:mm:ss.SSSZ' }),
   winston.format.errors({ stack: true }),
+  winston.format.splat(),
   winston.format.json(),
 );
 
@@ -25,17 +28,6 @@ const consoleFormatter = winston.format.combine(
   }),
 );
 
-// Configure transports (outputs)
-const transports: winston.transport[] = [];
-
-// Console transport (always, useful for debugging)
-transports.push(
-  new winston.transports.Console({
-    format: consoleFormatter,
-    level: isProduction ? 'warn' : 'debug',
-  }),
-);
-
 export const winstonLogger = winston.createLogger({
   level: isProduction ? 'info' : 'debug',
   format: jsonFormatter,
@@ -43,7 +35,12 @@ export const winstonLogger = winston.createLogger({
     service: 'caredroid-backend',
     environment: process.env.NODE_ENV || 'development',
   },
-  transports,
+  transports: [
+    new winston.transports.Console({
+      format: consoleFormatter,
+      level: isProduction ? 'warn' : 'debug',
+    }),
+  ],
 });
 
 export default winstonLogger;

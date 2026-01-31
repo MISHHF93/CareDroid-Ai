@@ -11,6 +11,10 @@ import { AppController } from './app.controller';
 
 // Configuration
 import { databaseConfig } from './config/database.config';
+import { emailConfig } from './config/email.config';
+import { redisConfig } from './config/redis.config';
+import { stripeConfig } from './config/stripe.config';
+import { datadogConfig } from './config/datadog.config';
 import ragConfig from './config/rag.config';
 
 // Modules
@@ -27,6 +31,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { MedicalControlPlaneModule } from './modules/medical-control-plane/medical-control-plane.module';
 import { EncryptionModule } from './modules/encryption/encryption.module';
 import { RAGModule } from './modules/rag/rag.module';
+import { NotificationModule } from './modules/notifications/notification.module';
 
 // Monitoring & Observability
 import { LoggerModule } from './modules/common/logger.module';
@@ -38,7 +43,7 @@ import { MetricsModule } from './modules/metrics/metrics.module';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
-      load: [ragConfig],
+      load: [emailConfig, redisConfig, stripeConfig, datadogConfig, ragConfig],
     }),
 
     // Database (load after ConfigModule so .env is available)
@@ -91,6 +96,7 @@ import { MetricsModule } from './modules/metrics/metrics.module';
     ComplianceModule,
     ChatModule,
     AnalyticsModule,
+    NotificationModule,
     
     // Medical Control Plane (Intent Classification, Tool Orchestration)
     MedicalControlPlaneModule,

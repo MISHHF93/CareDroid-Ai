@@ -7,6 +7,7 @@ import { User } from '../users/entities/user.entity';
 import { Subscription, SubscriptionTier } from '../subscriptions/entities/subscription.entity';
 import { AuditService } from '../audit/audit.service';
 import { AuditAction } from '../audit/entities/audit-log.entity';
+import { MetricsService } from '../metrics/metrics.service';
 
 interface RateLimitConfig {
   dailyLimit: number;
@@ -14,10 +15,16 @@ interface RateLimitConfig {
   maxTokens: number;
 }
 
+interface OpenaiPricing {
+  inputPer1kTokens: number;
+  outputPer1kTokens: number;
+}
+
 @Injectable()
 export class AIService {
   private readonly openai: OpenAI;
   private readonly rateLimits: Map<SubscriptionTier, RateLimitConfig>;
+  private readonly openaiPricing: Map<string, OpenaiPricing>;
 
   constructor(
     private readonly configService: ConfigService,
@@ -26,6 +33,7 @@ export class AIService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly auditService: AuditService,
+    private readonly metricsService: MetricsService,
   ) {
     const apiKey = this.configService.get<string>('OPENAI_API_KEY');
     if (apiKey) {
@@ -40,6 +48,25 @@ export class AIService {
       [SubscriptionTier.PROFESSIONAL, { dailyLimit: 1000, model: 'gpt-4o', maxTokens: 4000 }],
       [SubscriptionTier.INSTITUTIONAL, { dailyLimit: 10000, model: 'gpt-4o', maxTokens: 8000 }],
     ]);
+
+    // OpenAI pricing (USD per 1K tokens, as of Jan 2026)
+    this.openaiPricing = new Map([
+      ['gpt-4o', { inputPer1kTokens: 0.03, outputPer1kTokens: 0.06 }],
+      ['gpt-4o-mini', { inputPer1kTokens: 0.00015, outputPer1kTokens: 0.0006 }],
+    ]);
+  }
+
+  /**
+   * Calculate cost in USD based on model and token usage
+   */
+  private calculateCost(model: string, inputTokens: number, outputTokens: number): number {
+    const pricing = this.openaiPricing.get(model);
+    if (!pricing) {
+      return 0;
+    }
+    const inputCost = (inputTokens / 1000) * pricing.inputPer1kTokens;
+    const outputCost = (outputTokens / 1000) * pricing.outputPer1kTokens;
+    return inputCost + outputCost;
   }
 
   async invokeLLM(userId: string, prompt: string, context?: any) {
@@ -95,6 +122,14 @@ export class AIService {
         tokensUsed: response.usage?.total_tokens || 0,
         finishReason: response.choices[0].finish_reason,
       };
+
+      // Calculate and record cost
+      const costUsd = this.calculateCost(
+        config.model,
+        response.usage?.prompt_tokens || 0,
+        response.usage?.completion_tokens || 0,
+      );
+      this.metricsService.recordOpenaiCost(config.model, userId, costUsd);
 
       // Audit log
       await this.auditService.log({
@@ -156,6 +191,14 @@ export class AIService {
       });
 
       const result = JSON.parse(response.choices[0].message.content);
+
+      // Calculate and record cost
+      const costUsd = this.calculateCost(
+        config.model,
+        response.usage?.prompt_tokens || 0,
+        response.usage?.completion_tokens || 0,
+      );
+      this.metricsService.recordOpenaiCost(config.model, userId, costUsd);
 
       // Audit log
       await this.auditService.log({

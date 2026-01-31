@@ -312,3 +312,92 @@ groups:
           summary: "High CPU usage ({{ $value | humanizePercentage }} > 80%)"
           description: "Process CPU maxed out - may indicate inefficient code or high traffic"
           runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_HighCPUUsage.md"
+      # ========== Cost Tracking Alerts (Phase 4) ==========
+      - alert: HighLlmCostRate
+        expr: |
+          rate(openai_api_cost_total[1m]) > 1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High OpenAI cost rate ({{ $value | humanize }}$/min > $1/min)"
+          description: "LLM cost rate exceeds $1/minute (~$1440/day). Check for cost spike causes."
+          runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_HighLlmCostRate.md"
+
+      - alert: CostPerUserExceeded
+        expr: |
+          increase(cost_per_user_total[1d]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Cost per user exceeded ({{ $value | humanize }}$ > $10/day)"
+          description: "User {{ $labels.user_id }} cost limit exceeded - may be heavy usage or abuse"
+          runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_CostPerUserExceeded.md"
+
+      - alert: UnexpectedCostSpike
+        expr: |
+          (rate(openai_api_cost_total[5m]) > 2 * avg_over_time(rate(openai_api_cost_total[5m])[1h:5m]))
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Unexpected cost spike ({{ $value | humanize }}$ - 2x baseline)"
+          description: "OpenAI costs doubled in 5 minutes. Manual check required."
+          runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_UnexpectedCostSpike.md"
+
+      - alert: LlmCostVsQuotaRatio
+        expr: |
+          (openai_api_cost_total / 500) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Cost vs quota ({{ $value | humanizePercentage }} of $500/month)"
+          description: "LLM costs approaching monthly quota - monitor budget"
+          runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_LlmCostVsQuotaRatio.md"
+
+      # ========== Trending Alerts (Phase 4) ==========
+      - alert: ConfidenceTrendingDown
+        expr: |
+          (rate(intent_classification_confidence[30m]) or rate(intent_classification_confidence[1h])) < -0.01
+        for: 3h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Intent confidence trending down ({{ $value }}/hour)"
+          description: "NLU confidence scores declining over 3+ hours. May indicate model degradation."
+          runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_ConfidenceTrendingDown.md"
+
+      - alert: LatencyTrendingUp
+        expr: |
+          deriv(histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))[1h:5m]) > 0.05
+        for: 2h
+        labels:
+          severity: warning
+        annotations:
+          summary: "API latency trending up ({{ $value }}s/hour)"
+          description: "P95 latency increasing over 2+ hours. Service degradation in progress."
+          runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_LatencyTrendingUp.md"
+
+      - alert: ErrorRateTrendingUp
+        expr: |
+          deriv(rate(errors_total[5m])[1h:5m]) > 0.005
+        for: 2h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Error rate trending up ({{ $value }}/second increase/hour)"
+          description: "Error rate increasing over 2+ hours. Possible outage developing."
+          runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_ErrorRateTrendingUp.md"
+
+      - alert: AnomalyScoreElevated
+        expr: |
+          anomaly_score > 0.7
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Anomaly detected ({{ $labels.metric_name }}: {{ $value | humanizePercentage }})"
+          description: "ML anomaly detector flagged {{ $labels.metric_name }} as unusual (score > 0.7)"
+          runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_AnomalyScoreElevated.md"

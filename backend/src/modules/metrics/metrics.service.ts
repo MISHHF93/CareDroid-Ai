@@ -42,6 +42,11 @@ export class MetricsService {
   public readonly activeUsersGauge: Gauge;
   public readonly authenticatedRequestsTotal: Counter;
 
+  // Cost Metrics (Phase 4)
+  public readonly openaiApiCostTotal: Counter;
+  public readonly openaiCostPerMinute: Gauge;
+  public readonly costPerUserTotal: Counter;
+
   constructor() {
     // Enable default Node.js metrics (memory, CPU, event loop, etc.)
     collectDefaultMetrics({ register });
@@ -173,6 +178,27 @@ export class MetricsService {
       labelNames: ['user_role'],
       registers: [register],
     });
+
+    // ========== Cost Metrics (Phase 4) ==========
+    this.openaiApiCostTotal = new Counter({
+      name: 'openai_api_cost_total',
+      help: 'Total OpenAI API costs in USD',
+      labelNames: ['model', 'user_id'],
+      registers: [register],
+    });
+
+    this.openaiCostPerMinute = new Gauge({
+      name: 'openai_cost_per_minute',
+      help: 'Current OpenAI cost rate in USD per minute',
+      registers: [register],
+    });
+
+    this.costPerUserTotal = new Counter({
+      name: 'cost_per_user_total',
+      help: 'Total cost per user in USD',
+      labelNames: ['user_id'],
+      registers: [register],
+    });
   }
 
   /**
@@ -272,6 +298,21 @@ export class MetricsService {
    */
   recordAuthenticatedRequest(userRole: string): void {
     this.authenticatedRequestsTotal.labels(userRole).inc();
+  }
+
+  /**
+   * Record OpenAI API cost
+   */
+  recordOpenaiCost(model: string, userId: string, costUsd: number): void {
+    this.openaiApiCostTotal.labels(model, userId).inc(costUsd);
+    this.costPerUserTotal.labels(userId).inc(costUsd);
+  }
+
+  /**
+   * Update OpenAI cost per minute gauge
+   */
+  setCostPerMinute(costPerMinute: number): void {
+    this.openaiCostPerMinute.set(costPerMinute);
   }
 
   /**

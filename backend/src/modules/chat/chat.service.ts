@@ -193,6 +193,8 @@ export class ChatService {
       let responseText: string;
       let citations: MedicalSource[] = [];
       let confidence: number | undefined;
+      let toolCalls: any[] = [];
+      let toolResults: any = undefined;
 
       try {
         ragContext = await this.ragService.retrieve(message, {
@@ -215,13 +217,16 @@ export class ChatService {
             confidence: ragContext.confidence,
           });
 
-          const aiResponse = await this.aiService.invokeLLM(
+          // Use tool-calling LLM for general queries
+          const aiResponse = await this.aiService.invokeLLMWithTools(
             userId || 'anonymous',
             prompt,
+            [],
             { ...context, ragEnabled: true },
           );
 
           responseText = aiResponse.content || 'No response returned from AI service.';
+          toolCalls = aiResponse.toolCalls || [];
           
           // Add citations
           const citationsText = formatCitations(ragContext.sources);
@@ -239,24 +244,60 @@ export class ChatService {
           citations = ragContext.sources;
           confidence = confidenceScore.score;
         } else {
-          // No RAG context, use direct AI response
-          const aiResponse = await this.aiService.invokeLLM(
+          // No RAG context, use direct AI response with tools
+          const aiResponse = await this.aiService.invokeLLMWithTools(
             userId || 'anonymous',
             message,
+            [],
             context,
           );
           responseText = aiResponse.content || 'No response returned from AI service.';
+          toolCalls = aiResponse.toolCalls || [];
         }
       } catch (ragError) {
-        // RAG failed, fall back to direct AI
-        this.logger.warn(`RAG retrieval failed, using direct AI: ${ragError instanceof Error ? ragError.message : String(ragError)}`);
+        // RAG failed, fall back to tool-calling AI
+        this.logger.warn(`RAG retrieval failed, using tool-calling AI: ${ragError instanceof Error ? ragError.message : String(ragError)}`);
         
-        const aiResponse = await this.aiService.invokeLLM(
+        const aiResponse = await this.aiService.invokeLLMWithTools(
           userId || 'anonymous',
           message,
+          [],
           context,
         );
         responseText = aiResponse.content || 'No response returned from AI service.';
+        toolCalls = aiResponse.toolCalls || [];
+      }
+
+      // If there are tool calls, process them
+      if (toolCalls && toolCalls.length > 0) {
+        this.logger.log(`🔧 Processing ${toolCalls.length} tool calls from Claude`);
+        
+        // Take the first tool call for MVP (can extend for multi-tool support later)
+        const toolCall = toolCalls[0];
+        
+        try {
+          // Execute the tool
+          const toolResult = await this.toolOrchestrator.executeInChat(
+            this.mapToolName(toolCall.toolName),
+            toolCall.parameters,
+            userId || 'anonymous',
+            'chat-' + Date.now(),
+          );
+
+          if (toolResult.result.success) {
+            toolResults = {
+              toolName: toolCall.toolName,
+              toolId: toolCall.toolId,
+              parameters: toolCall.parameters,
+              result: toolResult.result.data,
+              displayFormat: 'card',
+            };
+
+            this.logger.log(`✅ Tool ${toolCall.toolName} executed successfully`);
+          }
+        } catch (toolError) {
+          this.logger.warn(`Tool execution failed: ${toolError instanceof Error ? toolError.message : String(toolError)}`);
+        }
       }
 
       return {
@@ -266,6 +307,7 @@ export class ChatService {
         intentClassification: classification,
         citations,
         confidence,
+        toolResult: toolResults,
       };
     } catch (error) {
       this.logger.warn('AI service unavailable, falling back to simulated response.');
@@ -276,6 +318,18 @@ export class ChatService {
         intentClassification: classification,
       };
     }
+  }
+
+  /**
+   * Map Claude tool names to internal tool IDs
+   */
+  private mapToolName(claudeToolName: string): string {
+    const toolMap = {
+      'sofa_calculator': 'sofa-calculator',
+      'drug_checker': 'drug-interactions',
+      'lab_interpreter': 'lab-interpreter',
+    };
+    return toolMap[claudeToolName] || claudeToolName;
   }
 
   async suggestNextAction(patientId: string, context: any): Promise<any> {

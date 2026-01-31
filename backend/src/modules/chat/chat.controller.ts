@@ -4,6 +4,7 @@ import { ChatService } from './chat.service';
 import { AuthorizationGuard } from '../auth/guards/authorization.guard';
 import { RequirePermission } from '../auth/decorators/permissions.decorator';
 import { Permission } from '../auth/enums/permission.enum';
+import { MedicalSource } from '../rag/dto/medical-source.dto';
 
 interface ChatMessage3DDto {
   patientId: string;
@@ -35,6 +36,19 @@ interface ChatResponse3DDto {
 
 interface ChatResponseDto {
   response: string;
+  toolResult?: {
+    toolName: string;
+    toolId?: string;
+    parameters: any;
+    result?: any;
+    displayFormat?: string;
+  };
+  citations?: MedicalSource[];
+  confidence?: number;
+  ragContext?: {
+    chunksRetrieved: number;
+    sourcesFound: number;
+  };
   metadata: {
     toolUsed?: string;
     featureUsed?: string;
@@ -80,6 +94,10 @@ export class ChatController {
 
     return {
       response: response.text,
+      toolResult: response.toolResult,
+      citations: response.citations,
+      confidence: response.confidence,
+      ragContext: response.ragContext,
       metadata: {
         toolUsed: dto.tool,
         featureUsed: dto.feature,

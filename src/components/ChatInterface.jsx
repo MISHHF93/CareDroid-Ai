@@ -88,10 +88,10 @@ const ChatInterface = ({
       
       const assistantMessage = {
         role: 'assistant',
-        content: data.respons,
+        content: data.response || 'I encountered an error processing your request.',
         citations: data.citations || [],
         confidence: data.confidence,
-        ragContext: data.ragContext,e || 'I encountered an error processing your request.',
+        ragContext: data.ragContext,
         timestamp: new Date()
       };
 
@@ -374,11 +374,7 @@ const ChatInterface = ({
                   <span style={{ marginLeft: '12px', opacity: 0.7 }}>
                     • {message.ragContext.chunksRetrieved} chunks from {message.ragContext.sourcesFound} sources
                   </span>
-                
-                color: 'var(--muted-text)',
-                marginTop: '8px'
-              }}>
-                {message.timestamp.toLocaleTimeString()}
+                )}
               </div>
             </div>
             {message.role === 'user' && (

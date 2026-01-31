@@ -1,0 +1,191 @@
+# ============================================================
+# Alertmanager Configuration for CareDroid
+# Routes alerts from Prometheus to multiple destinations
+# Supports: Slack, Email (SMTP), PagerDuty
+# ============================================================
+
+global:
+  resolve_timeout: ${ALERTMANAGER_RESOLVE_TIMEOUT:-5m}
+  
+  # Slack configuration (global)
+  slack_api_url: '${ALERTMANAGER_SLACK_WEBHOOK}'
+  
+  # Email configuration (global)
+  smtp_smarthost: '${ALERTMANAGER_SMTP_HOST}:${ALERTMANAGER_SMTP_PORT:-25}'
+  smtp_auth_username: '${ALERTMANAGER_SMTP_USER}'
+  smtp_auth_password: '${ALERTMANAGER_SMTP_PASSWORD}'
+  smtp_require_tls: true
+  
+  # PagerDuty configuration (global)
+  pagerduty_url: 'https://events.pagerduty.com/v2/enqueue'
+
+# Load Alertmanager notification templates
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Define alert routing rules
+route:
+  # Root route
+  receiver: 'null'
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 12h
+  
+  # Critical alerts: CRITICAL severity or emergency detection
+  routes:
+    - match:
+        severity: critical
+      receiver: 'slack-critical'
+      group_wait: 5s
+      group_interval: 5s
+      repeat_interval: 6h
+      routes:
+        # Emergency directly to PagerDuty + Slack
+        - match:
+            alertname: 'EmergencyDetected'
+          receiver: 'pagerduty-critical'
+          continue: true
+        # High error rate to PagerDuty + Slack
+        - match:
+            alertname: 'HighErrorRate'
+          receiver: 'pagerduty-critical'
+          continue: true
+        # Connection pool exhausted to PagerDuty + Slack
+        - match:
+            alertname: 'DatabaseConnectionPoolExhausted'
+          receiver: 'pagerduty-critical'
+          continue: true
+
+    # Warning alerts: WARN severity
+    - match:
+        severity: warning
+      receiver: 'email-warning'
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 24h
+      routes:
+        # High latency also to Slack
+        - match:
+            alertname: 'HighLatency'
+          receiver: 'slack-warning'
+          continue: true
+        # Slow queries also to Slack
+        - match:
+            alertname: 'SlowDatabaseQueries'
+          receiver: 'slack-warning'
+          continue: true
+
+    # Informational alerts: suppress unless explicitly routed
+    - match:
+        severity: info
+      receiver: 'null'
+      group_wait: 5m
+      repeat_interval: 24h
+
+# Receivers: Define where alerts are sent
+receivers:
+  # Null receiver: discards alerts (use for info/debug level)
+  - name: 'null'
+
+  # Slack receiver: real-time critical alerts
+  - name: 'slack-critical'
+    slack_configs:
+      - channel: '#alerts-critical'
+        title: 'CRITICAL: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts.Firing }}{{ .Annotations.summary }}{{ end }}'
+        send_resolved: true
+        color: 'danger'
+        title_link: 'http://prometheus:9090/alerts'
+        api_url: '${ALERTMANAGER_SLACK_WEBHOOK}'
+        actions:
+          - type: button
+            text: 'View in Prometheus'
+            url: 'http://prometheus:9090/graph'
+          - type: button
+            text: 'View in Grafana'
+            url: 'http://grafana:3000/d/'
+
+  # Slack receiver: warning alerts (less urgent channel)
+  - name: 'slack-warning'
+    slack_configs:
+      - channel: '#alerts-warnings'
+        title: 'WARNING: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts.Firing }}{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+        color: 'warning'
+        title_link: 'http://prometheus:9090/alerts'
+        api_url: '${ALERTMANAGER_SLACK_WEBHOOK}'
+
+  # Email receiver: detailed alerts for engineering team
+  - name: 'email-warning'
+    email_configs:
+      - to: '${ALERTMANAGER_EMAIL_TO}'
+        from: '${ALERTMANAGER_EMAIL_FROM}'
+        smarthost: '${ALERTMANAGER_SMTP_HOST}:${ALERTMANAGER_SMTP_PORT}'
+        auth_username: '${ALERTMANAGER_SMTP_USER}'
+        auth_password: '${ALERTMANAGER_SMTP_PASSWORD}'
+        headers:
+          Subject: '[{{ .Status | toUpper }}] {{ .GroupLabels.alertname }}'
+        html: |
+          <html>
+            <body>
+              <h2>{{ .GroupLabels.alertname }}</h2>
+              <p><strong>Status:</strong> {{ .Status | toUpper }}</p>
+              <p><strong>Severity:</strong> {{ .GroupLabels.severity }}</p>
+              <p><strong>Service:</strong> {{ .GroupLabels.service }}</p>
+              {% for $alert := .Alerts.Firing %}
+              <h3>{{ $alert.Labels.alertname }}</h3>
+              <p><strong>Summary:</strong> {{ $alert.Annotations.summary }}</p>
+              <p><strong>Description:</strong> {{ $alert.Annotations.description }}</p>
+              <p><strong>Fired at:</strong> {{ $alert.StartsAt.Format "2006-01-02 15:04:05" }}</p>
+              {% endfor %}
+              <hr>
+              <p><a href="http://prometheus:9090/alerts">View in Prometheus</a> | 
+                 <a href="http://grafana:3000">View in Grafana</a></p>
+            </body>
+          </html>
+
+  # PagerDuty receiver: on-call escalation for critical incidents
+  - name: 'pagerduty-critical'
+    pagerduty_configs:
+      - service_key: '${ALERTMANAGER_PAGERDUTY_KEY}'
+        description: '{{ .GroupLabels.alertname }}: {{ range .Alerts.Firing }}{{ .Annotations.summary }}{{ end }}'
+        details:
+          status: '{{ .Status }}'
+          severity: '{{ .GroupLabels.severity }}'
+          service: '{{ .GroupLabels.service }}'
+          summary: '{{ range .Alerts.Firing }}{{ .Annotations.summary }}{{ end }}'
+          description: '{{ range .Alerts.Firing }}{{ .Annotations.description }}{{ end }}'
+        client: 'CareDroid Alerting'
+        client_url: 'http://prometheus:9090'
+
+# Inhibition rules: prevent duplicate/related alerts
+inhibit_rules:
+  # If DB connection pool is exhausted, don't alert on slow queries
+  - source_match:
+      alertname: 'DatabaseConnectionPoolExhausted'
+    target_match:
+      alertname: 'SlowDatabaseQueries'
+    equal: ['instance']
+
+  # If high error rate is firing, don't alert on individual high latency
+  - source_match:
+      alertname: 'HighErrorRate'
+    target_match:
+      alertname: 'HighLatency'
+    equal: ['instance']
+
+  # If emergency detected, don't alert on individual high error rate
+  - source_match:
+      alertname: 'EmergencyDetected'
+    target_match:
+      alertname: 'HighErrorRate'
+    equal: ['instance']
+
+  # If warning alert is resolved, suppress notification
+  - source_match:
+      severity: 'resolved'
+    target_match_re:
+      severity: 'warning|info'
+    equal: ['alertname', 'dev', 'instance']

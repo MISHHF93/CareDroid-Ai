@@ -143,6 +143,192 @@ services:
     networks:
       - caredroid
 
+  # ============================================================
+  # Monitoring & Observability Stack
+  # ============================================================
+
+  # Elasticsearch - Log indexing and storage
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: caredroid-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - xpack.monitoring.enabled=true
+      - xpack.monitoring.collection.enabled=true
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q '\"status\":' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - caredroid
+
+  # Logstash - Log aggregation and processing
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.11.0
+    container_name: caredroid-logstash
+    environment:
+      - "LS_JAVA_OPTS=-Xmx256m -Xms256m"
+    volumes:
+      - ./config/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+      - ./logs:/logs:ro
+    ports:
+      - "5000:5000"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - caredroid
+    healthcheck:
+      test: ["CMD", "curl", "-s", "http://localhost:9600/_node/stats"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Kibana - Elasticsearch log visualization
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: caredroid-kibana
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+      ELASTICSEARCH_USERNAME: elastic
+      ELASTICSEARCH_PASSWORD: ""
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:5601/api/status | grep -q 'state.\":\"green\"' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - caredroid
+
+  # Prometheus - Metrics collection and storage
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: caredroid-prometheus
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./config/prometheus:/etc/prometheus/rules:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+    ports:
+      - "9090:9090"
+    healthcheck:
+      test: ["CMD", "curl", "-s", "http://localhost:9090/-/healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - caredroid
+
+  # ============================================================
+  # Alertmanager - Alert routing and notifications
+  # ============================================================
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: caredroid-alertmanager
+    volumes:
+      - ./config/alertmanager/config.yml:/etc/alertmanager/config.yml:ro
+      - ./config/alertmanager/notification-templates.tmpl:/etc/alertmanager/templates/notification-templates.tmpl:ro
+      - alertmanager_data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+    ports:
+      - "9093:9093"
+    environment:
+      ALERTMANAGER_SLACK_WEBHOOK: ${ALERTMANAGER_SLACK_WEBHOOK:-}
+      ALERTMANAGER_EMAIL_FROM: ${ALERTMANAGER_EMAIL_FROM:-alerts@caredroid.local}
+      ALERTMANAGER_EMAIL_TO: ${ALERTMANAGER_EMAIL_TO:-ops@caredroid.local}
+      ALERTMANAGER_SMTP_HOST: ${ALERTMANAGER_SMTP_HOST:-localhost}
+      ALERTMANAGER_SMTP_PORT: ${ALERTMANAGER_SMTP_PORT:-25}
+      ALERTMANAGER_SMTP_USER: ${ALERTMANAGER_SMTP_USER:-}
+      ALERTMANAGER_SMTP_PASSWORD: ${ALERTMANAGER_SMTP_PASSWORD:-}
+      ALERTMANAGER_PAGERDUTY_KEY: ${ALERTMANAGER_PAGERDUTY_KEY:-}
+      ALERTMANAGER_RESOLVE_TIMEOUT: ${ALERTMANAGER_RESOLVE_TIMEOUT:-5m}
+    healthcheck:
+      test: ["CMD", "curl", "-s", "http://localhost:9093/-/healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - caredroid
+
+  # Grafana - Metrics visualization and dashboards
+  grafana:
+    image: grafana/grafana:latest
+    container_name: caredroid-grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3001:3000"
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-s", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - caredroid
+
+  # Sentry - Error tracking and exception monitoring
+  sentry:
+    image: sentry:latest
+    container_name: caredroid-sentry
+    environment:
+      SENTRY_SECRET_KEY: ${SENTRY_SECRET_KEY:-your-secret-key-change-in-production}
+      SENTRY_POSTGRES_HOST: postgres
+      SENTRY_POSTGRES_PORT: 5432
+      SENTRY_DB_NAME: sentry
+      SENTRY_DB_USER: ${DB_USER:-postgres}
+      SENTRY_DB_PASSWORD: ${DB_PASSWORD:-secure123}
+      SENTRY_REDIS_HOST: redis
+      SENTRY_REDIS_PORT: 6379
+      SENTRY_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+      MAIL_HOST: ${MAIL_HOST:-localhost}
+      MAIL_PORT: ${MAIL_PORT:-1025}
+      MAIL_FROM: sentry@example.com
+    ports:
+      - "9000:9000"
+    volumes:
+      - sentry_data:/var/lib/sentry/files
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-s", "http://localhost:9000/_health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - caredroid
+
 volumes:
   postgres_data:
     driver: local
@@ -151,6 +337,16 @@ volumes:
   nlu_models:
     driver: local
   nlu_cache:
+    driver: local
+  elasticsearch_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  sentry_data:
+    driver: local
+  alertmanager_data:
     driver: local
 
 networks:

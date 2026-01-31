@@ -1,0 +1,81 @@
+{
+  "annotations": {"list": [{"builtIn": 1, "datasource": "-- Grafana --", "enable": true, "hide": true, "iconColor": "rgba(0, 211, 255, 1)", "name": "Annotations & Alerts", "type": "dashboard"}]},
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "bars", "hideFrom": {"tooltip": false, "viz": false, "legend": false}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "id": 2,
+      "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "single"}},
+      "targets": [{"expr": "sum(rate(http_requests_total{path=~\"/api/nlu.*\"}[5m])) by (path)", "refId": "A", "legendFormat": "{{path}}"}],
+      "title": "NLU Requests/sec by Endpoint",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisLabel": "Duration (ms)", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "hideFrom": {"tooltip": false, "viz": false, "legend": false}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 100}, {"color": "red", "value": 500}]}}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "id": 3,
+      "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "single"}},
+      "targets": [{"expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{path=~\"/api/nlu.*\"}[5m])) by (le, path)) * 1000", "refId": "A", "legendFormat": "{{path}} p95"}],
+      "title": "NLU Latency p95 by Endpoint (ms)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "hideFrom": {"tooltip": false, "viz": false, "legend": false}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 5}, {"color": "red", "value": 10}]}}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "id": 4,
+      "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "single"}},
+      "targets": [{"expr": "sum(rate(http_requests_total{path=~\"/api/nlu.*\",status=~\"5..\"}[5m])) / sum(rate(http_requests_total{path=~\"/api/nlu.*\"}[5m])) * 100", "refId": "A", "legendFormat": "Error Rate %"}],
+      "title": "NLU Error Rate %",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Elasticsearch",
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "bars", "hideFrom": {"tooltip": false, "viz": false, "legend": false}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "id": 5,
+      "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "single"}},
+      "targets": [{"bucketAggs": [{"field": "@timestamp", "id": "1", "settings": {"interval": "auto"}, "type": "date_histogram"}], "metrics": [{"id": "1", "type": "count"}], "query": "path:/api/nlu/classify AND (statusCode:200 OR statusCode:201)", "refId": "A", "timeField": "@timestamp"}],
+      "title": "Intent Classifications (Success)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "hideFrom": {"tooltip": false, "viz": false, "legend": false}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+      "id": 6,
+      "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "single"}},
+      "targets": [{"expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{path=~\"/api/nlu.*\"}[5m])) by (le)) * 1000", "refId": "A", "legendFormat": "NLU p99"}],
+      "title": "NLU Latency p99 (ms)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Elasticsearch",
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "bars", "hideFrom": {"tooltip": false, "viz": false, "legend": false}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}]}}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+      "id": 7,
+      "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "single"}},
+      "targets": [{"bucketAggs": [{"field": "@timestamp", "id": "1", "settings": {"interval": "auto"}, "type": "date_histogram"}], "metrics": [{"id": "1", "type": "count"}], "query": "path:/api/nlu/classify AND statusCode:[400 TO 599]", "refId": "A", "timeField": "@timestamp"}],
+      "title": "Intent Classification Errors",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 27,
+  "style": "dark",
+  "tags": ["nlu", "intelligence", "backend"],
+  "templating": {"list": []},
+  "time": {"from": "now-6h", "to": "now"},
+  "timepicker": {},
+  "timezone": "",
+  "title": "NLU Intelligence",
+  "uid": "nlu-intelligence",
+  "version": 0
+}

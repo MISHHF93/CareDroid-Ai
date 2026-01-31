@@ -1,0 +1,287 @@
+[
+  {
+    "name": "High Severity Errors (5xx)",
+    "description": "All HTTP 500-599 errors with full context",
+    "query": {
+      "bool": {
+        "must": [
+          {"range": {"statusCode": {"gte": 500, "lte": 599}}},
+          {"match": {"level": "error"}}
+        ]
+      }
+    },
+    "sort": [{"@timestamp": {"order": "desc"}}],
+    "columns": ["@timestamp", "statusCode", "path", "method", "duration", "error", "userId"],
+    "useCase": "Identify critical failures affecting system stability. Filter by statusCode:5xx to see only server errors."
+  },
+  {
+    "name": "Slow Requests (>2s)",
+    "description": "All requests exceeding 2000ms response time",
+    "query": {
+      "bool": {
+        "must": [
+          {"range": {"duration": {"gte": 2000}}}
+        ]
+      }
+    },
+    "sort": [{"duration": {"order": "desc"}}],
+    "columns": ["@timestamp", "path", "method", "duration", "statusCode", "userId", "dbQuery"],
+    "useCase": "Find performance bottlenecks and slow endpoints. Can be filtered by path to diagnose specific endpoint issues."
+  },
+  {
+    "name": "User Activity Trail",
+    "description": "All requests from a specific user with timestamps and actions",
+    "query": {
+      "bool": {
+        "must": [
+          {"exists": {"field": "userId"}}
+        ]
+      }
+    },
+    "sort": [{"@timestamp": {"order": "desc"}}],
+    "columns": ["@timestamp", "userId", "path", "method", "statusCode", "duration", "requestId"],
+    "useCase": "Track user activities for audit and debugging. Add filter: userId:\"<user_id>\" to see specific user actions. Useful for compliance and troubleshooting user-reported issues."
+  },
+  {
+    "name": "Authentication Failures",
+    "description": "Failed login attempts and auth errors",
+    "query": {
+      "bool": {
+        "must": [
+          {"bool": {
+            "should": [
+              {"match": {"authFailed": true}},
+              {"match": {"loginAttempt": "failed"}},
+              {"range": {"statusCode": {"gte": 401, "lte": 403}}}
+            ]
+          }}
+        ]
+      }
+    },
+    "sort": [{"@timestamp": {"order": "desc"}}],
+    "columns": ["@timestamp", "userId", "username", "statusCode", "error", "ip"],
+    "useCase": "Security monitoring for failed authentication. Alert on repeated failures from same IP/user. Helps detect brute force attempts."
+  },
+  {
+    "name": "Database Query Errors",
+    "description": "Database operation failures (SELECT, INSERT, UPDATE, DELETE)",
+    "query": {
+      "bool": {
+        "must": [
+          {"bool": {
+            "should": [
+              {"match": {"operation": "SELECT"}},
+              {"match": {"operation": "INSERT"}},
+              {"match": {"operation": "UPDATE"}},
+              {"match": {"operation": "DELETE"}}
+            ]
+          }},
+          {"match": {"dbStatus": "error"}}
+        ]
+      }
+    },
+    "sort": [{"@timestamp": {"order": "desc"}}],
+    "columns": ["@timestamp", "operation", "table", "duration", "error", "statusCode"],
+    "useCase": "Debug database issues. Shows which tables/operations are failing. Look for patterns in error types."
+  },
+  {
+    "name": "RAG Retrieval Performance",
+    "description": "All RAG (Retrieval Augmented Generation) operations with latency",
+    "query": {
+      "bool": {
+        "must": [
+          {"bool": {
+            "should": [
+              {"match": {"path": "/api/rag*"}},
+              {"match": {"component": "rag_retrieval"}},
+              {"match": {"operation": "RAG"}}
+            ]
+          }}
+        ]
+      }
+    },
+    "sort": [{"duration": {"order": "desc"}}],
+    "columns": ["@timestamp", "path", "duration", "statusCode", "query", "resultsCount", "cacheHit"],
+    "useCase": "Monitor RAG system performance. Identify slow retrievals, cache hit rates, and failures. Useful for optimizing retrieval strategies."
+  },
+  {
+    "name": "Tool Invocations",
+    "description": "All clinical tool invocations (drug-checker, SOFA, lab-interpreter)",
+    "query": {
+      "bool": {
+        "must": [
+          {"bool": {
+            "should": [
+              {"match": {"toolName": "drug-checker"}},
+              {"match": {"toolName": "sofa-calculator"}},
+              {"match": {"toolName": "lab-interpreter"}},
+              {"match": {"path": "/api/tools*"}}
+            ]
+          }}
+        ]
+      }
+    },
+    "sort": [{"@timestamp": {"order": "desc"}}],
+    "columns": ["@timestamp", "toolName", "duration", "statusCode", "userId", "input", "output"],
+    "useCase": "Track tool usage patterns. Monitor tool latency and error rates. Identify most-used tools and user patterns."
+  },
+  {
+    "name": "Emergency Detections",
+    "description": "AI-detected emergency medical situations",
+    "query": {
+      "bool": {
+        "must": [
+          {"bool": {
+            "should": [
+              {"match": {"emergencyDetected": true}},
+              {"match": {"path": "*emergency*"}},
+              {"match": {"alert": "medical_emergency"}}
+            ]
+          }}
+        ]
+      }
+    },
+    "sort": [{"@timestamp": {"order": "desc"}}],
+    "columns": ["@timestamp", "userId", "severity", "emergencyType", "details", "actions", "respondTime"],
+    "useCase": "Critical incidents log. Track emergency detection patterns and response times. Audit trail for medical emergencies."
+  },
+  {
+    "name": "Response Size Analysis",
+    "description": "Analysis of response payload sizes by endpoint",
+    "query": {
+      "bool": {
+        "must": [
+          {"exists": {"field": "responseSize"}}
+        ]
+      }
+    },
+    "sort": [{"responseSize": {"order": "desc"}}],
+    "columns": ["@timestamp", "path", "method", "responseSize", "statusCode", "contentType"],
+    "useCase": "Identify endpoints returning large payloads. Optimize serialization and compression. Baseline for network performance."
+  },
+  {
+    "name": "PHI Access Audit",
+    "description": "Access to Protected Health Information (PHI) with audit trail",
+    "query": {
+      "bool": {
+        "must": [
+          {"bool": {
+            "should": [
+              {"match": {"path": "*patient*"}},
+              {"match": {"path": "*medical*"}},
+              {"match": {"accessedPHI": true}}
+            ]
+          }},
+          {"bool": {
+            "should": [
+              {"match": {"method": "GET"}},
+              {"match": {"method": "POST"}},
+              {"match": {"method": "PUT"}},
+              {"match": {"method": "DELETE"}}
+            ]
+          }}
+        ]
+      }
+    },
+    "sort": [{"@timestamp": {"order": "desc"}}],
+    "columns": ["@timestamp", "userId", "method", "path", "statusCode", "recordId", "accessType"],
+    "useCase": "HIPAA compliance audit. Track who accessed what PHI and when. Required for privacy regulations and incident investigation."
+  },
+  {
+    "name": "Request Chain Analysis",
+    "description": "Track related requests using request IDs for multi-step operations",
+    "query": {
+      "bool": {
+        "must": [
+          {"exists": {"field": "requestId"}}
+        ]
+      }
+    },
+    "sort": [{"@timestamp": {"order": "asc"}}],
+    "columns": ["@timestamp", "requestId", "path", "method", "duration", "statusCode", "stage"],
+    "useCase": "Trace request flows through system. See how data moves between services. Debug distributed transaction issues by following request chain."
+  },
+  {
+    "name": "Subscription Events",
+    "description": "Subscription and billing-related events",
+    "query": {
+      "bool": {
+        "must": [
+          {"bool": {
+            "should": [
+              {"match": {"path": "*subscription*"}},
+              {"match": {"path": "*billing*"}},
+              {"match": {"path": "*payment*"}},
+              {"match": {"component": "subscriptions"}}
+            ]
+          }}
+        ]
+      }
+    },
+    "sort": [{"@timestamp": {"order": "desc"}}],
+    "columns": ["@timestamp", "userId", "event", "subscriptionId", "amount", "status", "statusCode"],
+    "useCase": "Monitor subscription lifecycle. Track billing operations and payment events. Debug subscription-related issues."
+  },
+  {
+    "name": "Third-party Integration Failures",
+    "description": "Failures communicating with external APIs and services",
+    "query": {
+      "bool": {
+        "must": [
+          {"bool": {
+            "should": [
+              {"match": {"external": true}},
+              {"match": {"thirdParty": true}},
+              {"match": {"integration": true}}
+            ]
+          }},
+          {"match": {"level": "error"}}
+        ]
+      }
+    },
+    "sort": [{"@timestamp": {"order": "desc"}}],
+    "columns": ["@timestamp", "service", "endpoint", "statusCode", "error", "retryCount", "duration"],
+    "useCase": "Monitor external service dependencies. Track API failures from vendors, identify reliability issues. Alert on repeated failures."
+  },
+  {
+    "name": "Geographic Request Distribution",
+    "description": "Analysis of requests by geographic location (if geoIP available)",
+    "query": {
+      "bool": {
+        "must": [
+          {"exists": {"field": "ip"}}
+        ]
+      }
+    },
+    "sort": [{"@timestamp": {"order": "desc"}}],
+    "columns": ["@timestamp", "ip", "country", "city", "path", "userId", "statusCode"],
+    "useCase": "Understand geographic distribution of users. Identify unusual access patterns. Help with CDN and regional deployment decisions."
+  },
+  {
+    "name": "Endpoint Health Summary",
+    "description": "Aggregated metrics by endpoint (count, duration, errors, top users)",
+    "query": {
+      "bool": {
+        "must": [
+          {"exists": {"field": "path"}}
+        ]
+      }
+    },
+    "sort": [{"@timestamp": {"order": "desc"}}],
+    "columns": ["path", "method", "count", "avgDuration", "maxDuration", "errorCount", "errorRate"],
+    "aggregations": {
+      "endpoints": {
+        "terms": {"field": "path.keyword", "size": 100},
+        "aggs": {
+          "stats": {
+            "stats": {"field": "duration"}
+          },
+          "errors": {
+            "filter": {"range": {"statusCode": {"gte": 400}}}
+          }
+        }
+      }
+    },
+    "useCase": "Dashboard of all endpoints. Quickly identify which endpoints are slowest, which have most errors. Prioritize optimization efforts."
+  }
+]

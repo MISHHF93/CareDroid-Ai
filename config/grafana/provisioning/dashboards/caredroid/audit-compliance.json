@@ -1,0 +1,71 @@
+{
+  "annotations": {"list": [{"builtIn": 1, "datasource": "-- Grafana --", "enable": true, "hide": true, "iconColor": "rgba(0, 211, 255, 1)", "name": "Annotations & Alerts", "type": "dashboard"}]},
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [{"title": "Kibana Logs", "url": "http://kibana:5601"}],
+  "panels": [
+    {
+      "datasource": "Elasticsearch",
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "bars", "hideFrom": {"tooltip": false, "viz": false, "legend": false}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}]}}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "id": 2,
+      "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "single"}},
+      "targets": [{"bucketAggs": [{"field": "@timestamp", "id": "1", "settings": {"interval": "auto"}, "type": "date_histogram"}], "metrics": [{"id": "1", "type": "count"}], "query": "level:error AND statusCode:[500 TO 599]", "refId": "A", "timeField": "@timestamp"}],
+      "title": "High-Severity Errors (5xx)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Elasticsearch",
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "bars", "hideFrom": {"tooltip": false, "viz": false, "legend": false}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "orange", "value": null}]}}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "id": 3,
+      "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "single"}},
+      "targets": [{"bucketAggs": [{"field": "@timestamp", "id": "1", "settings": {"interval": "auto"}, "type": "date_histogram"}], "metrics": [{"id": "1", "type": "count"}], "query": "duration:[2000 TO *]", "refId": "A", "timeField": "@timestamp"}],
+      "title": "Slow Requests (>2s)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Elasticsearch",
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "bars", "hideFrom": {"tooltip": false, "viz": false, "legend": false}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "id": 4,
+      "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "single"}},
+      "targets": [{"bucketAggs": [{"field": "@timestamp", "id": "1", "settings": {"interval": "auto"}, "type": "date_histogram"}, {"field": "userId", "id": "2", "settings": {}, "type": "terms"}], "metrics": [{"id": "1", "type": "count"}], "query": "*", "refId": "A", "timeField": "@timestamp"}],
+      "title": "User Activity by User ID",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Elasticsearch",
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "bars", "hideFrom": {"tooltip": false, "viz": false, "legend": false}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}]}}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "id": 5,
+      "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "single"}},
+      "targets": [{"bucketAggs": [{"field": "@timestamp", "id": "1", "settings": {"interval": "auto"}, "type": "date_histogram"}], "metrics": [{"id": "1", "type": "count"}], "query": "(authFailed OR loginAttempt:failed) AND (statusCode:[400 TO 499])", "refId": "A", "timeField": "@timestamp"}],
+      "title": "Failed Authentication Attempts",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Elasticsearch",
+      "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "hideFrom": {"tooltip": false, "viz": false, "legend": false}}, "mappings": [], "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}, "overrides": []},
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 16},
+      "id": 6,
+      "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "single"}},
+      "targets": [{"bucketAggs": [{"field": "@timestamp", "id": "1", "settings": {"interval": "auto"}, "type": "date_histogram"}, {"field": "level", "id": "2", "settings": {}, "type": "terms"}], "metrics": [{"id": "1", "type": "count"}], "query": "method:(GET OR POST OR PUT OR DELETE) AND (level:error OR statusCode:[400 TO 599])", "refId": "A", "timeField": "@timestamp"}],
+      "title": "Data Access Audit Trail",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 27,
+  "style": "dark",
+  "tags": ["audit", "compliance", "security"],
+  "templating": {"list": []},
+  "time": {"from": "now-24h", "to": "now"},
+  "timepicker": {},
+  "timezone": "",
+  "title": "Audit & Compliance",
+  "uid": "audit-compliance",
+  "version": 0
+}

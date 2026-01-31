@@ -28,6 +28,10 @@ import { MedicalControlPlaneModule } from './modules/medical-control-plane/medic
 import { EncryptionModule } from './modules/encryption/encryption.module';
 import { RAGModule } from './modules/rag/rag.module';
 
+// Monitoring & Observability
+import { LoggerModule } from './modules/common/logger.module';
+import { MetricsModule } from './modules/metrics/metrics.module';
+
 @Module({
   imports: [
     // Configuration
@@ -65,6 +69,10 @@ import { RAGModule } from './modules/rag/rag.module';
 
     // Scheduled tasks
     ScheduleModule.forRoot(),
+
+    // Monitoring & Observability
+    LoggerModule,
+    MetricsModule,
 
     // Serve frontend static assets
     ServeStaticModule.forRoot({

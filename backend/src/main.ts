@@ -2,9 +2,15 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
+import * as Sentry from '@sentry/node';
 import { AppModule } from './app.module';
+import { initSentry } from './config/sentry.config';
+import { LoggingMiddleware } from './middleware/logging.middleware';
 
 async function bootstrap() {
+  // Initialize Sentry for error tracking BEFORE creating the app
+  initSentry();
+
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
   });
@@ -46,6 +52,13 @@ async function bootstrap() {
       },
     }),
   );
+
+  // Sentry error tracking middleware (must be early in the middleware stack)
+  app.use(Sentry.Handlers.requestHandler());
+  app.use(Sentry.Handlers.errorHandler());
+
+  // HTTP request/response logging middleware
+  app.use(LoggingMiddleware);
 
   // CORS configuration (allow same-origin since frontend is proxied)
   app.enableCors({
@@ -93,9 +106,15 @@ async function bootstrap() {
 
   console.log(`\n🚀 CareDroid Backend running on: http://localhost:${port}`);
   console.log(`📚 Swagger docs available at: http://localhost:${port}/api`);
+  console.log(`� Prometheus metrics at: http://localhost:${port}/metrics`);
   console.log(`🔐 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔒 TLS 1.3: ENFORCED (only TLS 1.3+ allowed)`);
   console.log(`📱 All traffic consolidated to port ${port}`);
+  console.log(`\n📈 Monitoring Stack (when docker-compose running):`);
+  console.log(`   - Grafana dashboards: http://localhost:3001`);
+  console.log(`   - Prometheus: http://localhost:9090`);
+  console.log(`   - Kibana logs: http://localhost:5601`);
+  console.log(`   - Sentry errors: http://localhost:9000`);
 }
 
 bootstrap();

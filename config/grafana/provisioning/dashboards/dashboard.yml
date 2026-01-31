@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: 'CareDroid Dashboards'
+    orgId: 1
+    folder: 'CareDroid'
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/caredroid

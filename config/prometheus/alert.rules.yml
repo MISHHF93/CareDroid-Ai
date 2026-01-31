@@ -1,0 +1,172 @@
+# ============================================================
+# Prometheus Alert Rules for CareDroid
+# Defines alert conditions and thresholds for monitoring
+# ============================================================
+
+groups:
+  - name: caredroid_alerts
+    interval: 30s
+    rules:
+      # ========== HTTP Request Alerts ==========
+      - alert: HighErrorRate
+        expr: |
+          (sum(rate(http_requests_total{status=~"5.."}[5m])) /
+           sum(rate(http_requests_total[5m]))) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High HTTP error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} for the last 5 minutes"
+
+      - alert: HighLatency
+        expr: |
+          histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API latency detected"
+          description: "95th percentile latency is {{ $value }}s"
+
+      - alert: RequestRateAnomaly
+        expr: |
+          abs((rate(http_requests_total[5m]) - rate(http_requests_total[5m] offset 1h)) / 
+              rate(http_requests_total[5m] offset 1h)) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Unusual request rate change detected"
+          description: "Request rate changed by {{ $value | humanizePercentage }}"
+
+      # ========== Database Alerts ==========
+      - alert: SlowDatabaseQueries
+        expr: |
+          histogram_quantile(0.99, sum(rate(database_query_duration_seconds_bucket[5m])) by (le, operation)) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow database queries detected for {{ $labels.operation }}"
+          description: "99th percentile query time is {{ $value }}s"
+
+      - alert: HighDatabaseErrorRate
+        expr: |
+          (sum(rate(database_queries_total{status="error"}[5m])) /
+           sum(rate(database_queries_total[5m]))) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High database error rate"
+          description: "Database error rate is {{ $value | humanizePercentage }}"
+
+      - alert: DatabaseConnectionPoolExhausted
+        expr: |
+          database_connection_pool_utilization > 0.9
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database connection pool nearly exhausted"
+          description: "Connection pool utilization is {{ $value | humanizePercentage }}"
+
+      # ========== Cache Alerts ==========
+      - alert: CacheMissRateHigh
+        expr: |
+          (1 - cache_hit_rate) > 0.3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Cache hit rate is below acceptable threshold"
+          description: "Cache hit rate is {{ $value | humanizePercentage }}"
+
+      # ========== Tool Invocation Alerts ==========
+      - alert: HighToolErrorRate
+        expr: |
+          (sum(rate(tool_invocations_total{status="error"}[5m])) by (tool_name) /
+           sum(rate(tool_invocations_total[5m])) by (tool_name)) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate for {{ $labels.tool_name }}"
+          description: "Error rate is {{ $value | humanizePercentage }}"
+
+      - alert: SlowToolInvocation
+        expr: |
+          histogram_quantile(0.95, sum(rate(tool_invocation_duration_seconds_bucket[5m])) by (le, tool_name)) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Tool {{ $labels.tool_name }} is slow (95th percentile > 10s)"
+          description: "Tool invocation latency: {{ $value }}s"
+
+      # ========== RAG Alerts ==========
+      - alert: SlowRagRetrieval
+        expr: |
+          histogram_quantile(0.90, sum(rate(rag_retrieval_duration_seconds_bucket[5m])) by (le)) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "RAG knowledge base retrieval is slow"
+          description: "90th percentile retrieval latency: {{ $value }}s"
+
+      # ========== Emergency Detection Alerts ==========
+      - alert: EmergencyDetected
+        expr: |
+          increase(emergency_detection_total[5m]) > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Emergency condition detected: {{ $labels.emergency_type }}"
+          description: "Severity: {{ $labels.severity }} | Occurrences in last 5m: {{ $value }}"
+
+      # ========== General Application Alerts ==========
+      - alert: ApplicationErrorRate
+        expr: |
+          (sum(rate(errors_total[5m])) by (error_type) /
+           sum(rate(http_requests_total[5m]))) > 0.01
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High application error rate for {{ $labels.error_type }}"
+          description: "Error ratio: {{ $value | humanizePercentage }}"
+
+      - alert: ActiveUserAnomaly
+        expr: |
+          abs((active_users - avg_over_time(active_users[1h])) / 
+              avg_over_time(active_users[1h])) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Unusual active user count"
+          description: "Current: {{ $value }} users (90% change from 1h average)"
+
+      # ========== System Metrics Alerts ==========
+      - alert: HighMemoryUsage
+        expr: |
+          process_resident_memory_bytes > 500000000
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage: {{ $value | humanize }}B"
+
+      - alert: HighCPUUsage
+        expr: |
+          rate(process_cpu_seconds_total[5m]) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage: {{ $value | humanizePercentage }}"

@@ -4,12 +4,21 @@ import { ChatService } from './chat.service';
 import { AiModule } from '../ai/ai.module';
 import { IntentClassifierModule } from '../medical-control-plane/intent-classifier/intent-classifier.module';
 import { ToolOrchestratorModule } from '../medical-control-plane/tool-orchestrator/tool-orchestrator.module';
+import { EmergencyEscalationModule } from '../medical-control-plane/emergency-escalation/emergency-escalation.module';
 import { AuditModule } from '../audit/audit.module';
 import { RAGModule } from '../rag/rag.module';
 import { MetricsModule } from '../metrics/metrics.module';
 
 @Module({
-  imports: [AiModule, IntentClassifierModule, ToolOrchestratorModule, AuditModule, RAGModule, MetricsModule],
+  imports: [
+    AiModule,
+    IntentClassifierModule,
+    ToolOrchestratorModule,
+    EmergencyEscalationModule,
+    AuditModule,
+    RAGModule,
+    MetricsModule,
+  ],
   controllers: [ChatController],
   providers: [ChatService],
   exports: [ChatService],

@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { AIService } from '../ai/ai.service';
 import { IntentClassifierService } from '../medical-control-plane/intent-classifier/intent-classifier.service';
 import { ToolOrchestratorService } from '../medical-control-plane/tool-orchestrator/tool-orchestrator.service';
+import { EmergencyEscalationService } from '../medical-control-plane/emergency-escalation/emergency-escalation.service';
 import { AuditService } from '../audit/audit.service';
 import { AuditAction } from '../audit/entities/audit-log.entity';
 import { NluMetricsService } from '../metrics/nlu-metrics.service';
@@ -27,6 +28,9 @@ interface QueryResponse {
     severity: EmergencySeverity;
     message: string;
     requiresEscalation: boolean;
+    escalationActions?: string[]; // Phase 2: NEW
+    requires911?: boolean; // Phase 2: NEW
+    medicalDirectorNotified?: boolean; // Phase 2: NEW
   };
   toolResult?: any;
   citations?: MedicalSource[];
@@ -42,6 +46,7 @@ export class ChatService {
     private readonly aiService: AIService,
     private readonly intentClassifier: IntentClassifierService,
     private readonly toolOrchestrator: ToolOrchestratorService,
+    private readonly emergencyEscalation: EmergencyEscalationService,
     private readonly auditService: AuditService,
     private readonly ragService: RAGService,
     private readonly nluMetrics: NluMetricsService,
@@ -123,45 +128,30 @@ export class ChatService {
         `🚨 EMERGENCY DETECTED: ${classification.emergencySeverity} - ${classification.emergencyKeywords.length} keywords matched`,
       );
 
-      const escalationMessage = this.intentClassifier.getEmergencyEscalationMessage(
-        // Reconstruct patterns from keywords (simplified)
-        classification.emergencyKeywords.map(kw => ({
-          keywords: [kw.keyword],
-          category: kw.category,
-          severity: kw.severity,
-          escalationMessage: this.getEmergencyMessage(kw.category, kw.severity),
-        })),
-      );
+      // Execute emergency escalation workflow (Phase 2: NEW)
+      const escalationResult = await this.emergencyEscalation.escalate(classification, {
+        severity: classification.emergencySeverity!,
+        category: classification.emergencyKeywords[0]?.category || 'unknown',
+        keywords: classification.emergencyKeywords.map(k => k.keyword),
+        context: {
+          userId: userId || 'anonymous',
+          conversationId,
+          message,
+          timestamp: new Date(),
+        },
+      });
 
-      // Log emergency in audit trail
-      if (userId) {
-        await this.auditService.log({
-          userId,
-          action: AuditAction.SECURITY_EVENT, // Repurpose for medical emergencies
-          resource: 'chat/emergency-detected',
-          details: {
-            message: message.substring(0, 200),
-            severity: classification.emergencySeverity,
-            keywords: classification.emergencyKeywords,
-            escalationMessage,
-          },
-          ipAddress: '0.0.0.0',
-          userAgent: 'system',
-        });
-      }
-
-      // Return emergency response
+      // Return emergency response with escalation details
       return {
-        text: `${escalationMessage}\n\n⚠️ **This is an AI system and cannot replace emergency medical services.**\n\nI can help you review protocols and provide clinical information, but immediate action may be required. Would you like me to:\n1. Display the relevant emergency protocol\n2. Calculate relevant clinical scores\n3. Provide evidence-based management guidelines`,
-        suggestions: [
-          'Show emergency protocol',
-          'Calculate clinical scores',
-          'Review management guidelines',
-        ],
+        text: escalationResult.message,
+        suggestions: escalationResult.recommendations.slice(0, 3), // Top 3 recommendations
         emergencyAlert: {
-          severity: classification.emergencySeverity,
-          message: escalationMessage,
-          requiresEscalation: this.intentClassifier.requiresEscalation(classification),
+          severity: classification.emergencySeverity!,
+          message: escalationResult.message,
+          requiresEscalation: true,
+          escalationActions: escalationResult.actions.map(a => a.type),
+          requires911: escalationResult.requiresImmediate911,
+          medicalDirectorNotified: escalationResult.medicalDirectorNotified,
         },
         intentClassification: classification,
       };

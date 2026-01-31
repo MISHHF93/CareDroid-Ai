@@ -12,6 +12,7 @@ import { IntentClassifierService } from '../src/modules/medical-control-plane/in
 import { ToolOrchestratorService } from '../src/modules/medical-control-plane/tool-orchestrator/tool-orchestrator.service';
 import { RAGService } from '../src/modules/rag/rag.service';
 import { NluMetricsService } from '../src/modules/metrics/nlu-metrics.service';
+import { EmergencyEscalationService } from '../src/modules/medical-control-plane/emergency-escalation/emergency-escalation.service';
 
 describe('Tool Calling Integration (Batch 15 Phase 1)', () => {
   let aiService: AIService;
@@ -103,6 +104,21 @@ describe('Tool Calling Integration (Batch 15 Phase 1)', () => {
           useValue: {
             recordConversationDepth: jest.fn(),
             recordConfidenceMismatch: jest.fn(),
+          },
+        },
+        {
+          provide: EmergencyEscalationService,
+          useValue: {
+            escalate: jest.fn().mockResolvedValue({
+              escalated: false,
+              severity: null,
+              actions: [],
+              recommendations: [],
+              requiresImmediate911: false,
+              medicalDirectorNotified: false,
+              message: '',
+            }),
+            shouldEscalate: jest.fn().mockReturnValue(false),
           },
         },
       ],

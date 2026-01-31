@@ -6,9 +6,10 @@ import { DrugCheckerService } from './services/drug-checker.service';
 import { LabInterpreterService } from './services/lab-interpreter.service';
 import { AiModule } from '../../ai/ai.module';
 import { AuditModule } from '../../audit/audit.module';
+import { MetricsModule } from '../../metrics/metrics.module';
 
 @Module({
-  imports: [AiModule, AuditModule],
+  imports: [AiModule, AuditModule, MetricsModule],
   controllers: [ToolOrchestratorController],
   providers: [
     ToolOrchestratorService,

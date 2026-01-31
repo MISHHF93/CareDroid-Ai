@@ -12,6 +12,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AIService } from '../../ai/ai.service';
+import { NluMetricsService } from '../../metrics/nlu-metrics.service';
 import {
   IntentClassification,
   IntentClassificationContext,
@@ -54,6 +55,7 @@ export class IntentClassifierService {
   constructor(
     private readonly aiService: AIService,
     private readonly configService: ConfigService,
+    private readonly nluMetrics: NluMetricsService,
   ) {
     const baseUrl = this.configService.get<string>('NLU_SERVICE_URL') || 'http://localhost:8001';
     this.nluServiceUrl = baseUrl.replace(/\/$/, '');
@@ -85,12 +87,22 @@ export class IntentClassifierService {
     // ========================================
     // PHASE 1: KEYWORD MATCHING
     // ========================================
+    const keywordStartMs = Date.now();
     const keywordResult = this.keywordMatcher(message, emergencyPatterns);
+    const keywordDurationSec = (Date.now() - keywordStartMs) / 1000;
+
+    // Record Phase 1 metrics
+    this.nluMetrics.recordKeywordPhaseDuration(keywordDurationSec, 'success');
+    this.nluMetrics.recordConfidenceScore(keywordResult.confidence, keywordResult.primaryIntent, 'keyword');
 
     if (keywordResult.confidence >= 0.7) {
       this.logger.log(
         `✅ Phase 1 (Keyword): High confidence (${keywordResult.confidence.toFixed(2)}) - ${keywordResult.primaryIntent}`,
       );
+      
+      // Record successful classification
+      this.nluMetrics.recordIntentClassification(keywordResult.primaryIntent, 'keyword');
+
       return {
         ...keywordResult,
         isEmergency,
@@ -108,20 +120,35 @@ export class IntentClassifierService {
     // ========================================
     // PHASE 2: NLU MODEL (Fine-tuned BERT)
     // ========================================
+    const nluStartMs = Date.now();
     const nluResult = await this.nluMatcher(message, context);
+    const nluDurationSec = (Date.now() - nluStartMs) / 1000;
 
-    if (nluResult && nluResult.confidence >= 0.7) {
-      this.logger.log(
-        `✅ Phase 2 (NLU): High confidence (${nluResult.confidence.toFixed(2)}) - ${nluResult.primaryIntent}`,
-      );
-      return {
-        ...nluResult,
-        isEmergency,
-        emergencyKeywords: this.mapEmergencyKeywords(emergencyPatterns),
-        emergencySeverity,
-        method: 'nlu',
-        classifiedAt: new Date(),
-      };
+    // Record Phase 2 metrics
+    if (nluResult) {
+      this.nluMetrics.recordModelPhaseDuration(nluDurationSec, 'success');
+      this.nluMetrics.recordConfidenceScore(nluResult.confidence, nluResult.primaryIntent, 'model');
+
+      if (nluResult.confidence >= 0.7) {
+        this.logger.log(
+          `✅ Phase 2 (NLU): High confidence (${nluResult.confidence.toFixed(2)}) - ${nluResult.primaryIntent}`,
+        );
+        
+        // Record successful classification
+        this.nluMetrics.recordIntentClassification(nluResult.primaryIntent, 'nlu');
+
+        return {
+          ...nluResult,
+          isEmergency,
+          emergencyKeywords: this.mapEmergencyKeywords(emergencyPatterns),
+          emergencySeverity,
+          method: 'nlu',
+          classifiedAt: new Date(),
+        };
+      }
+    } else {
+      // NLU failed or circuit breaker open
+      this.nluMetrics.recordModelPhaseDuration(nluDurationSec, 'failure');
     }
 
     // ========================================
@@ -129,8 +156,16 @@ export class IntentClassifierService {
     // ========================================
     this.logger.log(`🤖 Phase 3 (LLM): Invoking GPT-4 for complex intent classification`);
 
+    const llmStartMs = Date.now();
     try {
       const llmResult = await this.llmMatcher(message, context);
+      const llmDurationSec = (Date.now() - llmStartMs) / 1000;
+
+      // Record Phase 3 metrics
+      this.nluMetrics.recordLlmPhaseDuration(llmDurationSec, 'success');
+      this.nluMetrics.recordConfidenceScore(llmResult.confidence, llmResult.primaryIntent, 'llm');
+      this.nluMetrics.recordIntentClassification(llmResult.primaryIntent, 'llm');
+
       return {
         ...llmResult,
         isEmergency,
@@ -140,9 +175,14 @@ export class IntentClassifierService {
         classifiedAt: new Date(),
       };
     } catch (error) {
+      const llmDurationSec = (Date.now() - llmStartMs) / 1000;
+      this.nluMetrics.recordLlmPhaseDuration(llmDurationSec, 'failure');
+      
       this.logger.error(`❌ Phase 3 (LLM) failed: ${error instanceof Error ? error.message : String(error)}. Returning keyword result.`);
       
       // Fallback to keyword result
+      this.nluMetrics.recordIntentClassification(keywordResult.primaryIntent, 'keyword');
+
       return {
         ...keywordResult,
         isEmergency,
@@ -401,12 +441,23 @@ Respond in JSON format:
     if (breaker.failureCount >= threshold) {
       breaker.openUntil = Date.now() + resetMs;
       this.logger.warn(`Circuit breaker opened for ${resetMs}ms after ${breaker.failureCount} failures.`);
+      
+      // Update metrics: circuit breaker opened
+      const serviceName = breaker === this.nluCircuitBreaker ? 'nlu' : 'llm';
+      this.nluMetrics.setCircuitBreakerState(serviceName, true);
     }
   }
 
   private recordSuccess(breaker: { failureCount: number; openUntil: number }): void {
+    const wasOpen = breaker.openUntil > Date.now();
     breaker.failureCount = 0;
     breaker.openUntil = 0;
+    
+    // Update metrics: circuit breaker closed if it was open
+    if (wasOpen) {
+      const serviceName = breaker === this.nluCircuitBreaker ? 'nlu' : 'llm';
+      this.nluMetrics.setCircuitBreakerState(serviceName, false);
+    }
   }
 
   /**

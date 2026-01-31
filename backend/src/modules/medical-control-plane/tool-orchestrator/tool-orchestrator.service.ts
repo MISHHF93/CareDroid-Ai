@@ -8,6 +8,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { AuditService } from '../../audit/audit.service';
 import { AuditAction } from '../../audit/entities/audit-log.entity';
+import { ToolMetricsService } from '../../metrics/tool-metrics.service';
 import {
   ClinicalToolService,
   ToolMetadata,
@@ -40,6 +41,7 @@ export class ToolOrchestratorService {
     private readonly drugCheckerService: DrugCheckerService,
     private readonly labInterpreterService: LabInterpreterService,
     private readonly auditService: AuditService,
+    private readonly toolMetrics: ToolMetricsService,
   ) {
     this.initializeRegistry();
   }
@@ -129,9 +131,17 @@ export class ToolOrchestratorService {
       const tool = this.getTool(dto.toolId);
       const metadata = tool.getMetadata();
 
+      // Calculate and record parameter complexity
+      const complexity = this.toolMetrics.calculateParameterComplexity(dto.parameters);
+      const complexityLabel = complexity < 20 ? 'low' : complexity < 50 ? 'medium' : 'high';
+      this.toolMetrics.setToolParameterComplexity(dto.toolId, complexityLabel, complexity);
+
       // Validate parameters
       const validation = tool.validate(dto.parameters);
       if (!validation.valid) {
+        // Record validation error
+        this.toolMetrics.recordToolError(dto.toolId, 'validation');
+
         await this.auditService.log({
           userId: dto.userId,
           action: AuditAction.AI_QUERY,
@@ -164,6 +174,9 @@ export class ToolOrchestratorService {
       const result = await tool.execute(dto.parameters);
       const executionTime = Date.now() - startTime;
 
+      // Record execution time tier metrics
+      this.toolMetrics.recordToolExecutionTier(dto.toolId, executionTime);
+
       // Audit the execution
       await this.auditService.log({
         userId: dto.userId,
@@ -194,6 +207,10 @@ export class ToolOrchestratorService {
     } catch (error) {
       const executionTime = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      // Categorize and record error
+      const errorType = this.toolMetrics.categorizeError(error);
+      this.toolMetrics.recordToolError(dto.toolId, errorType);
       
       this.logger.error(`Tool execution error: ${dto.toolId}`, error);
 

@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { OpenAIEmbeddingsService } from './embeddings/openai-embeddings.service';
 import { PineconeService } from './vector-db/pinecone.service';
 import { DocumentChunker } from './utils/document-chunker';
+import { ToolMetricsService } from '../metrics/tool-metrics.service';
 import {
   RAGContext,
   RAGRetrievalOptions,
@@ -32,6 +33,7 @@ export class RAGService {
     private readonly embeddingsService: OpenAIEmbeddingsService,
     private readonly vectorDb: PineconeService,
     private readonly configService: ConfigService,
+    private readonly toolMetrics: ToolMetricsService,
   ) {
     this.documentChunker = new DocumentChunker();
   }
@@ -83,6 +85,20 @@ export class RAGService {
         metadata: match.metadata,
         embedding: match.vector,
       }));
+
+      // Record RAG metrics
+      if (chunks.length === 0) {
+        // Track empty results
+        this.toolMetrics.recordRagEmptyResults();
+      } else {
+        // Record retrieval count
+        this.toolMetrics.recordRagRetrieval(chunks.length);
+        
+        // Record relevance scores for each chunk
+        chunks.forEach(chunk => {
+          this.toolMetrics.recordRagRelevanceScore(chunk.score);
+        });
+      }
 
       // 5. Extract unique sources
       const sources = this.extractUniqueSources(chunks);

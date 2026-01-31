@@ -116,6 +116,122 @@ groups:
           summary: "RAG knowledge base retrieval is slow"
           description: "90th percentile retrieval latency: {{ $value }}s"
 
+      - alert: RagEmptyResults
+        expr: |
+          (sum(rate(rag_empty_results_total[5m])) /
+           sum(rate(rag_chunks_retrieved_total[5m]))) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High rate of empty RAG results"
+          description: "{{ $value | humanizePercentage }} of queries return no results"
+
+      - alert: LowRagRelevance
+        expr: |
+          histogram_quantile(0.5, sum(rate(rag_chunk_relevance_score_bucket[5m])) by (le)) < 0.6
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "RAG chunk relevance is degrading"
+          description: "Median relevance score: {{ $value }}"
+
+      # ========== NLU & Intent Classification Alerts ==========
+      - alert: NluConfidenceDropping
+        expr: |
+          avg(rate(nlu_confidence_scores_sum[5m]) / rate(nlu_confidence_scores_count[5m])) < 0.6
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "NLU confidence scores are decreasing"
+          description: "Average confidence: {{ $value }}"
+
+      - alert: NluCircuitBreakerOpen
+        expr: |
+          nlu_circuit_breaker_state > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "NLU circuit breaker is open for {{ $labels.service }}"
+          description: "Service {{ $labels.service }} is failing and circuit breaker has activated"
+
+      - alert: LlmFallbackSpike
+        expr: |
+          (sum(rate(intent_classifications_total{method="llm"}[5m])) /
+           sum(rate(intent_classifications_total[5m]))) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High LLM fallback rate"
+          description: "{{ $value | humanizePercentage }} of classifications falling back to GPT-4"
+
+      - alert: IntentMismatchIncreasing
+        expr: |
+          rate(chat_intent_confidence_mismatch_total[5m]) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High intent classification mismatch rate for {{ $labels.intent }}"
+          description: "User corrections: {{ $value }} per second"
+
+      - alert: NluPhaseLatencyHigh
+        expr: |
+          histogram_quantile(0.95, sum(rate(nlu_phase_model_duration_seconds_bucket[5m])) by (le)) > 0.3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "NLU model phase latency is high"
+          description: "95th percentile latency: {{ $value }}s"
+
+      # ========== Tool Performance Alerts ==========
+      - alert: ToolErrorRateSpike
+        expr: |
+          (sum(rate(tool_errors_total[5m])) by (tool, error_type) /
+           sum(rate(tool_invocations_total[5m])) by (tool)) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate for tool {{ $labels.tool }}"
+          description: "{{ $labels.error_type }} errors: {{ $value | humanizePercentage }}"
+
+      - alert: ToolLatencyTierShift
+        expr: |
+          (sum(rate(tool_execution_time_tier_total{tier=~"slow|very_slow"}[5m])) by (tool) /
+           sum(rate(tool_execution_time_tier_total[5m])) by (tool)) > 0.3
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Tool {{ $labels.tool }} performance degraded"
+          description: "{{ $value | humanizePercentage }} of executions are slow"
+
+      - alert: ToolTimeoutSpike
+        expr: |
+          rate(tool_errors_total{error_type="timeout"}[5m]) > 0.1
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Tool {{ $labels.tool }} experiencing timeouts"
+          description: "Timeout rate: {{ $value }} per second"
+
+      - alert: HighToolParameterComplexity
+        expr: |
+          avg(tool_param_complexity_score{complexity="high"}) by (tool) > 80
+        for: 10m
+        labels:
+          severity: info
+        annotations:
+          summary: "Tool {{ $labels.tool }} receiving complex queries"
+          description: "Average complexity score: {{ $value }}"
+
       # ========== Emergency Detection Alerts ==========
       - alert: EmergencyDetected
         expr: |

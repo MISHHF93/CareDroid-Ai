@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { MetricsService } from './metrics.service';
 import { MetricsController } from './metrics.controller';
+import { NluMetricsService } from './nlu-metrics.service';
+import { ToolMetricsService } from './tool-metrics.service';
 
 /**
  * Metrics Module
@@ -10,7 +12,7 @@ import { MetricsController } from './metrics.controller';
 
 @Module({
   controllers: [MetricsController],
-  providers: [MetricsService],
-  exports: [MetricsService],
+  providers: [MetricsService, NluMetricsService, ToolMetricsService],
+  exports: [MetricsService, NluMetricsService, ToolMetricsService],
 })
 export class MetricsModule {}

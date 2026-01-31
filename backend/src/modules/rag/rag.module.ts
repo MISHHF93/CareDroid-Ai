@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { RAGService } from './rag.service';
 import { OpenAIEmbeddingsService } from './embeddings/openai-embeddings.service';
 import { PineconeService } from './vector-db/pinecone.service';
+import { MetricsModule } from '../metrics/metrics.module';
 
 /**
  * RAG Module
@@ -14,7 +15,7 @@ import { PineconeService } from './vector-db/pinecone.service';
  */
 
 @Module({
-  imports: [ConfigModule],
+  imports: [ConfigModule, MetricsModule],
   providers: [
     RAGService,
     OpenAIEmbeddingsService,

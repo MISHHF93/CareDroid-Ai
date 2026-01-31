@@ -4,6 +4,7 @@ import { IntentClassifierService } from '../medical-control-plane/intent-classif
 import { ToolOrchestratorService } from '../medical-control-plane/tool-orchestrator/tool-orchestrator.service';
 import { AuditService } from '../audit/audit.service';
 import { AuditAction } from '../audit/entities/audit-log.entity';
+import { NluMetricsService } from '../metrics/nlu-metrics.service';
 import { PrimaryIntent, EmergencySeverity } from '../medical-control-plane/intent-classifier/dto/intent-classification.dto';
 import { RAGService } from '../rag/rag.service';
 import { MedicalSource } from '../rag/dto/medical-source.dto';
@@ -43,6 +44,7 @@ export class ChatService {
     private readonly toolOrchestrator: ToolOrchestratorService,
     private readonly auditService: AuditService,
     private readonly ragService: RAGService,
+    private readonly nluMetrics: NluMetricsService,
   ) {}
 
   async processQuery(
@@ -84,6 +86,11 @@ export class ChatService {
       this.logger.log(
         `🧠 Intent: ${classification.primaryIntent} | Tool: ${classification.toolId || 'N/A'} | Confidence: ${classification.confidence.toFixed(2)} | Method: ${classification.method}`,
       );
+
+      // Record conversation depth metric
+      // Note: Currently set to 1 as conversation history isn't tracked yet
+      // This will be updated when conversation history tracking is implemented
+      this.nluMetrics.recordConversationDepth(1);
 
       // Log intent classification in audit trail
       if (userId) {
@@ -755,5 +762,36 @@ Return ONLY a JSON object with the extracted values. Return null for any paramet
       text: `Clinical query processed. Patient context loaded. How can I assist with patient care decisions?`,
       suggestions: ['Drug interactions', 'Clinical protocols', 'Lab interpretation'],
     };
+  }
+
+  /**
+   * Record when user corrects or provides feedback on incorrect intent classification
+   * This method can be called from feedback endpoints when implemented
+   */
+  async recordIntentMismatch(
+    originalIntent: PrimaryIntent,
+    correctedIntent: PrimaryIntent,
+    userId: string,
+  ): Promise<void> {
+    this.logger.warn(
+      `⚠️ Intent mismatch recorded: ${originalIntent} → ${correctedIntent} (user: ${userId})`,
+    );
+
+    // Record metrics
+    this.nluMetrics.recordConfidenceMismatch(originalIntent);
+
+    // Audit the mismatch
+    await this.auditService.log({
+      userId,
+      action: AuditAction.AI_QUERY,
+      resource: 'chat/intent-mismatch',
+      details: {
+        originalIntent,
+        correctedIntent,
+        timestamp: new Date(),
+      },
+      ipAddress: '0.0.0.0',
+      userAgent: 'system',
+    });
   }
 }

@@ -29,6 +29,8 @@ export enum AuditAction {
   CLINICAL_DATA_ACCESS = 'clinical_data_access',
   SECURITY_EVENT = 'security_event',
   PROFILE_UPDATE = 'profile_update',
+  EMERGENCY_ACCESS_SUCCESS = 'emergency_access_success',
+  EMERGENCY_ACCESS_FAILED = 'emergency_access_failed',
 }
 
 @Entity('audit_logs')

@@ -12,6 +12,8 @@ describe('AuditService', () => {
     find: jest.fn(),
     findOne: jest.fn(),
     count: jest.fn(),
+    update: jest.fn(),
+    createQueryBuilder: jest.fn(),
   };
 
   const mockAuditLog = {
@@ -629,3 +631,4 @@ describe('hash chaining and integrity verification', () => {
       expect(result).toBeDefined();
     });
   });
+});

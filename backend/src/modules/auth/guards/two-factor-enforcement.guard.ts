@@ -1,14 +1,14 @@
-import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, UnauthorizedException, SetMetadata } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { UserRole } from '../users/entities/user.entity';
-import { TwoFactorService } from '../two-factor/two-factor.service';
+import { UserRole } from '../../users/entities/user.entity';
+import { TwoFactorService } from '../../two-factor/two-factor.service';
 
 /**
  * TwoFactorEnforcementGuard
  * 
  * Enforces 2FA for high-privilege roles (admin, physician)
  * Can be applied at controller or method level with decorator:
- * @UseTwoFactorEnforcement(['admin', 'physician'])
+ * @TwoFactorRequired(['admin', 'physician'])
  */
 @Injectable()
 export class TwoFactorEnforcementGuard implements CanActivate {
@@ -59,9 +59,4 @@ export class TwoFactorEnforcementGuard implements CanActivate {
  * Decorator to mark endpoints that require 2FA for certain roles
  * Usage: @TwoFactorRequired(['admin', 'physician'])
  */
-export const TwoFactorRequired = (roles: UserRole[]) => {
-  return (target: any, key?: string, descriptor?: PropertyDescriptor) => {
-    const reflector = new Reflector();
-    reflector.set('twoFactorRequired', roles, descriptor?.value || target.prototype[key]);
-  };
-};
+export const TwoFactorRequired = (roles: UserRole[]) => SetMetadata('twoFactorRequired', roles);

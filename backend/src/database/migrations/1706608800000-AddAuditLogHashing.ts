@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner, TableColumn } from 'typeorm';
+import { MigrationInterface, QueryRunner, TableColumn, TableIndex } from 'typeorm';
 
 export class AddAuditLogHashing1706608800000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -47,10 +47,10 @@ export class AddAuditLogHashing1706608800000 implements MigrationInterface {
       // Create indexes for hash lookups
       await queryRunner.createIndex(
         'audit_logs',
-        {
+        new TableIndex({
           name: 'IDX_audit_logs_hash',
           columnNames: ['hash'],
-        },
+        }),
       );
     }
   }
@@ -59,10 +59,12 @@ export class AddAuditLogHashing1706608800000 implements MigrationInterface {
     const table = await queryRunner.getTable('audit_logs');
 
     if (table) {
-      // Drop indexes
-      const hashIndex = table.findIndex('IDX_audit_logs_hash');
-      if (hashIndex) {
-        await queryRunner.dropIndex('audit_logs', hashIndex);
+      // Drop indexes by name
+      const hashIndexName = 'IDX_audit_logs_hash';
+      try {
+        await queryRunner.dropIndex('audit_logs', hashIndexName);
+      } catch (e) {
+        // Index doesn't exist, continue
       }
 
       // Drop columns

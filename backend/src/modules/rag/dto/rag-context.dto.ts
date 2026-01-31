@@ -5,6 +5,8 @@
  * AI responses with relevant medical knowledge.
  */
 
+import { MedicalSource } from './medical-source.dto';
+
 export interface RAGContext {
   /**
    * Retrieved text chunks from the knowledge base

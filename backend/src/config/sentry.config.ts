@@ -25,10 +25,7 @@ export const initSentry = (): void => {
       // Enable HTTP client/server integration
       new Sentry.Integrations.Http({ tracing: true }),
       // Enable Express request/error handlers
-      new Sentry.Integrations.Express({
-        request: true,
-        serverName: true,
-      }),
+      new Sentry.Integrations.Express(),
       // Capture unhandled exceptions
       new Sentry.Integrations.OnUncaughtException(),
       // Capture unhandled promise rejections
@@ -40,16 +37,6 @@ export const initSentry = (): void => {
     attachStacktrace: true,
     // Maximum breadcrumbs to capture
     maxBreadcrumbs: 50,
-    // Ignore certain errors
-    ignore: [
-      // Ignore 404s from monitoring services
-      (error) => {
-        if (error.status === 404) {
-          return true;
-        }
-        return false;
-      },
-    ],
     // Denormalize errors in serverless/async contexts
     beforeSend(event, hint) {
       // Filter out certain error types

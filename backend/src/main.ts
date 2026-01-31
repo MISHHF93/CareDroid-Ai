@@ -44,12 +44,6 @@ async function bootstrap() {
       xssFilter: true,
       // Referrer-Policy: control referrer information
       referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
-      // Permissions-Policy
-      permissionsPolicy: {
-        camera: [],
-        microphone: [],
-        geolocation: [],
-      },
     }),
   );
 

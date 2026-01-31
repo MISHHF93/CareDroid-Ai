@@ -99,7 +99,8 @@ async function bootstrap() {
         totalChunks += result.chunksIngested;
         successCount++;
       } catch (error) {
-        console.error(`❌ Failed: ${error.message}`);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error(`❌ Failed: ${errorMessage}`);
         failCount++;
       }
     }
@@ -121,7 +122,8 @@ async function bootstrap() {
     console.log(`   Embedding Model: ${stats.embeddingModel}`);
     console.log('');
   } catch (error) {
-    console.error('❌ Ingestion failed:', error.message);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('❌ Ingestion failed:', errorMessage);
     process.exit(1);
   } finally {
     await app.close();

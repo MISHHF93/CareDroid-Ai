@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { WinstonModule } from 'nest-winston';
 import { winstonLogger } from '../../config/logger.config';
 
 /**
@@ -12,9 +11,7 @@ import { winstonLogger } from '../../config/logger.config';
   providers: [
     {
       provide: 'LOGGER',
-      useValue: WinstonModule.createLogger({
-        instance: winstonLogger,
-      }),
+      useValue: winstonLogger,
     },
   ],
   exports: ['LOGGER'],

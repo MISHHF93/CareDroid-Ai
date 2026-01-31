@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from '../users/entities/user.entity';
-import { AuditService } from '../audit/audit.service';
-import { AuditAction } from '../audit/entities/audit-log.entity';
+import { User } from '../../users/entities/user.entity';
+import { AuditService } from '../../audit/audit.service';
+import { AuditAction } from '../../audit/entities/audit-log.entity';
 
 /**
  * Emergency Access Service

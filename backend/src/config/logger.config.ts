@@ -1,14 +1,10 @@
 import * as winston from 'winston';
-import * as DailyRotateFile from 'winston-daily-rotate-file';
-import { utilities as nestWinstonUtilities } from 'nest-winston';
 
 /**
  * Winston Logger Configuration
  * Configures structured logging with multiple transports:
  * - Console (development)
- * - Daily rotating file (all logs)
- * - Daily rotating file (errors only)
- * JSON formatting for ELK stack ingestion
+ * JSON formatting for structured logging
  */
 
 const isProduction = process.env.NODE_ENV === 'production';
@@ -22,9 +18,10 @@ const jsonFormatter = winston.format.combine(
 
 // Console formatter with colors (development)
 const consoleFormatter = winston.format.combine(
-  nestWinstonUtilities.format.nestLike('CareDroid', {
-    colors: true,
-    prettyPrint: true,
+  winston.format.colorize(),
+  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+  winston.format.printf(({ timestamp, level, message, ...rest }) => {
+    return `[${timestamp}] ${level}: ${message} ${Object.keys(rest).length ? JSON.stringify(rest) : ''}`;
   }),
 );
 
@@ -39,30 +36,6 @@ transports.push(
   }),
 );
 
-// Daily rotating file for combined logs
-transports.push(
-  new DailyRotateFile({
-    filename: 'logs/combined-%DATE%.log',
-    datePattern: 'YYYY-MM-DD',
-    maxSize: '20m',
-    maxDays: isProduction ? '30d' : '7d',
-    level: 'debug',
-    format: jsonFormatter,
-  }),
-);
-
-// Daily rotating file for errors only
-transports.push(
-  new DailyRotateFile({
-    filename: 'logs/errors-%DATE%.log',
-    datePattern: 'YYYY-MM-DD',
-    maxSize: '20m',
-    maxDays: isProduction ? '60d' : '14d',
-    level: 'error',
-    format: jsonFormatter,
-  }),
-);
-
 export const winstonLogger = winston.createLogger({
   level: isProduction ? 'info' : 'debug',
   format: jsonFormatter,
@@ -71,24 +44,6 @@ export const winstonLogger = winston.createLogger({
     environment: process.env.NODE_ENV || 'development',
   },
   transports,
-  exceptionHandlers: [
-    new DailyRotateFile({
-      filename: 'logs/exceptions-%DATE%.log',
-      datePattern: 'YYYY-MM-DD',
-      maxSize: '20m',
-      maxDays: '30d',
-      format: jsonFormatter,
-    }),
-  ],
-  rejectionHandlers: [
-    new DailyRotateFile({
-      filename: 'logs/rejections-%DATE%.log',
-      datePattern: 'YYYY-MM-DD',
-      maxSize: '20m',
-      maxDays: '30d',
-      format: jsonFormatter,
-    }),
-  ],
 });
 
 export default winstonLogger;

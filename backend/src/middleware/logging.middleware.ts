@@ -16,6 +16,7 @@ export class LoggingMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction): void {
     const startTime = Date.now();
     const { method, originalUrl, ip } = req;
+    const logger = this.logger; // Save logger reference for use in nested function
 
     // Extract user ID if available (from JWT token in Authorization header)
     const authHeader = req.headers.authorization || '';
@@ -28,7 +29,7 @@ export class LoggingMiddleware implements NestMiddleware {
 
     // Add request ID for tracing
     const requestId = req.headers['x-request-id'] || req.header('x-trace-id') || this.generateRequestId();
-    Sentry.setTag('request_id', requestId);
+    Sentry.setTag('request_id', String(requestId));
 
     // Intercept response.end() to capture when response is sent
     const originalSend = res.send;
@@ -52,17 +53,17 @@ export class LoggingMiddleware implements NestMiddleware {
 
       // Log with appropriate level based on status code
       if (statusCode >= 500) {
-        this.logger.error('Server Error', logEntry);
+        logger.error('Server Error', logEntry);
         Sentry.captureMessage(`HTTP ${statusCode} - ${method} ${originalUrl}`, 'error');
       } else if (statusCode >= 400) {
-        this.logger.warn('Client Error', logEntry);
+        logger.warn('Client Error', logEntry);
       } else {
-        this.logger.debug('Request Complete', logEntry);
+        logger.debug('Request Complete', logEntry);
       }
 
       // Add performance metric
       if (duration > 2000) {
-        this.logger.warn(`Slow request detected: ${duration}ms for ${method} ${originalUrl}`);
+        logger.warn(`Slow request detected: ${duration}ms for ${method} ${originalUrl}`);
         Sentry.captureMessage(`Slow request: ${duration}ms - ${method} ${originalUrl}`, 'warning');
       }
 

@@ -1,4 +1,6 @@
-export const emailConfig = {
+import { registerAs } from '@nestjs/config';
+
+export default registerAs('email', () => ({
   smtp: {
     host: process.env.SMTP_HOST || 'smtp.sendgrid.net',
     port: parseInt(process.env.SMTP_PORT || '587', 10),
@@ -25,4 +27,4 @@ export const emailConfig = {
       subject: 'Your two-factor authentication code',
     },
   },
-};
+}));

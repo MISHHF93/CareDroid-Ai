@@ -1,10 +1,10 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
 import { Subscription, SubscriptionTier, SubscriptionStatus } from './entities/subscription.entity';
 import { User } from '../users/entities/user.entity';
-import { stripeConfig } from '../../config/stripe.config';
 import { AuditService } from '../audit/audit.service';
 import { AuditAction } from '../audit/entities/audit-log.entity';
 
@@ -18,8 +18,13 @@ export class SubscriptionsService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly auditService: AuditService,
+    private readonly configService: ConfigService,
   ) {
-    this.stripe = new Stripe(stripeConfig.secretKey, {
+    const secretKey = this.configService.get<string>('stripe.secretKey');
+    if (!secretKey) {
+      throw new Error('Stripe secret key not configured');
+    }
+    this.stripe = new Stripe(secretKey, {
       apiVersion: '2023-10-16',
     });
   }
@@ -59,8 +64,8 @@ export class SubscriptionsService {
         },
       ],
       mode: 'subscription',
-      success_url: successUrl || stripeConfig.successUrl,
-      cancel_url: cancelUrl || stripeConfig.cancelUrl,
+      success_url: successUrl || this.configService.get<string>('stripe.successUrl'),
+      cancel_url: cancelUrl || this.configService.get<string>('stripe.cancelUrl'),
       metadata: {
         userId: user.id,
         tier,
@@ -91,7 +96,7 @@ export class SubscriptionsService {
 
     const session = await this.stripe.billingPortal.sessions.create({
       customer: subscription.stripeCustomerId,
-      return_url: returnUrl || stripeConfig.successUrl,
+      return_url: returnUrl || this.configService.get<string>('stripe.successUrl'),
     });
 
     return { url: session.url };
@@ -245,11 +250,11 @@ export class SubscriptionsService {
   private getPriceIdForTier(tier: SubscriptionTier): string | null {
     switch (tier) {
       case SubscriptionTier.FREE:
-        return stripeConfig.plans.free.priceId;
+        return this.configService.get<string>('stripe.plans.free.priceId');
       case SubscriptionTier.PROFESSIONAL:
-        return stripeConfig.plans.professional.priceId;
+        return this.configService.get<string>('stripe.plans.professional.priceId');
       case SubscriptionTier.INSTITUTIONAL:
-        return stripeConfig.plans.institutional.priceId;
+        return this.configService.get<string>('stripe.plans.institutional.priceId');
       default:
         return null;
     }
@@ -278,21 +283,21 @@ export class SubscriptionsService {
     return [
       {
         id: 'free',
-        name: stripeConfig.plans.free.name,
-        price: stripeConfig.plans.free.price,
-        features: stripeConfig.plans.free.features,
+        name: this.configService.get<string>('stripe.plans.free.name'),
+        price: this.configService.get<number>('stripe.plans.free.price'),
+        features: this.configService.get<string[]>('stripe.plans.free.features'),
       },
       {
         id: 'professional',
-        name: stripeConfig.plans.professional.name,
-        price: stripeConfig.plans.professional.price,
-        features: stripeConfig.plans.professional.features,
+        name: this.configService.get<string>('stripe.plans.professional.name'),
+        price: this.configService.get<number>('stripe.plans.professional.price'),
+        features: this.configService.get<string[]>('stripe.plans.professional.features'),
       },
       {
         id: 'institutional',
-        name: stripeConfig.plans.institutional.name,
-        price: stripeConfig.plans.institutional.price,
-        features: stripeConfig.plans.institutional.features,
+        name: this.configService.get<string>('stripe.plans.institutional.name'),
+        price: this.configService.get<number>('stripe.plans.institutional.price'),
+        features: this.configService.get<string[]>('stripe.plans.institutional.features'),
       },
     ];
   }

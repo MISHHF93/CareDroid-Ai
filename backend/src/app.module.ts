@@ -11,10 +11,12 @@ import { AppController } from './app.controller';
 
 // Configuration
 import { databaseConfig } from './config/database.config';
-import { emailConfig } from './config/email.config';
-import { redisConfig } from './config/redis.config';
-import { stripeConfig } from './config/stripe.config';
-import { datadogConfig } from './config/datadog.config';
+import emailConfig from './config/email.config';
+import redisConfig from './config/redis.config';
+import stripeConfig from './config/stripe.config';
+import datadogConfig from './config/datadog.config';
+import openaiConfig from './config/openai.config';
+import encryptionConfig from './config/encryption.config';
 import ragConfig from './config/rag.config';
 
 // Modules
@@ -32,6 +34,8 @@ import { MedicalControlPlaneModule } from './modules/medical-control-plane/medic
 import { EncryptionModule } from './modules/encryption/encryption.module';
 import { RAGModule } from './modules/rag/rag.module';
 import { NotificationModule } from './modules/notifications/notification.module';
+import { EmailModule } from './modules/email/email.module';
+import { CacheModule } from './modules/cache/cache.module';
 
 // Monitoring & Observability
 import { LoggerModule } from './modules/common/logger.module';
@@ -43,7 +47,7 @@ import { MetricsModule } from './modules/metrics/metrics.module';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
-      load: [emailConfig, redisConfig, stripeConfig, datadogConfig, ragConfig],
+      load: [emailConfig, redisConfig, stripeConfig, datadogConfig, openaiConfig, encryptionConfig, ragConfig],
     }),
 
     // Database (load after ConfigModule so .env is available)
@@ -78,6 +82,10 @@ import { MetricsModule } from './modules/metrics/metrics.module';
     // Monitoring & Observability
     LoggerModule,
     MetricsModule,
+
+    // Email & Caching
+    EmailModule,
+    CacheModule,
 
     // Serve frontend static assets (temporarily disabled for testing)
     // ServeStaticModule.forRoot({

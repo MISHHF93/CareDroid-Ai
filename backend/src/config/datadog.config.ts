@@ -1,4 +1,6 @@
-export const datadogConfig = {
+import { registerAs } from '@nestjs/config';
+
+export default registerAs('datadog', () => ({
   enabled: process.env.DATADOG_API_KEY && process.env.DATADOG_API_KEY.length > 0,
   apiKey: process.env.DATADOG_API_KEY || '',
   appKey: process.env.DATADOG_APP_KEY || '',
@@ -24,4 +26,4 @@ export const datadogConfig = {
   profiling: {
     enabled: process.env.DATADOG_PROFILING_ENABLED === 'true',
   },
-};
+}));

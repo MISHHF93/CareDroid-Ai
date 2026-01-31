@@ -1,18 +1,22 @@
-# CareDroid - Clinical AI Co-Pilot
+# CareDroid-AI - Medical AI Clinical Co-Pilot
 
 > **Intelligent, Secure, Evidence-Based Clinical Decision Support**  
-> HIPAA-Compliant | RAG-Powered | Built for Healthcare Professionals
+> HIPAA-Compliant | Tool Orchestration | Emergency Escalation | Multi-User RBAC
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Version](https://img.shields.io/badge/version-1.0.0--Batch15-blue)
 ![License](https://img.shields.io/badge/license-Proprietary-red)
 ![HIPAA](https://img.shields.io/badge/HIPAA-Compliant-green)
-![Status](https://img.shields.io/badge/status-Active%20Development-yellow)
+![Status](https://img.shields.io/badge/status-Production%20Ready-brightgreen)
 
 ---
 
 ## 🎯 Vision
 
-CareDroid transforms clinical workflows by providing an **intelligent conversational interface** that serves as your personal clinical co-pilot. Instead of switching between multiple tools, you ask natural questions and the AI dynamically surfaces the right clinical calculators, protocols, and evidence-based guidelines—all within a seamless chat experience.
+CareDroid-AI transforms clinical workflows by providing an **intelligent conversational interface** that serves as your personal clinical co-pilot. Batch 15 introduces:
+
+1. **Tool Orchestration** - Dynamically invoke SOFA, Drug Checker, Lab Interpreter in-chat
+2. **Emergency Escalation** - Real-time detection with severity-based routing to 911, medical directors
+3. **Multi-User RBAC** - Secure multi-user environment with role-based permissions (Student, Nurse, Physician, Admin)
 
 **Example Interactions:**
 ```

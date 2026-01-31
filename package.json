@@ -1,8 +1,8 @@
 {
-  "name": "caredroid-android",
+  "name": "CareDroid-Ai",
   "private": true,
   "version": "1.0.0",
-  "description": "CareDroid - 3D Holographic Clinical AI Platform",
+  "description": "CareDroid-AI - Medical AI Clinical Co-Pilot Platform with Emergency Escalation & RBAC",
   "type": "module",
   "scripts": {
     "dev": "vite --port 8000",

@@ -318,7 +318,7 @@ export class MetricsService {
   /**
    * Get all metrics in Prometheus text format
    */
-  getMetricsAsString(): string {
+  async getMetricsAsString(): Promise<string> {
     return register.metrics();
   }
 }

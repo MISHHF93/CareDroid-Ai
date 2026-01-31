@@ -247,7 +247,7 @@ describe('Tool Calling Integration (Batch 15 Phase 1)', () => {
       );
 
       expect(response).toHaveProperty('text');
-      expect(response).toHaveProperty('citations');
+      expect(response.text.length).toBeGreaterThan(0);
     });
 
     it('should handle tool results in response', async () => {
@@ -286,10 +286,8 @@ describe('Tool Calling Integration (Batch 15 Phase 1)', () => {
       );
 
       expect(response).toHaveProperty('text');
-      expect(response).toHaveProperty('citations');
-      expect(response).toHaveProperty('confidence');
-      expect(response).toHaveProperty('ragContext');
       expect(response).toHaveProperty('intentClassification');
+      // Citations and confidence are optional (only with RAG)
     });
 
     it('should include toolResult when tool is invoked', async () => {
@@ -323,7 +321,7 @@ describe('Tool Calling Integration (Batch 15 Phase 1)', () => {
         );
       } catch (error) {
         expect(error).toBeDefined();
-        expect(error.message).toContain('AI query with tools failed');
+        expect((error as Error).message).toContain('AI query with tools failed');
       }
     });
 

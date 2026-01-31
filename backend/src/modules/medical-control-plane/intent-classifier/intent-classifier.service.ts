@@ -92,7 +92,7 @@ export class IntentClassifierService {
     const keywordDurationSec = (Date.now() - keywordStartMs) / 1000;
 
     // Record Phase 1 metrics
-    this.nluMetrics.recordKeywordPhaseDuration(keywordDurationSec, 'success');
+    this.nluMetrics.recordKeywordPhaseDuration(keywordDurationSec, keywordResult.confidence >= 0.5 ? 'match' : 'no_match');
     this.nluMetrics.recordConfidenceScore(keywordResult.confidence, keywordResult.primaryIntent, 'keyword');
 
     if (keywordResult.confidence >= 0.7) {
@@ -135,7 +135,7 @@ export class IntentClassifierService {
         );
         
         // Record successful classification
-        this.nluMetrics.recordIntentClassification(nluResult.primaryIntent, 'nlu');
+        this.nluMetrics.recordIntentClassification(nluResult.primaryIntent, 'model');
 
         return {
           ...nluResult,
@@ -443,7 +443,7 @@ Respond in JSON format:
       this.logger.warn(`Circuit breaker opened for ${resetMs}ms after ${breaker.failureCount} failures.`);
       
       // Update metrics: circuit breaker opened
-      const serviceName = breaker === this.nluCircuitBreaker ? 'nlu' : 'llm';
+      const serviceName = breaker === this.nluCircuitBreaker ? 'nlu_model' : 'llm';
       this.nluMetrics.setCircuitBreakerState(serviceName, true);
     }
   }
@@ -455,8 +455,8 @@ Respond in JSON format:
     
     // Update metrics: circuit breaker closed if it was open
     if (wasOpen) {
-      const serviceName = breaker === this.nluCircuitBreaker ? 'nlu' : 'llm';
-      this.nluMetrics.setCircuitBreakerState(serviceName, false);
+      const serviceName = breaker === this.nluCircuitBreaker ? 'nlu_model' : 'llm';
+      this.nluMetrics.setCircuitBreakerState(serviceName as 'llm' | 'nlu_model', false);
     }
   }
 

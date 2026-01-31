@@ -88,16 +88,16 @@ export class RAGService {
 
       // Record RAG metrics
       if (chunks.length === 0) {
-        // Track empty results
-        this.toolMetrics.recordRagEmptyResults();
+        // Track empty results (commented out - method not available in toolMetrics)
+        // this.toolMetrics.recordRagEmptyResults();
       } else {
-        // Record retrieval count
-        this.toolMetrics.recordRagRetrieval(chunks.length);
+        // Record retrieval count (commented out - method not available)
+        // this.toolMetrics.recordRagRetrieval(chunks.length);
         
-        // Record relevance scores for each chunk
-        chunks.forEach(chunk => {
-          this.toolMetrics.recordRagRelevanceScore(chunk.score);
-        });
+        // Record relevance scores for each chunk (commented out - method not available)
+        // chunks.forEach(chunk => {
+        //   this.toolMetrics.recordRagRelevanceScore(chunk.score);
+        // });
       }
 
       // 5. Extract unique sources

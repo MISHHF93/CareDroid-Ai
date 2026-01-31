@@ -133,8 +133,8 @@ export class ToolOrchestratorService {
 
       // Calculate and record parameter complexity
       const complexity = this.toolMetrics.calculateParameterComplexity(dto.parameters);
-      const complexityLabel = complexity < 20 ? 'low' : complexity < 50 ? 'medium' : 'high';
-      this.toolMetrics.setToolParameterComplexity(dto.toolId, complexityLabel, complexity);
+      const complexityLabel = complexity.category;
+      this.toolMetrics.setToolParameterComplexity(dto.toolId, complexityLabel, complexity.score);
 
       // Validate parameters
       const validation = tool.validate(dto.parameters);

@@ -16,8 +16,9 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "High HTTP error rate detected"
-          description: "Error rate is {{ $value | humanizePercentage }} for the last 5 minutes"
+          summary: "High HTTP error rate detected ({{ $value | humanizePercentage }})"
+          description: "API error rate exceeded 10% threshold for 2+ minutes. Immediate action required."
+          runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_HighErrorRate.md"
 
       - alert: HighLatency
         expr: |
@@ -26,8 +27,9 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "High API latency detected"
-          description: "95th percentile latency is {{ $value }}s"
+          summary: "High API latency (P95: {{ $value }}s > 2s)"
+          description: "API response times degraded - user experience impacted"
+          runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_HighLatency.md"
 
       - alert: RequestRateAnomaly
         expr: |
@@ -37,8 +39,9 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "Unusual request rate change detected"
-          description: "Request rate changed by {{ $value | humanizePercentage }}"
+          summary: "Request rate anomaly ({{ $value | humanizePercentage }} change from baseline)"
+          description: "Traffic pattern unusual - may be bot traffic or user surge"
+          runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_RequestRateAnomaly.md"
 
       # ========== Database Alerts ==========
       - alert: SlowDatabaseQueries
@@ -48,8 +51,9 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "Slow database queries detected for {{ $labels.operation }}"
-          description: "99th percentile query time is {{ $value }}s"
+          summary: "Slow database queries for {{ $labels.operation }} (P99: {{ $value }}s > 1s)"
+          description: "Database performance degraded - likely index missing or data volume issue"
+          runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_SlowDatabaseQueries.md"
 
       - alert: HighDatabaseErrorRate
         expr: |
@@ -59,8 +63,9 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "High database error rate"
-          description: "Database error rate is {{ $value | humanizePercentage }}"
+          summary: "High database error rate ({{ $value | humanizePercentage }} > 5%)"
+          description: "Queries failing - connection pool issue or syntax errors"
+          runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_HighDatabaseErrorRate.md"
 
       - alert: DatabaseConnectionPoolExhausted
         expr: |
@@ -69,8 +74,9 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "Database connection pool nearly exhausted"
-          description: "Connection pool utilization is {{ $value | humanizePercentage }}"
+          summary: "Database connections exhausted ({{ $value | humanizePercentage }} utilization)"
+          description: "Connection pool at 90%+ - requests may start queuing"
+          runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_DatabaseConnectionPoolExhausted.md"
 
       # ========== Cache Alerts ==========
       - alert: CacheMissRateHigh
@@ -80,8 +86,9 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "Cache hit rate is below acceptable threshold"
-          description: "Cache hit rate is {{ $value | humanizePercentage }}"
+          summary: "Cache miss rate high ({{ $value | humanizePercentage }} > 30%)"
+          description: "Redis caching not effective - many cache misses"
+          runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_CacheMissRateHigh.md"
 
       # ========== Tool Invocation Alerts ==========
       - alert: HighToolErrorRate
@@ -92,8 +99,9 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "High error rate for {{ $labels.tool_name }}"
-          description: "Error rate is {{ $value | humanizePercentage }}"
+          summary: "Tool {{ $labels.tool_name }} error rate high ({{ $value | humanizePercentage }})"
+          description: "Clinical tool {{ $labels.tool_name }} failing on >10% of requests"
+          runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_HighToolErrorRate.md"
 
       - alert: SlowToolInvocation
         expr: |
@@ -102,8 +110,9 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "Tool {{ $labels.tool_name }} is slow (95th percentile > 10s)"
-          description: "Tool invocation latency: {{ $value }}s"
+          summary: "Tool {{ $labels.tool_name }} P95 latency high ({{ $value }}s > 10s)"
+          description: "Clinical tool {{ $labels.tool_name }} performance degraded"
+          runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_SlowToolInvocation.md"
 
       # ========== RAG Alerts ==========
       - alert: SlowRagRetrieval
@@ -113,8 +122,9 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "RAG knowledge base retrieval is slow"
-          description: "90th percentile retrieval latency: {{ $value }}s"
+          summary: "RAG retrieval slow (P90: {{ $value }}s > 2s)"
+          description: "Knowledge base searches taking too long - query performance issue"
+          runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_SlowRagRetrieval.md"
 
       - alert: RagEmptyResults
         expr: |
@@ -124,8 +134,9 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "High rate of empty RAG results"
-          description: "{{ $value | humanizePercentage }} of queries return no results"
+          summary: "RAG empty result rate high ({{ $value | humanizePercentage }} > 50%)"
+          description: "Knowledge base failing to find relevant documents - coverage gap"
+          runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_RagEmptyResults.md"
 
       - alert: LowRagRelevance
         expr: |
@@ -134,8 +145,9 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "RAG chunk relevance is degrading"
-          description: "Median relevance score: {{ $value }}"
+          summary: "RAG relevance scores degrading (median {{ $value }} < 0.6)"
+          description: "Knowledge base is retrieving less relevant documents"
+          runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_LowRagRelevance.md"
 
       # ========== NLU & Intent Classification Alerts ==========
       - alert: NluConfidenceDropping
@@ -145,8 +157,9 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "NLU confidence scores are decreasing"
-          description: "Average confidence: {{ $value }}"
+          summary: "NLU confidence scores dropping ({{ $value | humanize }})"
+          description: "Intent classification confidence below 60% threshold - user experience degrading"
+          runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_NluConfidenceDropping.md"
 
       - alert: NluCircuitBreakerOpen
         expr: |
@@ -155,8 +168,9 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "NLU circuit breaker is open for {{ $labels.service }}"
-          description: "Service {{ $labels.service }} is failing and circuit breaker has activated"
+          summary: "NLU circuit breaker OPEN for {{ $labels.service }}"
+          description: "Service {{ $labels.service }} failing - circuit breaker activated. Intent classification service DOWN."
+          runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_NluCircuitBreakerOpen.md"
 
       - alert: LlmFallbackSpike
         expr: |
@@ -166,8 +180,9 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "High LLM fallback rate"
-          description: "{{ $value | humanizePercentage }} of classifications falling back to GPT-4"
+          summary: "High LLM fallback rate ({{ $value | humanizePercentage }}) - costs spiking"
+          description: "More than 50% of classifications using expensive LLM fallback. NLU likely degraded."
+          runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_LlmFallbackSpike.md"
 
       - alert: IntentMismatchIncreasing
         expr: |
@@ -176,8 +191,9 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "High intent classification mismatch rate for {{ $labels.intent }}"
-          description: "User corrections: {{ $value }} per second"
+          summary: "Intent mismatch increasing for {{ $labels.intent }} ({{ $value | humanize}}/sec)"
+          description: "Users are correcting classifications - NLU quality issue for this intent"
+          runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_IntentMismatchIncreasing.md"
 
       - alert: NluPhaseLatencyHigh
         expr: |
@@ -186,8 +202,9 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "NLU model phase latency is high"
-          description: "95th percentile latency: {{ $value }}s"
+          summary: "NLU model phase P95 latency high ({{ $value }}s > 300ms)"
+          description: "Intent classification model inference is slow - likely to trigger fallback"
+          runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_NluPhaseLatencyHigh.md"
 
       # ========== Tool Performance Alerts ==========
       - alert: ToolErrorRateSpike
@@ -198,8 +215,9 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "High error rate for tool {{ $labels.tool }}"
-          description: "{{ $labels.error_type }} errors: {{ $value | humanizePercentage }}"
+          summary: "Tool {{ $labels.tool }} {{ $labels.error_type }} errors spiking ({{ $value | humanizePercentage }})"
+          description: "Clinical tool experiencing specific error type - investigate cause"
+          runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_ToolErrorRateSpike.md"
 
       - alert: ToolLatencyTierShift
         expr: |
@@ -209,8 +227,9 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "Tool {{ $labels.tool }} performance degraded"
-          description: "{{ $value | humanizePercentage }} of executions are slow"
+          summary: "Tool {{ $labels.tool }} slow execution % high ({{ $value | humanizePercentage }} > 30%)"
+          description: "Tool performance degrading - many slow executions"
+          runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_ToolLatencyTierShift.md"
 
       - alert: ToolTimeoutSpike
         expr: |
@@ -219,8 +238,9 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "Tool {{ $labels.tool }} experiencing timeouts"
-          description: "Timeout rate: {{ $value }} per second"
+          summary: "Tool {{ $labels.tool }} timeouts spiking ({{ $value }}/sec)"
+          description: "Tools timing out - likely external service or resource exhaustion"
+          runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_ToolTimeoutSpike.md"
 
       - alert: HighToolParameterComplexity
         expr: |
@@ -229,8 +249,9 @@ groups:
         labels:
           severity: info
         annotations:
-          summary: "Tool {{ $labels.tool }} receiving complex queries"
-          description: "Average complexity score: {{ $value }}"
+          summary: "Tool {{ $labels.tool }} complexity score high ({{ $value }})"
+          description: "Tool receivingcomplex queries - may impact performance"
+          runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_HighToolParameterComplexity.md"
 
       # ========== Emergency Detection Alerts ==========
       - alert: EmergencyDetected
@@ -240,8 +261,9 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "Emergency condition detected: {{ $labels.emergency_type }}"
-          description: "Severity: {{ $labels.severity }} | Occurrences in last 5m: {{ $value }}"
+          summary: "🚨 EMERGENCY DETECTED: {{ $labels.emergency_type }} (Severity: {{ $labels.severity }})"
+          description: "Real user emergency detected. Call 911 and medical director. Count: {{ $value }}"
+          runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_EmergencyDetected.md"
 
       # ========== General Application Alerts ==========
       - alert: ApplicationErrorRate
@@ -252,8 +274,9 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "High application error rate for {{ $labels.error_type }}"
-          description: "Error ratio: {{ $value | humanizePercentage }}"
+          summary: "Application {{ $labels.error_type }} errors ({{ $value | humanizePercentage }} > 1%)"
+          description: "Application errors exceeding threshold - check logs for details"
+          runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_ApplicationErrorRate.md"
 
       - alert: ActiveUserAnomaly
         expr: |
@@ -263,8 +286,9 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "Unusual active user count"
-          description: "Current: {{ $value }} users (90% change from 1h average)"
+          summary: "Active user count anomaly ({{ $value | humanizePercentage }} change)"
+          description: "Unusual user activity - monitoring pattern"
+          runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_ActiveUserAnomaly.md"
 
       # ========== System Metrics Alerts ==========
       - alert: HighMemoryUsage
@@ -274,8 +298,9 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "High memory usage detected"
-          description: "Memory usage: {{ $value | humanize }}B"
+          summary: "High memory usage ({{ $value | humanize }}B > 500MB)"
+          description: "Process memory high - potential memory leak or data volume issue"
+          runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_HighMemoryUsage.md"
 
       - alert: HighCPUUsage
         expr: |
@@ -284,5 +309,6 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "High CPU usage detected"
-          description: "CPU usage: {{ $value | humanizePercentage }}"
+          summary: "High CPU usage ({{ $value | humanizePercentage }} > 80%)"
+          description: "Process CPU maxed out - may indicate inefficient code or high traffic"
+          runbook_url: "https://github.com/caredroid/care-droid-app/blob/main/docs/runbooks/ALERT_HighCPUUsage.md"

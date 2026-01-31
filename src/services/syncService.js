@@ -1,9 +1,6 @@
-import axios from 'axios';
-import offlineService from './offlineService';
-import { db } from '../db/offline.db';
-
 /**
  * Sync Service - Handles synchronization between offline storage and backend
+ * NOTE: Requires dexie library - install with: npm install dexie
  */
 class SyncService {
   constructor() {
@@ -88,7 +85,7 @@ class SyncService {
     this.isSyncing = true;
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('caredroid_access_token');
       if (!token) {
         console.log('No auth token - skipping sync');
         this.isSyncing = false;
@@ -142,25 +139,35 @@ class SyncService {
 
     for (const message of messages) {
       try {
-        const response = await axios.post(
+        const response = await fetch(
           '/api/chat/messages',
           {
-            conversationId: message.conversationId,
-            content: message.content,
-            role: message.role,
-            timestamp: message.timestamp,
-          },
-          {
-            headers: { Authorization: `Bearer ${token}` },
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              conversationId: message.conversationId,
+              content: message.content,
+              role: message.role,
+              timestamp: message.timestamp,
+            }),
           }
         );
+
+        if (!response.ok) {
+          throw new Error(`Failed to sync message: ${response.status}`);
+        }
+
+        const data = await response.json();
 
         // Mark as synced
         await offlineService.markAsSynced('messages', message.id);
 
         // Update with server ID if needed
-        if (response.data.id) {
-          await db.messages.update(message.id, { serverId: response.data.id });
+        if (data.id) {
+          await db.messages.update(message.id, { serverId: data.id });
         }
       } catch (error) {
         console.error(`Failed to sync message ${message.id}:`, error);
@@ -180,22 +187,32 @@ class SyncService {
 
     for (const conversation of conversations) {
       try {
-        const response = await axios.post(
+        const response = await fetch(
           '/api/chat/conversations',
           {
-            userId: conversation.userId,
-            title: conversation.title,
-            lastMessageAt: conversation.lastMessageAt,
-          },
-          {
-            headers: { Authorization: `Bearer ${token}` },
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              userId: conversation.userId,
+              title: conversation.title,
+              lastMessageAt: conversation.lastMessageAt,
+            }),
           }
         );
 
+        if (!response.ok) {
+          throw new Error(`Failed to sync conversation: ${response.status}`);
+        }
+
+        const data = await response.json();
+
         await offlineService.markAsSynced('conversations', conversation.id);
 
-        if (response.data.id) {
-          await db.conversations.update(conversation.id, { serverId: response.data.id });
+        if (data.id) {
+          await db.conversations.update(conversation.id, { serverId: data.id });
         }
       } catch (error) {
         console.error(`Failed to sync conversation ${conversation.id}:`, error);
@@ -215,18 +232,26 @@ class SyncService {
 
     for (const result of toolResults) {
       try {
-        await axios.post(
+        const response = await fetch(
           '/api/tools/results',
           {
-            toolType: result.toolType,
-            input: result.input,
-            output: result.output,
-            timestamp: result.timestamp,
-          },
-          {
-            headers: { Authorization: `Bearer ${token}` },
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              toolType: result.toolType,
+              input: result.input,
+              output: result.output,
+              timestamp: result.timestamp,
+            }),
           }
         );
+
+        if (!response.ok) {
+          throw new Error(`Failed to sync tool result: ${response.status}`);
+        }
 
         await offlineService.markAsSynced('toolResults', result.id);
       } catch (error) {
@@ -247,15 +272,22 @@ class SyncService {
 
     for (const notification of notifications) {
       try {
-        if (notification.read) {
+        if (notification.read && notification.serverId) {
           // Mark as read on server
-          await axios.patch(
+          const response = await fetch(
             `/api/notifications/${notification.serverId}/read`,
-            {},
             {
-              headers: { Authorization: `Bearer ${token}` },
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+              },
             }
           );
+
+          if (!response.ok) {
+            throw new Error(`Failed to mark notification as read: ${response.status}`);
+          }
         }
 
         await offlineService.markAsSynced('notifications', notification.id);
@@ -279,18 +311,26 @@ class SyncService {
 
     for (const log of auditLogs) {
       try {
-        await axios.post(
+        const response = await fetch(
           '/api/audit/sync',
           {
-            action: log.action,
-            resourceType: log.resourceType,
-            resourceId: log.resourceId,
-            timestamp: log.timestamp,
-          },
-          {
-            headers: { Authorization: `Bearer ${token}` },
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              action: log.action,
+              resourceType: log.resourceType,
+              resourceId: log.resourceId,
+              timestamp: log.timestamp,
+            }),
           }
         );
+
+        if (!response.ok) {
+          throw new Error(`Failed to sync audit log: ${response.status}`);
+        }
 
         await offlineService.markAsSynced('auditLogs', log.id);
       } catch (error) {
@@ -309,31 +349,37 @@ class SyncService {
       console.log('Downloading latest data from server...');
 
       // Get user profile
-      const profileResponse = await axios.get('/api/user/profile', {
+      const profileResponse = await fetch('/api/user/profile', {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (profileResponse.data) {
-        await offlineService.saveUserProfile(
-          profileResponse.data.id,
-          profileResponse.data
-        );
+      if (profileResponse.ok) {
+        const profileData = await profileResponse.json();
+        if (profileData) {
+          await offlineService.saveUserProfile(
+            profileData.id,
+            profileData
+          );
+        }
       }
 
       // Get latest notifications
-      const notificationsResponse = await axios.get('/api/notifications?limit=50', {
+      const notificationsResponse = await fetch('/api/notifications?limit=50', {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (notificationsResponse.data.notifications) {
-        for (const notification of notificationsResponse.data.notifications) {
-          // Only save if not already in local DB
-          const existing = await db.notifications.get(notification.id);
-          if (!existing) {
-            await db.notifications.add({
-              ...notification,
-              synced: true,
-            });
+      if (notificationsResponse.ok) {
+        const notificationsData = await notificationsResponse.json();
+        if (notificationsData.notifications) {
+          for (const notification of notificationsData.notifications) {
+            // Only save if not already in local DB
+            const existing = await db.notifications.get(notification.id);
+            if (!existing) {
+              await db.notifications.add({
+                ...notification,
+                synced: true,
+              });
+            }
           }
         }
       }
@@ -378,7 +424,7 @@ class SyncService {
       await db.knowledgeCache.clear();
 
       // Download fresh data
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('caredroid_access_token');
       if (token) {
         await this.downloadLatestData(token);
       }

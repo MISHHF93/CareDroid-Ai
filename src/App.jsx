@@ -21,8 +21,9 @@ import AuthShell from './layout/AuthShell';
 import AppShell from './layout/AppShell';
 import { UserProvider, useUser, Permission } from './contexts/UserContext';
 import { NotificationProvider } from './contexts/NotificationContext';
-import OfflineProvider from './contexts/OfflineProvider';
 import PermissionGate from './components/PermissionGate';
+import AnalyticsService from './services/analyticsService';
+import CrashReportingService from './services/crashReportingService';
 
 const SESSION_KEY = 'caredroid_session_id';
 const AUTH_TOKEN_KEY = 'caredroid_access_token';
@@ -156,6 +157,19 @@ function AppContent() {
     console.log('=== Token saved to localStorage ===');
     console.log('localStorage check:', localStorage.getItem('caredroid_access_token'));
     
+    // Track login event with analytics
+    try {
+      AnalyticsService.trackEvent({
+        event: 'user_login',
+        properties: {
+          timestamp: new Date().toISOString(),
+          auth_method: 'direct_signin'
+        }
+      });
+    } catch (error) {
+      console.error('Failed to track login event:', error);
+    }
+    
     // Update React state - this will trigger re-render and routing
     setAuthToken(token);
     console.log('=== setAuthToken called - state updated ===');
@@ -165,11 +179,34 @@ function AppContent() {
   };
 
   const handleSignOut = () => {
+    try {
+      // Track logout event
+      AnalyticsService.trackEvent({
+        event: 'user_logout',
+        properties: {
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error) {
+      console.error('Failed to track logout event:', error);
+    }
+    
     userSignOut();
     addToast('Signed out.', 'info');
   };
 
   const trackEvent = (eventName, parameters = {}) => {
+    // Track in analytics service for client-side and Segment integration
+    try {
+      AnalyticsService.trackEvent({
+        event: eventName,
+        properties: parameters
+      });
+    } catch (error) {
+      console.error('Failed to track event in AnalyticsService:', error);
+    }
+
+    // Also send to backend analytics API
     const payload = {
       sessionId,
       events: [{
@@ -425,9 +462,7 @@ function App() {
   return (
     <UserProvider>
       <NotificationProvider>
-        <OfflineProvider>
-          <AppContent />
-        </OfflineProvider>
+        <AppContent />
       </NotificationProvider>
     </UserProvider>
   );

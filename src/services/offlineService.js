@@ -1,11 +1,26 @@
-import { db } from '../db/offline.db';
-
 /**
  * Offline Service - Manages offline data storage and retrieval
  */
 class OfflineService {
   constructor() {
     this.isInitialized = false;
+    this.db = null;
+  }
+
+  /**
+   * Lazy-load the database
+   */
+  async getDb() {
+    if (!this.db) {
+      try {
+        const module = await import('../db/offline.db');
+        this.db = module.db;
+      } catch (error) {
+        console.error('Failed to load offline database:', error);
+        throw error;
+      }
+    }
+    return this.db;
   }
 
   /**

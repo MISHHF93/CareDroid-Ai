@@ -36,17 +36,13 @@ export class AppController {
   }
 
   @Get()
-  getRoot() {
-    return {
-      message: 'CareDroid API',
-      version: '1.0.0',
-      docs: '/api',
-    };
+  getRoot(@Res() res: Response) {
+    return res.sendFile(join(__dirname, '..', '..', 'public', 'index.html'));
   }
 
-  // Frontend SPA routes (temporarily disabled for API testing)
-  // @Get('*')
-  // getSpaRoutes(@Res() res: Response) {
-  //   return res.sendFile(join(__dirname, '..', '..', 'dist', 'index.html'));
-  // }
+  // Frontend SPA routes (single-port deployment)
+  @Get('*')
+  getSpaRoutes(@Res() res: Response) {
+    return res.sendFile(join(__dirname, '..', '..', 'public', 'index.html'));
+  }
 }

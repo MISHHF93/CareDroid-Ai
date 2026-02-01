@@ -1,14 +1,11 @@
 import React from 'react';
-import Sidebar from '../components/Sidebar';
-import { HeaderNav } from '../components/navigation/Navigation';
+import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '../contexts/NotificationContext';
 import { useUser } from '../contexts/UserContext';
+import Sidebar from '../components/Sidebar';
 
 const AppShell = ({
   isAuthed,
-  isSidebarOpen,
-  isMobile,
-  onToggleSidebar,
   conversations,
   activeConversation,
   onSelectConversation,
@@ -16,23 +13,19 @@ const AppShell = ({
   onSignOut,
   authToken,
   healthStatus,
+  currentTool = null,
+  currentFeature = null,
+  onToolSelect = null,
+  onFeatureSelect = null,
   children
 }) => {
   const { notifications } = useNotifications();
   const { user } = useUser();
-  const unreadCount = notifications.filter(n => !n.read).length;
-
-  // Get user info from context or localStorage fallback
-  const userInfo = user || {
-    name: localStorage.getItem('userName') || 'User',
-    email: localStorage.getItem('userEmail') || 'user@hospital.org',
-    role: localStorage.getItem('userRole') || 'User',
-  };
+  const navigate = useNavigate();
 
   return (
     <div className="app-shell" style={{
       display: 'flex',
-      flexDirection: 'column',
       height: '100vh',
       width: '100vw',
       background: 'var(--navy-bg)',
@@ -40,36 +33,28 @@ const AppShell = ({
       overflow: 'hidden',
       position: 'relative'
     }}>
-      {/* New Header Navigation */}
-      <HeaderNav user={userInfo} notificationCount={unreadCount} showBreadcrumbs={false} />
+      {/* Sidebar */}
+      <Sidebar
+        conversations={conversations}
+        activeConversation={activeConversation}
+        onSelectConversation={onSelectConversation}
+        onNewConversation={onNewConversation}
+        onSignOut={onSignOut}
+        healthStatus={healthStatus}
+        currentTool={currentTool}
+        onToolSelect={onToolSelect}
+      />
 
-      <div style={{
-        display: 'flex',
-        flex: 1,
-        minHeight: 0
+      {/* Main Content Area */}
+      <div style={{ 
+        flex: 1, 
+        display: 'flex', 
+        flexDirection: 'column',
+        marginLeft: '280px',
+        minWidth: 0,
+        transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
       }}>
-        <Sidebar
-          isOpen={isSidebarOpen}
-          isMobile={isMobile}
-          onToggle={onToggleSidebar}
-          conversations={conversations}
-          activeConversation={activeConversation}
-          onSelectConversation={onSelectConversation}
-          onNewConversation={onNewConversation}
-          authToken={authToken}
-          onSignOut={onSignOut}
-        />
-        <div style={{ 
-          flex: 1, 
-          display: 'flex', 
-          flexDirection: 'column',
-          minWidth: 0,
-          width: '100%'
-        }}>
-          <div style={{ flex: 1, display: 'flex' }}>
-            {children}
-          </div>
-        </div>
+        {children}
       </div>
     </div>
   );

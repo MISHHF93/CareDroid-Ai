@@ -36,9 +36,27 @@
   --font-36: 36px;
   --accent-1: #00ff88;
   --accent-2: #00ffff;
+  --accent-cyan: #00ffff;
+  --accent-green: #00ff88;
   --accent-gradient: linear-gradient(135deg, #00ff88, #00ffff);
+  --gradient-accent: linear-gradient(135deg, #00ff88, #00ffff);
   --danger: #ff6b6b;
   --warning: #ffd166;
+  --text-primary: #f8fafc;
+  --text-muted: rgba(248, 250, 252, 0.6);
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-md: 16px;
+  --text-lg: 18px;
+  --text-xl: 22px;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 20px;
+  --space-2xs: 4px;
+  --border-subtle: rgba(255, 255, 255, 0.12);
+  --surface-glass: rgba(15, 23, 42, 0.7);
 }
 
 @media (prefers-color-scheme: light) {

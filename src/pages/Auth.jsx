@@ -287,17 +287,45 @@ const Auth = ({ onAddToast, onAuthSuccess }) => {
           </a>
           <Button
             onClick={() => {
-              console.log('=== Direct Sign-In clicked ===');
+              console.log('\n\n=== 🚀 DIRECT SIGN-IN CLICKED ===');
               console.log('bypassToken:', bypassToken);
-              console.log('onAuthSuccess type:', typeof onAuthSuccess);
+              console.log('onAuthSuccess exists:', !!onAuthSuccess);
+              
               try {
-                onAuthSuccess?.(bypassToken);
-                console.log('=== onAuthSuccess called successfully ===');
-                // Don't redirect here - let App.jsx handle the state update and routing
+                // Create mock user profile for dev mode
+                const mockUser = {
+                  id: 'dev-user',
+                  email: 'dev@caredroid.local',
+                  name: 'Development User',
+                  role: 'admin',
+                  fullName: 'Development User',
+                  isEmailVerified: true,
+                  twoFactorEnabled: false,
+                  createdAt: new Date().toISOString()
+                };
+                
+                // Save to localStorage FIRST
+                localStorage.setItem('caredroid_user_profile', JSON.stringify(mockUser));
+                localStorage.setItem('caredroid_access_token', bypassToken);
+                
+                console.log('✅ Saved to localStorage:');
+                console.log('- Token:', localStorage.getItem('caredroid_access_token'));
+                console.log('- Profile:', JSON.parse(localStorage.getItem('caredroid_user_profile')));
+                
+                // Call onAuthSuccess with BOTH token and user
+                if (onAuthSuccess) {
+                  console.log('🔄 Calling onAuthSuccess...');
+                  onAuthSuccess(bypassToken, mockUser);
+                  console.log('✅ onAuthSuccess completed');
+                } else {
+                  console.error('❌ ERROR: onAuthSuccess is not defined!');
+                }
               } catch (error) {
-                console.error('Error calling onAuthSuccess:', error);
+                console.error('❌ Error in Direct Sign-In:', error);
+                console.error('Error stack:', error.stack);
               }
-              onAddToast?.('Signed in with direct access.', 'success');
+              
+              onAddToast?.('Signing in...', 'info');
             }}
             variant="ghost"
             style={{ borderStyle: 'dashed', textAlign: 'left' }}

@@ -8,8 +8,6 @@ import { featureInventory } from '../data/featureInventory';
 import { apiFetch } from '../services/apiClient';
 
 const ChatInterface = ({
-  isSidebarOpen,
-  onToggleSidebar,
   currentTool,
   currentFeature,
   prefillText,
@@ -20,8 +18,7 @@ const ChatInterface = ({
   onAddToast,
   authToken,
   onToolSelect,
-  onFeatureSelect,
-  showHeader = true
+  onFeatureSelect
 }) => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -131,162 +128,8 @@ const ChatInterface = ({
       flex: 1,
       display: 'flex',
       flexDirection: 'column',
-      position: 'relative',
-      marginLeft: isSidebarOpen ? '0' : '0',
-      transition: 'margin-left 0.3s ease'
+      position: 'relative'
     }}>
-      {showHeader && (
-        <div style={{
-          height: '60px',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-          display: 'flex',
-          alignItems: 'center',
-          padding: '0 20px',
-          gap: '15px'
-        }}>
-          {!isSidebarOpen && (
-            <button
-              onClick={onToggleSidebar}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#fff',
-                cursor: 'pointer',
-                fontSize: '24px',
-                padding: '5px'
-              }}
-            >
-              ☰
-            </button>
-          )}
-          <div style={{ flex: 1 }}>
-            <h1 style={{
-              margin: 0,
-              fontSize: '20px',
-              fontWeight: 600,
-              background: 'linear-gradient(135deg, #00FF88, #00FFFF)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent'
-            }}>
-              CareDroid Clinical AI
-            </h1>
-          </div>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            flexWrap: 'wrap',
-            justifyContent: 'flex-end'
-          }}>
-            {authToken && (
-              <div style={{
-                padding: '6px 12px',
-                borderRadius: '16px',
-                fontSize: '12px',
-                background: 'rgba(0, 255, 136, 0.08)',
-                border: '1px solid rgba(0, 255, 136, 0.3)',
-                color: '#00FF88'
-              }}>
-                ✅ Signed In
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Tool Dock (chat-only) */}
-      <div style={{
-        padding: '20px 24px 0',
-        display: 'grid',
-        gap: '14px'
-      }}>
-        <div style={{
-          fontSize: '12px',
-          color: 'var(--muted-text)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px'
-        }}>
-          Clinical Tools
-        </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-          {featureInventory.filter((item) => item.type === 'tool').map((tool) => (
-            <button
-              key={tool.id}
-              onClick={() => onToolSelect?.(tool.id === currentTool ? null : tool.id)}
-              style={{
-                padding: '8px 12px',
-                borderRadius: '10px',
-                border: currentTool === tool.id ? '1px solid rgba(0, 255, 136, 0.5)' : '1px solid var(--panel-border)',
-                background: currentTool === tool.id ? 'rgba(0, 255, 136, 0.12)' : 'transparent',
-                color: 'var(--text-color)',
-                cursor: 'pointer',
-                fontSize: '13px'
-              }}
-            >
-              {tool.icon} {tool.name}
-            </button>
-          ))}
-        </div>
-
-        <div style={{
-          fontSize: '12px',
-          color: 'var(--muted-text)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px',
-          marginTop: '6px'
-        }}>
-          Feature Inventory
-        </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-          {featureInventory.filter((item) => item.type === 'feature').map((feature) => (
-            <button
-              key={feature.id}
-              onClick={() => onFeatureSelect?.(feature.id === currentFeature ? null : feature.id)}
-              style={{
-                padding: '8px 12px',
-                borderRadius: '10px',
-                border: currentFeature === feature.id ? '1px solid rgba(0, 255, 255, 0.6)' : '1px solid var(--panel-border)',
-                background: currentFeature === feature.id ? 'rgba(0, 255, 255, 0.12)' : 'transparent',
-                color: 'var(--text-color)',
-                cursor: 'pointer',
-                fontSize: '13px'
-              }}
-            >
-              {feature.icon} {feature.name}
-            </button>
-          ))}
-        </div>
-
-        {(currentTool || currentFeature) && (
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            {currentTool && (
-              <div style={{
-                padding: '6px 12px',
-                background: 'rgba(0, 255, 136, 0.1)',
-                border: '1px solid #00FF88',
-                borderRadius: '20px',
-                fontSize: '12px',
-                color: '#00FF88'
-              }}>
-                🔧 {currentTool}
-              </div>
-            )}
-            {currentFeature && (
-              <div style={{
-                padding: '6px 12px',
-                background: 'rgba(0, 255, 255, 0.1)',
-                border: '1px solid rgba(0, 255, 255, 0.5)',
-                borderRadius: '20px',
-                fontSize: '12px',
-                color: '#00FFFF'
-              }}>
-                ✨ {getInventoryItem(currentFeature)?.name || currentFeature}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
       {/* Messages Area */}
       <div style={{
         flex: 1,

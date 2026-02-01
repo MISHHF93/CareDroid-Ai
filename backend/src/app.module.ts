@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-// import { ServeStaticModule } from '@nestjs/serve-static';
+import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -92,9 +92,9 @@ import { MetricsModule } from './modules/metrics/metrics.module';
     EmailModule,
     CacheModule,
 
-    // Serve frontend static assets (temporarily disabled for testing)
+    // Serve frontend static assets (single-port deployment)
     // ServeStaticModule.forRoot({
-    //   rootPath: join(__dirname, '..', '..', 'dist'),
+    //   rootPath: join(__dirname, '..', '..', 'public'),
     //   exclude: ['/api*', '/health'],
     // }),
 

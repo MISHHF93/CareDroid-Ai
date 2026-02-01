@@ -115,40 +115,47 @@ export const UserProvider = ({ children }) => {
 
   // Initialize from localStorage on mount
   useEffect(() => {
-    console.log('=== UserContext Init Starting ===');
+    console.log('\n\n=== 🎬 UserContext INITIALIZATION ===');
     
     const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
     const storedProfile = localStorage.getItem(USER_PROFILE_KEY);
 
-    console.log('=== UserContext localStorage check ===');
-    console.log('storedToken exists:', !!storedToken);
-    console.log('storedToken value:', storedToken);
-    console.log('storedProfile exists:', !!storedProfile);
-
-    // Load token even if profile doesn't exist yet
-    if (storedToken) {
-      console.log('=== Loading token into state ===');
-      setAuthTokenState(storedToken);
-    } else {
-      console.log('=== No token found in localStorage ===');
+    console.log('📦 localStorage contents:');
+    console.log('- Token exists:', !!storedToken);
+    console.log('- Token value:', storedToken);
+    console.log('- Profile exists:', !!storedProfile);
+    if (storedProfile) {
+      try {
+        console.log('- Profile data:', JSON.parse(storedProfile));
+      } catch (e) {
+        console.log('- Profile parse error:', e);
+      }
     }
 
-    // Load profile if it exists
+    // Load token
+    if (storedToken) {
+      console.log('✅ Loading token into state');
+      setAuthTokenState(storedToken);
+    } else {
+      console.log('⚠️ No token in localStorage');
+    }
+
+    // Load profile
     if (storedProfile) {
       try {
         const profile = JSON.parse(storedProfile);
-        console.log('=== Loading profile into state ===');
+        console.log('✅ Loading profile into state:', profile);
         setUserState(profile);
       } catch (error) {
-        console.error('Failed to parse stored user profile:', error);
+        console.error('❌ Failed to parse stored user profile:', error);
         localStorage.removeItem(USER_PROFILE_KEY);
       }
     } else {
-      console.log('=== No profile found in localStorage ===');
+      console.log('⚠️ No profile in localStorage');
     }
 
     setIsLoading(false);
-    console.log('=== UserContext Init Complete ===');
+    console.log('✅ UserContext Init Complete\n\n');
   }, []);
 
   // Fetch user profile when token changes
@@ -168,9 +175,32 @@ export const UserProvider = ({ children }) => {
           const profile = await response.json();
           setUserState(profile);
           localStorage.setItem(USER_PROFILE_KEY, JSON.stringify(profile));
+        } else {
+          // If profile fetch fails and we're in dev mode, use mock profile
+          const storedProfile = localStorage.getItem(USER_PROFILE_KEY);
+          if (storedProfile) {
+            try {
+              const profile = JSON.parse(storedProfile);
+              setUserState(profile);
+              console.log('Using stored mock profile from localStorage');
+            } catch (e) {
+              console.error('Failed to parse stored profile');
+            }
+          }
         }
       } catch (error) {
         console.error('Failed to fetch user profile:', error);
+        // Try to use stored mock profile if backend is unavailable
+        const storedProfile = localStorage.getItem(USER_PROFILE_KEY);
+        if (storedProfile) {
+          try {
+            const profile = JSON.parse(storedProfile);
+            setUserState(profile);
+            console.log('Using stored mock profile (backend unavailable)');
+          } catch (e) {
+            console.error('Failed to parse stored profile');
+          }
+        }
       } finally {
         setIsLoading(false);
       }
@@ -232,6 +262,17 @@ export const UserProvider = ({ children }) => {
   };
 
   const isAuthenticated = Boolean(authToken && user);
+
+  // Debug logging for authentication state changes
+  useEffect(() => {
+    console.log('=== UserContext isAuthenticated changed ===');
+    console.log('authToken:', !!authToken);
+    console.log('user:', !!user);
+    console.log('isAuthenticated:', isAuthenticated);
+    if (user) {
+      console.log('user details:', { id: user.id, email: user.email, role: user.role });
+    }
+  }, [isAuthenticated, authToken, user]);
 
   const value = {
     user,

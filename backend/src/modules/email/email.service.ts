@@ -156,6 +156,6 @@ export class EmailService {
 
   private getFrontendBaseUrl(): string {
     const emailConfig = this.configService.get<any>('email');
-    return emailConfig?.frontendUrl || 'http://localhost:5173';
+    return emailConfig?.frontendUrl || 'http://localhost:8000';
   }
 }

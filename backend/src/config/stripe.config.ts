@@ -41,6 +41,6 @@ export default registerAs('stripe', () => ({
     },
   },
 
-  successUrl: process.env.STRIPE_SUCCESS_URL || 'http://localhost:5173/subscription/success',
-  cancelUrl: process.env.STRIPE_CANCEL_URL || 'http://localhost:5173/subscription/cancel',
+  successUrl: process.env.STRIPE_SUCCESS_URL || 'http://localhost:8000/subscription/success',
+  cancelUrl: process.env.STRIPE_CANCEL_URL || 'http://localhost:8000/subscription/cancel',
 }));

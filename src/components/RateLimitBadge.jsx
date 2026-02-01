@@ -3,7 +3,7 @@
  * Shows user their remaining AI queries for the day
  */
 
-import { useSystemConfig } from '../contexts/SystemConfigContext';
+import { useSystemConfig } from '../contexts/SystemConfigContext.jsx';
 import './RateLimitBadge.css';
 
 export function RateLimitBadge() {

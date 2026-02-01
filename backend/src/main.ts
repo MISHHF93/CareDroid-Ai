@@ -56,7 +56,7 @@ async function bootstrap() {
   // app.use(LoggingMiddleware);
 
   // CORS configuration (allow same-origin since frontend is proxied)
-  const defaultOrigins = ['http://localhost:8000', 'http://localhost:5173'];
+  const defaultOrigins = ['http://localhost:8000'];
   const envOrigins = (process.env.FRONTEND_URL || '')
     .split(',')
     .map((origin) => origin.trim())
@@ -108,15 +108,14 @@ async function bootstrap() {
 
   console.log(`\n🚀 CareDroid Backend running on: http://localhost:${port}`);
   console.log(`📚 Swagger docs available at: http://localhost:${port}/api`);
-  console.log(`� Prometheus metrics at: http://localhost:${port}/metrics`);
+  console.log(`📊 Prometheus metrics at: http://localhost:${port}/metrics`);
   console.log(`🔐 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔒 TLS 1.3: ENFORCED (only TLS 1.3+ allowed)`);
-  console.log(`📱 All traffic consolidated to port ${port}`);
   console.log(`\n📈 Monitoring Stack (when docker-compose running):`);
   console.log(`   - Grafana dashboards: http://localhost:3001`);
   console.log(`   - Prometheus: http://localhost:9090`);
   console.log(`   - Kibana logs: http://localhost:5601`);
-  console.log(`   - Sentry errors: http://localhost:9000`);
+  console.log(`   - Sentry errors: http://localhost:9000`)
 }
 
 bootstrap();

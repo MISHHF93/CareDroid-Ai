@@ -29,7 +29,7 @@ const appConfig = {
     buildDate: getEnvValue('VITE_APP_BUILD_DATE', ''),
   },
   api: {
-    baseUrl: normalizeUrl(getEnvValue('VITE_API_URL', 'http://localhost:8000')),
+    baseUrl: normalizeUrl(getEnvValue('VITE_API_URL', '')),
     wsUrl: getEnvValue('VITE_WS_URL', ''),
   },
   analytics: {

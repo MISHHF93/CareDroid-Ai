@@ -1,209 +1,243 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useUser, Permission } from '../contexts/UserContext';
+import { useNotifications } from '../contexts/NotificationContext';
+import PermissionGate from './PermissionGate';
+import './Sidebar.css';
 
+/**
+ * CareDroid Professional Sidebar
+ * Clinical AI Platform Navigation
+ */
 const Sidebar = ({ 
-  isOpen, 
-  onToggle, 
-  conversations, 
+  conversations = [], 
   activeConversation, 
   onSelectConversation,
   onNewConversation,
-  isMobile,
-  authToken,
-  onSignOut
+  onSignOut,
+  healthStatus = 'online',
+  currentTool = null,
+  onToolSelect
 }) => {
+  const navigate = useNavigate();
+  const { user } = useUser();
+  const { notifications } = useNotifications();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  // Clinical Tools
+  const clinicalTools = [
+    { 
+      id: 'drug-interactions', 
+      icon: '💊', 
+      name: 'Drug Checker',
+      color: '#FF6B9D',
+      description: 'Check drug interactions'
+    },
+    { 
+      id: 'lab-interpreter', 
+      icon: '🔬', 
+      name: 'Lab Interpreter',
+      color: '#4ECDC4',
+      description: 'Interpret lab results'
+    },
+    { 
+      id: 'sofa-calculator', 
+      icon: '📊', 
+      name: 'SOFA Calculator',
+      color: '#95E1D3',
+      description: 'Calculate SOFA score'
+    },
+    { 
+      id: 'protocols', 
+      icon: '📋', 
+      name: 'Protocols',
+      color: '#A8E6CF',
+      description: 'Clinical protocols'
+    }
+  ];
+
+  // Navigation Items
+  const navItems = [
+    { id: 'chat', icon: '💬', label: 'Chat', path: '/' },
+    { id: 'profile', icon: '👤', label: 'Profile', path: '/profile' },
+    { id: 'team', icon: '👥', label: 'Team', path: '/team', permission: Permission.MANAGE_USERS },
+    { id: 'audit', icon: '📜', label: 'Audit Logs', path: '/audit-logs', permission: Permission.VIEW_AUDIT_LOGS },
+    { id: 'settings', icon: '⚙️', label: 'Settings', path: '/settings' }
+  ];
+
+  const recentConversations = conversations.slice(-5).reverse();
+
+  const handleToolClick = (toolId) => {
+    if (onToolSelect) {
+      onToolSelect(toolId);
+    }
+    navigate('/');
+  };
+
+  const handleNavClick = (path) => {
+    navigate(path);
+  };
+
   return (
-    <>
-      {/* Mobile overlay backdrop */}
-      {isMobile && isOpen && (
-        <div
-          onClick={onToggle}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0, 0, 0, 0.5)',
-            zIndex: 999,
-            animation: 'fadeIn 0.2s ease-out'
-          }}
-        />
-      )}
-      
-      {/* Sidebar container */}
-      <div style={{
-        width: '280px',
-        height: '100vh',
-        background: 'var(--surface-glass)',
-        backdropFilter: 'blur(20px)',
-        borderRight: '1px solid var(--border-subtle)',
-        display: 'flex',
-        flexDirection: 'column',
-        position: isMobile ? 'fixed' : 'relative',
-        zIndex: 1000,
-        left: 0,
-        top: 0,
-        transform: isMobile ? (isOpen ? 'translateX(0)' : 'translateX(-100%)') : (isOpen ? 'translateX(0)' : 'translateX(-280px)'),
-        transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        boxShadow: isOpen ? '4px 0 24px rgba(0, 0, 0, 0.15)' : 'none'
-      }}>
+    <aside className={`sidebar ${isCollapsed ? 'sidebar-collapsed' : ''}`}>
       {/* Header */}
-      <div style={{
-        padding: 'var(--space-lg)',
-        borderBottom: '1px solid var(--border-subtle)',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
-        <div style={{
-          fontSize: 'var(--text-lg)',
-          fontWeight: 700,
-          background: 'var(--gradient-accent)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent'
-        }}>
-          🤖 CareDroid
-        </div>
-        <button
-          onClick={onToggle}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: 'var(--muted-text)',
-            cursor: 'pointer',
-            fontSize: '20px',
-            padding: '5px'
-          }}
-        >
-          ✕
-        </button>
-      </div>
-
-      {/* New Conversation Button */}
-      <div style={{ padding: 'var(--space-md)' }}>
-        <button
-          onClick={onNewConversation}
-          style={{
-            width: '100%',
-            background: 'var(--gradient-accent)',
-            border: 'none',
-            borderRadius: 'var(--radius-md)',
-            padding: 'var(--space-sm) var(--space-md)',
-            color: 'var(--navy-ink)',
-            fontSize: 'var(--text-sm)',
-            fontWeight: 600,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 'var(--space-xs)'
-          }}
-        >
-          ➕ New Conversation
-        </button>
-      </div>
-
-      {/* Conversations */}
-      <div style={{
-        flex: 1,
-        overflowY: 'auto',
-        padding: '0 var(--space-md)'
-      }}>
-        {/* Recent Conversations */}
-        <div style={{
-          fontSize: 'var(--text-xs)',
-          fontWeight: 600,
-          color: 'var(--text-muted)',
-          margin: 'var(--space-lg) 0 var(--space-sm)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px'
-        }}>
-          Recent Conversations
-        </div>
-        {conversations.slice(-5).reverse().map(conv => (
-          <button
-            key={conv.id}
-            onClick={() => onSelectConversation(conv.id)}
-            style={{
-              width: '100%',
-              background: activeConversation === conv.id 
-                ? 'var(--surface-hover)' 
-                : 'transparent',
-              border: 'none',
-              borderRadius: 'var(--radius-md)',
-              padding: 'var(--space-sm) var(--space-md)',
-              marginBottom: 'var(--space-2xs)',
-              color: 'var(--text-primary)',
-              cursor: 'pointer',
-              textAlign: 'left',
-              fontSize: 'var(--text-sm)',
-              transition: 'background 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              if (activeConversation !== conv.id) {
-                e.currentTarget.style.background = 'var(--surface-hover-subtle)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (activeConversation !== conv.id) {
-                e.currentTarget.style.background = 'transparent';
-              }
-            }}
-          >
-            <div style={{ 
-              overflow: 'hidden', 
-              textOverflow: 'ellipsis', 
-              whiteSpace: 'nowrap' 
-            }}>
-              💬 {conv.title}
+      <div className="sidebar-header">
+        <div className="sidebar-logo">
+          <div className="logo-icon">🏥</div>
+          {!isCollapsed && (
+            <div className="logo-text">
+              <h1>CareDroid</h1>
+              <span className="logo-subtitle">Clinical AI</span>
             </div>
-          </button>
-        ))}
-        {conversations.length === 0 && (
-          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
-            No conversations yet.
+          )}
+        </div>
+        <button 
+          className="sidebar-toggle"
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {isCollapsed ? '→' : '←'}
+        </button>
+      </div>
+
+      {/* User Profile */}
+      {!isCollapsed && (
+        <div className="sidebar-user">
+          <div className="user-avatar">
+            {user?.name?.charAt(0).toUpperCase() || 'U'}
+          </div>
+          <div className="user-info">
+            <div className="user-name">{user?.name || 'User'}</div>
+            <div className="user-role">{user?.role || 'Clinician'}</div>
+          </div>
+          <div className={`health-indicator ${healthStatus}`}>
+            <div className="health-dot"></div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content */}
+      <div className="sidebar-content">
+        {/* New Conversation Button */}
+        <button 
+          className="btn-new-conversation"
+          onClick={onNewConversation}
+        >
+          <span className="btn-icon">✨</span>
+          {!isCollapsed && <span>New Conversation</span>}
+        </button>
+
+        {/* Navigation */}
+        <nav className="sidebar-nav">
+          <div className="nav-section-title">
+            {!isCollapsed && 'Navigation'}
+          </div>
+          {navItems.map(item => {
+            const NavButton = (
+              <button
+                key={item.id}
+                className={`nav-item ${window.location.pathname === item.path ? 'active' : ''}`}
+                onClick={() => handleNavClick(item.path)}
+                title={isCollapsed ? item.label : ''}
+              >
+                <span className="nav-icon">{item.icon}</span>
+                {!isCollapsed && <span className="nav-label">{item.label}</span>}
+              </button>
+            );
+
+            return item.permission ? (
+              <PermissionGate key={item.id} permission={item.permission} hideIfDenied>
+                {NavButton}
+              </PermissionGate>
+            ) : NavButton;
+          })}
+        </nav>
+
+        {/* Clinical Tools */}
+        {!isCollapsed && (
+          <div className="sidebar-section">
+            <div className="section-header">
+              <span className="section-icon">🧰</span>
+              <span className="section-title">Clinical Tools</span>
+            </div>
+            <div className="tools-grid">
+              {clinicalTools.map(tool => (
+                <button
+                  key={tool.id}
+                  className={`tool-card ${currentTool === tool.id ? 'active' : ''}`}
+                  onClick={() => handleToolClick(tool.id)}
+                  style={{ '--tool-color': tool.color }}
+                >
+                  <span className="tool-icon">{tool.icon}</span>
+                  <span className="tool-name">{tool.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Recent Conversations */}
+        {!isCollapsed && recentConversations.length > 0 && (
+          <div className="sidebar-section">
+            <div className="section-header">
+              <span className="section-icon">💭</span>
+              <span className="section-title">Recent</span>
+            </div>
+            <div className="conversations-list">
+              {recentConversations.map(conv => (
+                <button
+                  key={conv.id}
+                  className={`conversation-item ${activeConversation === conv.id ? 'active' : ''}`}
+                  onClick={() => onSelectConversation(conv.id)}
+                >
+                  <span className="conversation-title">
+                    {conv.title.length > 25 ? conv.title.substring(0, 25) + '...' : conv.title}
+                  </span>
+                  <span className="conversation-time">
+                    {new Date(conv.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>
 
       {/* Footer */}
-      <div style={{
-        padding: 'var(--space-md)',
-        borderTop: '1px solid var(--border-subtle)',
-        fontSize: 'var(--text-xs)',
-        color: 'var(--text-muted)'
-      }}>
-        <div style={{ display: 'grid', gap: 'var(--space-xs)', marginBottom: 'var(--space-sm)' }}>
-          <Link to="/profile" style={{ color: 'var(--accent-cyan)', textDecoration: 'none', fontSize: 'var(--text-xs)' }}>Profile</Link>
-          <Link to="/profile-settings" style={{ color: 'var(--accent-cyan)', textDecoration: 'none', fontSize: 'var(--text-xs)' }}>Profile Settings</Link>
-          <Link to="/settings" style={{ color: 'var(--accent-cyan)', textDecoration: 'none', fontSize: 'var(--text-xs)' }}>App Settings</Link>
-          {!authToken && (
-            <Link to="/auth" style={{ color: 'var(--accent-cyan)', textDecoration: 'none', fontSize: 'var(--text-xs)' }}>Log in</Link>
+      <div className="sidebar-footer">
+        {/* Notifications */}
+        <button 
+          className="footer-action"
+          onClick={() => navigate('/notifications')}
+          title="Notifications"
+        >
+          <span className="action-icon">🔔</span>
+          {unreadCount > 0 && (
+            <span className="notification-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
           )}
-          {authToken && (
-            <button
-              onClick={onSignOut}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: 'var(--accent-cyan)',
-                cursor: 'pointer',
-                textAlign: 'left',
-                padding: 0,
-                fontSize: 'var(--text-xs)'
-              }}
-            >
-              Log out
-            </button>
-          )}
-        </div>
-        <div style={{ marginBottom: '8px' }}>
-          🔒 HIPAA Compliant
-        </div>
-        <div>
-          v1.0.0 • Clinical AI Assistant
-        </div>
+        </button>
+
+        {/* HIPAA Badge */}
+        {!isCollapsed && (
+          <div className="hipaa-badge">
+            <span className="hipaa-icon">🔒</span>
+            <span className="hipaa-text">HIPAA Compliant</span>
+          </div>
+        )}
+
+        {/* Sign Out */}
+        <button 
+          className="btn-signout"
+          onClick={onSignOut}
+          title="Sign Out"
+        >
+          <span className="signout-icon">🚪</span>
+          {!isCollapsed && <span>Sign Out</span>}
+        </button>
       </div>
-      </div>
-    </>
+    </aside>
   );
 };
 

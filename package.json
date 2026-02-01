@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite --port 8000",
     "build": "vite build",
+    "build:frontend": "vite build",
     "preview": "vite preview",
     "android-debug": "npm run build && npx cap sync android && cd android && .\\gradlew.bat assembleDebug",
     "android-release": "npm run build && npx cap sync android && cd android && .\\gradlew.bat assembleRelease",
@@ -15,6 +16,7 @@
     "backend:start": "cd backend && npm run start:prod",
     "start:backend": "cd backend && npm run start:dev",
     "start:all": "concurrently \"npm run backend:dev\" \"npm run dev\"",
+    "start:single": "npm run build:frontend && npm run backend:start",
     "lint": "eslint . --ext .js,.jsx",
     "format": "prettier --write \"src/**/*.{js,jsx,json,css}\""
   },

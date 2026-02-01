@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import ChatInterface from './components/ChatInterface';
 import ErrorBoundary from './components/ErrorBoundary';
 import Toast from './components/Toast';
@@ -19,9 +19,10 @@ import { ConsentHistory } from './pages/legal/ConsentHistory';
 import { PublicShell } from './layout/PublicShell';
 import AuthShell from './layout/AuthShell';
 import AppShell from './layout/AppShell';
+import AppRoute from './components/AppRoute';
 import { UserProvider, useUser, Permission } from './contexts/UserContext';
 import { NotificationProvider } from './contexts/NotificationContext';
-import { SystemConfigProvider } from './contexts/SystemConfigContext';
+import { SystemConfigProvider } from './contexts/SystemConfigContext.jsx';
 import PermissionGate from './components/PermissionGate';
 import AnalyticsService from './services/analyticsService';
 import CrashReportingService from './services/crashReportingService';
@@ -47,9 +48,8 @@ const createInitialMessages = () => ([{
 }]);
 
 function AppContent() {
-  const { authToken, setAuthToken, signOut: userSignOut } = useUser();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
+  const { authToken, setAuthToken, signOut: userSignOut, user, isAuthenticated, setUser } = useUser();
+  const navigate = useNavigate();
   const [currentTool, setCurrentTool] = useState(null);
   const [currentFeature, setCurrentFeature] = useState(null);
   const [prefillText, setPrefillText] = useState('');
@@ -64,49 +64,36 @@ function AppContent() {
     1: createInitialMessages()
   });
   
-  // Use authToken directly for routing - this will trigger re-render immediately
-  const isAuthed = Boolean(authToken);
+  // Use isAuthenticated from UserContext (checks both token AND user)
+  const isAuthed = isAuthenticated;
 
   // Debug logging
   useEffect(() => {
     console.log('=== AppContent render ===');
     console.log('authToken exists:', !!authToken);
     console.log('authToken value:', authToken);
+    console.log('user exists:', !!user);
+    console.log('user value:', user);
+    console.log('isAuthenticated:', isAuthenticated);
     console.log('isAuthed:', isAuthed);
+    console.log('current URL:', window.location.pathname);
     console.log('localStorage token:', localStorage.getItem('caredroid_access_token'));
+    console.log('localStorage profile:', localStorage.getItem('caredroid_user_profile'));
     
     if (isAuthed) {
       console.log('✅ AUTHENTICATED - Should render AppShell');
     } else {
       console.log('❌ NOT AUTHENTICATED - Should render LoginPage');
     }
-  }, [authToken, isAuthed]);
+  }, [authToken, user, isAuthenticated, isAuthed]);
 
+  // Auto-navigate when authenticated (handles edge cases)
   useEffect(() => {
-    const media = window.matchMedia('(max-width: 1024px)');
-    const handleChange = () => setIsMobile(media.matches);
-    handleChange();
-    if (media.addEventListener) {
-      media.addEventListener('change', handleChange);
-    } else {
-      media.addListener(handleChange);
+    if (isAuthenticated && window.location.pathname.includes('/auth')) {
+      console.log('🔄 Auto-navigation: Authenticated user on auth page, redirecting to home...');
+      navigate('/', { replace: true });
     }
-    return () => {
-      if (media.removeEventListener) {
-        media.removeEventListener('change', handleChange);
-      } else {
-        media.removeListener(handleChange);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (isMobile) {
-      setIsSidebarOpen(false);
-    } else {
-      setIsSidebarOpen(true);
-    }
-  }, [isMobile]);
+  }, [isAuthenticated, navigate]);
 
   useEffect(() => {
     let isActive = true;
@@ -131,8 +118,6 @@ function AppContent() {
     };
   }, []);
 
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
-
   const addToast = (message, type = 'info') => {
     const id = `toast-${Date.now()}-${Math.random().toString(16).slice(2)}`;
     setToasts((prev) => [...prev, { id, message, type }]);
@@ -145,22 +130,28 @@ function AppContent() {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   };
 
-  const handleAuthSuccess = (token) => {
-    console.log('=== handleAuthSuccess called ===');
-    console.log('token received:', !!token);
-    console.log('token value:', token);
+  const handleAuthSuccess = (token, mockUser = null) => {
+    console.log('\n\n=== 🔑 handleAuthSuccess called ===');
+    console.log('token:', token);
+    console.log('mockUser:', mockUser);
     
     if (!token) {
-      console.error('ERROR: No token provided to handleAuthSuccess');
+      console.error('❌ ERROR: No token provided');
       return;
     }
     
-    // Save token to localStorage immediately
-    localStorage.setItem('caredroid_access_token', token);
-    console.log('=== Token saved to localStorage ===');
-    console.log('localStorage check:', localStorage.getItem('caredroid_access_token'));
+    // Set user in state immediately if provided
+    if (mockUser && setUser) {
+      console.log('👤 Setting user in UserContext state...');
+      setUser(mockUser);
+      console.log('✅ User set in context');
+    }
     
-    // Track login event with analytics
+    console.log('💾 localStorage status:');
+    console.log('- Token:', !!localStorage.getItem('caredroid_access_token'));
+    console.log('- Profile:', !!localStorage.getItem('caredroid_user_profile'));
+    
+    // Track login event
     try {
       AnalyticsService.trackEvent({
         event: 'user_login',
@@ -173,14 +164,31 @@ function AppContent() {
       console.error('Failed to track login event:', error);
     }
     
-    // Update React state - this will trigger re-render and routing
+    console.log('🔄 Setting authToken in state...');
     setAuthToken(token);
-    console.log('=== setAuthToken called - state updated ===');
-    console.log('isAuthed should now be:', !!token);
+    console.log('✅ Token set in context');
+    console.log('📍 Current URL:', window.location.pathname);
+    
+    addToast('Signed in successfully!', 'success');
+    
+    // Navigate using React Router (no page reload needed since state is already updated)
+    console.log('🚀 Navigating to home...');
+    setTimeout(() => {
+      console.log('🎯 Executing navigation');
+      console.log('- isAuthenticated should now be true');
+      console.log('- Token in state:', !!authToken || !!token);
+      console.log('- User in state:', !!user || !!mockUser);
+      
+      // Use different approach: force state check then navigate
+      if (window.location.pathname === '/auth') {
+        navigate('/', { replace: true });
+        console.log('✅ Navigation initiated via React Router');
+      } else {
+        console.log('⚠️ Already at correct path');
+      }
+    }, 100);
 
     NotificationService.registerPushToken().catch(() => {});
-    
-    addToast('Signed in successfully.', 'success');
   };
 
   const handleSignOut = () => {
@@ -280,6 +288,22 @@ function AppContent() {
 
 
 
+  // Common props for all authenticated routes
+  const appRouteProps = {
+    isAuthed,
+    conversations,
+    activeConversation,
+    onSelectConversation: handleSelectConversation,
+    onNewConversation: handleNewConversation,
+    onSignOut: handleSignOut,
+    authToken,
+    healthStatus,
+    currentTool,
+    currentFeature,
+    onToolSelect: handleToolSelect,
+    onFeatureSelect: handleFeatureSelect
+  };
+
   return (
     <ErrorBoundary>
       {!isAuthed ? (
@@ -298,22 +322,8 @@ function AppContent() {
         <Routes>
           {/* Home/Chat page */}
           <Route path="/" element={
-            <AppShell
-              isAuthed={isAuthed}
-              isSidebarOpen={isSidebarOpen}
-              isMobile={isMobile}
-              onToggleSidebar={toggleSidebar}
-              conversations={conversations}
-              activeConversation={activeConversation}
-              onSelectConversation={handleSelectConversation}
-              onNewConversation={handleNewConversation}
-              onSignOut={handleSignOut}
-              authToken={authToken}
-              healthStatus={healthStatus}
-            >
+            <AppRoute {...appRouteProps}>
               <ChatInterface
-                isSidebarOpen={isSidebarOpen}
-                onToggleSidebar={toggleSidebar}
                 currentTool={currentTool}
                 currentFeature={currentFeature}
                 prefillText={prefillText}
@@ -325,127 +335,54 @@ function AppContent() {
                 authToken={authToken}
                 onToolSelect={handleToolSelect}
                 onFeatureSelect={handleFeatureSelect}
-                showHeader={false}
               />
-            </AppShell>
+            </AppRoute>
           } />
 
           {/* Settings page */}
           <Route path="/settings" element={
-            <AppShell
-              isAuthed={isAuthed}
-              isSidebarOpen={isSidebarOpen}
-              isMobile={isMobile}
-              onToggleSidebar={toggleSidebar}
-              conversations={conversations}
-              activeConversation={activeConversation}
-              onSelectConversation={handleSelectConversation}
-              onNewConversation={handleNewConversation}
-              onSignOut={handleSignOut}
-              authToken={authToken}
-              healthStatus={healthStatus}
-            >
+            <AppRoute {...appRouteProps}>
               <Settings onAddToast={addToast} />
-            </AppShell>
+            </AppRoute>
           } />
 
           {/* Profile page */}
           <Route path="/profile" element={
-            <AppShell
-              isAuthed={isAuthed}
-              isSidebarOpen={isSidebarOpen}
-              isMobile={isMobile}
-              onToggleSidebar={toggleSidebar}
-              conversations={conversations}
-              activeConversation={activeConversation}
-              onSelectConversation={handleSelectConversation}
-              onNewConversation={handleNewConversation}
-              onSignOut={handleSignOut}
-              authToken={authToken}
-              healthStatus={healthStatus}
-            >
+            <AppRoute {...appRouteProps}>
               <Profile />
-            </AppShell>
+            </AppRoute>
           } />
 
           {/* Profile Settings page */}
           <Route path="/profile-settings" element={
-            <AppShell
-              isAuthed={isAuthed}
-              isSidebarOpen={isSidebarOpen}
-              isMobile={isMobile}
-              onToggleSidebar={toggleSidebar}
-              conversations={conversations}
-              activeConversation={activeConversation}
-              onSelectConversation={handleSelectConversation}
-              onNewConversation={handleNewConversation}
-              onSignOut={handleSignOut}
-              authToken={authToken}
-              healthStatus={healthStatus}
-            >
+            <AppRoute {...appRouteProps}>
               <ProfileSettings onAddToast={addToast} />
-            </AppShell>
+            </AppRoute>
           } />
 
           {/* Onboarding page */}
           <Route path="/onboarding" element={
-            <AppShell
-              isAuthed={isAuthed}
-              isSidebarOpen={isSidebarOpen}
-              isMobile={isMobile}
-              onToggleSidebar={toggleSidebar}
-              conversations={conversations}
-              activeConversation={activeConversation}
-              onSelectConversation={handleSelectConversation}
-              onNewConversation={handleNewConversation}
-              onSignOut={handleSignOut}
-              authToken={authToken}
-              healthStatus={healthStatus}
-            >
+            <AppRoute {...appRouteProps}>
               <Onboarding onAddToast={addToast} />
-            </AppShell>
+            </AppRoute>
           } />
 
           {/* Audit Logs page */}
           <Route path="/audit-logs" element={
-            <AppShell
-              isAuthed={isAuthed}
-              isSidebarOpen={isSidebarOpen}
-              isMobile={isMobile}
-              onToggleSidebar={toggleSidebar}
-              conversations={conversations}
-              activeConversation={activeConversation}
-              onSelectConversation={handleSelectConversation}
-              onNewConversation={handleNewConversation}
-              onSignOut={handleSignOut}
-              authToken={authToken}
-              healthStatus={healthStatus}
-            >
+            <AppRoute {...appRouteProps}>
               <PermissionGate permission={Permission.VIEW_AUDIT_LOGS} fallback={<Navigate to="/" replace />}>
                 <AuditLogs />
               </PermissionGate>
-            </AppShell>
+            </AppRoute>
           } />
 
           {/* Team page */}
           <Route path="/team" element={
-            <AppShell
-              isAuthed={isAuthed}
-              isSidebarOpen={isSidebarOpen}
-              isMobile={isMobile}
-              onToggleSidebar={toggleSidebar}
-              conversations={conversations}
-              activeConversation={activeConversation}
-              onSelectConversation={handleSelectConversation}
-              onNewConversation={handleNewConversation}
-              onSignOut={handleSignOut}
-              authToken={authToken}
-              healthStatus={healthStatus}
-            >
+            <AppRoute {...appRouteProps}>
               <PermissionGate permission={Permission.MANAGE_USERS} fallback={<Navigate to="/" replace />}>
                 <TeamManagement />
               </PermissionGate>
-            </AppShell>
+            </AppRoute>
           } />
 
           {/* Public Legal Routes for authenticated users */}

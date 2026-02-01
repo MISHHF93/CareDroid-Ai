@@ -1,7 +1,9 @@
 import axios from 'axios';
 import appConfig from '../config/appConfig';
 
-const API_BASE_URL = appConfig.api.baseUrl;
+// In development, use empty string to let Vite proxy handle routing
+// In production, use full API URL
+const API_BASE_URL = appConfig.api.baseUrl || '';
 
 const normalizePath = (path) => {
   if (!path) return '';
@@ -11,7 +13,8 @@ const normalizePath = (path) => {
 export const buildApiUrl = (path = '') => {
   if (!path) return API_BASE_URL || '';
   if (/^https?:\/\//i.test(path)) return path;
-  if (!API_BASE_URL) return path;
+  // If no base URL (dev mode), use relative path for Vite proxy
+  if (!API_BASE_URL) return normalizePath(path);
   return `${API_BASE_URL}${normalizePath(path)}`;
 };
 

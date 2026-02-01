@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   createCipheriv,
   createDecipheriv,
@@ -37,9 +38,10 @@ export class EncryptionService {
   private readonly algorithm: EncryptionAlgorithm;
   private readonly keyVersion: number;
 
-  constructor() {
+  constructor(private readonly configService: ConfigService) {
     // Get encryption key from environment
-    const keyString = process.env.ENCRYPTION_MASTER_KEY;
+    const encryptionConfig = this.configService.get<any>('encryption');
+    const keyString = encryptionConfig?.masterKey || process.env.ENCRYPTION_MASTER_KEY;
     if (!keyString) {
       throw new Error(
         'ENCRYPTION_MASTER_KEY environment variable not set. ' +
@@ -53,9 +55,8 @@ export class EncryptionService {
     }
 
     this.masterKey = Buffer.from(keyString, 'hex');
-    this.algorithm = (process.env.ENCRYPTION_ALGORITHM as EncryptionAlgorithm) ||
-      EncryptionAlgorithm.AES_256_GCM;
-    this.keyVersion = parseInt(process.env.ENCRYPTION_KEY_VERSION || '1', 10);
+    this.algorithm = encryptionConfig?.algorithm || EncryptionAlgorithm.AES_256_GCM;
+    this.keyVersion = encryptionConfig?.keyVersion || parseInt(process.env.ENCRYPTION_KEY_VERSION || '1', 10);
 
     this.logger.log(`✅ Encryption service initialized with ${this.algorithm}`);
   }

@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -10,7 +10,8 @@ import { AuditAction } from '../audit/entities/audit-log.entity';
 
 @Injectable()
 export class SubscriptionsService {
-  private stripe: Stripe;
+  private readonly logger = new Logger(SubscriptionsService.name);
+  private stripe: Stripe | null;
 
   constructor(
     @InjectRepository(Subscription)
@@ -22,11 +23,13 @@ export class SubscriptionsService {
   ) {
     const secretKey = this.configService.get<string>('stripe.secretKey');
     if (!secretKey) {
-      throw new Error('Stripe secret key not configured');
+      this.logger.warn('Stripe secret key not configured. Payment features will be disabled.');
+      this.stripe = null;
+    } else {
+      this.stripe = new Stripe(secretKey, {
+        apiVersion: '2023-10-16',
+      });
     }
-    this.stripe = new Stripe(secretKey, {
-      apiVersion: '2023-10-16',
-    });
   }
 
   async createCheckoutSession(userId: string, tier: SubscriptionTier, successUrl?: string, cancelUrl?: string) {

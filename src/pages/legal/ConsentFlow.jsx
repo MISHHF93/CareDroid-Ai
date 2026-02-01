@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Checkbox } from '../../components/forms/Checkbox';
+import { apiFetch } from '../../services/apiClient';
 import './ConsentFlow.css';
 
 /**
@@ -59,7 +60,7 @@ export const ConsentFlow = ({ onComplete }) => {
 
     try {
       // Submit consents to backend
-      const response = await fetch('/api/consent/record', {
+      const response = await apiFetch('/api/consent/record', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

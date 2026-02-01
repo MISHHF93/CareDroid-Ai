@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './AuditLogs.css';
+import { apiFetch } from '../services/apiClient';
 
 export default function AuditLogs() {
   const [logs, setLogs] = useState([]);
@@ -50,7 +51,7 @@ export default function AuditLogs() {
       if (filters.endDate) params.append('endDate', filters.endDate);
       params.append('limit', '100');
 
-      const response = await fetch(`/api/audit/logs?${params.toString()}`, {
+      const response = await apiFetch(`/api/audit/logs?${params.toString()}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('caredroid_access_token')}`,
         },
@@ -71,7 +72,7 @@ export default function AuditLogs() {
 
   const verifyIntegrity = async () => {
     try {
-      const response = await fetch('/api/audit/verify-integrity', {
+      const response = await apiFetch('/api/audit/verify-integrity', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('caredroid_access_token')}`,
         },
@@ -89,7 +90,7 @@ export default function AuditLogs() {
 
   const fetchStatistics = async () => {
     try {
-      const response = await fetch('/api/audit/statistics', {
+      const response = await apiFetch('/api/audit/statistics', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('caredroid_access_token')}`,
         },

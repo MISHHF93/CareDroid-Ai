@@ -12,7 +12,6 @@ import { Subscription, SubscriptionTier, SubscriptionStatus } from '../subscript
 import { AuditService } from '../audit/audit.service';
 import { AuditAction } from '../audit/entities/audit-log.entity';
 import { TwoFactorService } from '../two-factor/two-factor.service';
-import { jwtConfig } from '../../config/auth.config';
 
 @Injectable()
 export class AuthService {
@@ -235,7 +234,7 @@ export class AuthService {
 
     const accessToken = this.jwtService.sign(payload);
 
-    const config = jwtConfig(this.configService);
+    const config = this.configService.get<any>('jwt');
     const refreshToken = this.jwtService.sign(payload, {
       expiresIn: config.refreshTokenExpiry,
     });

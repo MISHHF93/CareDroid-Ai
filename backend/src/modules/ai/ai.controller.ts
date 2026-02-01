@@ -31,4 +31,11 @@ export class AIController {
   async getUsage(@Req() req: any, @Query('days') days?: number) {
     return this.aiService.getUsage(req.user.id, days ? parseInt(days.toString(), 10) : 30);
   }
+
+  @Get('remaining-queries')
+  @ApiOperation({ summary: 'Get remaining AI queries for current subscription tier' })
+  @ApiResponse({ status: 200, description: 'Remaining queries count' })
+  async getRemainingQueries(@Req() req: any) {
+    return this.aiService.getRemainingQueries(req.user.id);
+  }
 }

@@ -6,8 +6,8 @@
  */
 
 import { Test, TestingModule } from '@nestjs/testing';
-import { SofaCalculatorService } from '../../../src/modules/medical-control-plane/tool-orchestrator/services/sofa-calculator.service';
-import { AIService } from '../../../src/modules/ai/ai.service';
+import { SofaCalculatorService } from '../src/modules/medical-control-plane/tool-orchestrator/services/sofa-calculator.service';
+import { AIService } from '../src/modules/ai/ai.service';
 
 describe('SofaCalculatorService', () => {
   let service: SofaCalculatorService;

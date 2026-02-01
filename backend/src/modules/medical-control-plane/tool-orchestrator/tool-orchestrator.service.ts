@@ -9,6 +9,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { AuditService } from '../../audit/audit.service';
 import { AuditAction } from '../../audit/entities/audit-log.entity';
 import { ToolMetricsService } from '../../metrics/tool-metrics.service';
+import { SubscriptionTier } from '../../subscriptions/entities/subscription.entity';
 import {
   ClinicalToolService,
   ToolMetadata,
@@ -89,6 +90,39 @@ export class ToolOrchestratorService {
     return {
       ...tool.getMetadata(),
       parameters: tool.getSchema(),
+    };
+  }
+
+  /**
+   * Get available tools by subscription tier
+   */
+  getToolsBySubscriptionTier(tier: SubscriptionTier): ToolListDto {
+    const toolAccessMap: Record<SubscriptionTier, string[]> = {
+      [SubscriptionTier.FREE]: ['sofa_calculator'],
+      [SubscriptionTier.PROFESSIONAL]: ['sofa_calculator', 'drug_checker'],
+      [SubscriptionTier.INSTITUTIONAL]: ['sofa_calculator', 'drug_checker', 'lab_interpreter'],
+    };
+
+    const allowedToolIds = toolAccessMap[tier] || toolAccessMap[SubscriptionTier.FREE];
+    const tools = allowedToolIds
+      .map(toolId => {
+        try {
+          const tool = this.getTool(toolId);
+          return {
+            ...tool.getMetadata(),
+            parameters: tool.getSchema(),
+          };
+        } catch {
+          return null;
+        }
+      })
+      .filter(tool => tool !== null);
+
+    return {
+      tools,
+      count: tools.length,
+      tier,
+      message: `${tools.length} tools available for ${tier} subscription`,
     };
   }
 

@@ -3,22 +3,26 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-linkedin-oauth2';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from '../auth.service';
-import { oauthConfig } from '../../../config/auth.config';
 import { OAuthProvider } from '../../users/entities/oauth-account.entity';
 
 @Injectable()
 export class LinkedInStrategy extends PassportStrategy(Strategy, 'linkedin') {
+  private readonly configService: ConfigService;
+  private readonly authService: AuthService;
+
   constructor(
-    private readonly configService: ConfigService,
-    private readonly authService: AuthService,
+    configService: ConfigService,
+    authService: AuthService,
   ) {
-    const config = oauthConfig(configService);
+    const config = configService.get<any>('oauth');
     super({
       clientID: config.linkedin.clientId,
       clientSecret: config.linkedin.clientSecret,
       callbackURL: config.linkedin.callbackUrl,
       scope: config.linkedin.scope,
     });
+    this.configService = configService;
+    this.authService = authService;
   }
 
   async validate(

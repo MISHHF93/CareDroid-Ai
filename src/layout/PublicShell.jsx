@@ -1,5 +1,6 @@
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import './PublicShell.css';
+import appConfig from '../config/appConfig';
 
 /**
  * PublicShell Layout
@@ -11,6 +12,13 @@ import './PublicShell.css';
  */
 export const PublicShell = () => {
   const navigate = useNavigate();
+  const appName = appConfig.app.name;
+  const appVersion = appConfig.app.version;
+  const buildDate = appConfig.app.buildDate;
+  const privacyUrl = appConfig.legal.privacyPolicyUrl;
+  const termsUrl = appConfig.legal.termsOfServiceUrl;
+  const supportUrl = appConfig.legal.supportUrl;
+  const hipaaUrl = appConfig.legal.hipaaBaaUrl;
 
   return (
     <div className="public-shell">
@@ -18,7 +26,7 @@ export const PublicShell = () => {
         <div className="public-header-content">
           <Link to="/" className="public-logo">
             <span className="logo-icon">⚕️</span>
-            <span className="logo-text">CareDroid Clinical AI</span>
+            <span className="logo-text">{appName}</span>
           </Link>
 
           <nav className="public-nav">
@@ -42,19 +50,32 @@ export const PublicShell = () => {
       <footer className="public-footer">
         <div className="public-footer-content">
           <div className="footer-section">
-            <h4>CareDroid Clinical AI</h4>
+            <h4>{appName}</h4>
             <p>Evidence-based clinical decision support powered by AI</p>
             <div className="footer-badges">
               <span className="badge-hipaa">🔒 HIPAA Compliant</span>
-              <span className="badge-version">v1.0.0</span>
+              <span className="badge-version">v{appVersion}</span>
+              {buildDate ? <span className="badge-version">Build {buildDate}</span> : null}
             </div>
           </div>
 
           <div className="footer-section">
             <h4>Legal</h4>
             <ul className="footer-links">
-              <li><Link to="/privacy">Privacy Policy</Link></li>
-              <li><Link to="/terms">Terms of Service</Link></li>
+              <li>
+                {privacyUrl ? (
+                  <a href={privacyUrl} target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+                ) : (
+                  <Link to="/privacy">Privacy Policy</Link>
+                )}
+              </li>
+              <li>
+                {termsUrl ? (
+                  <a href={termsUrl} target="_blank" rel="noopener noreferrer">Terms of Service</a>
+                ) : (
+                  <Link to="/terms">Terms of Service</Link>
+                )}
+              </li>
               <li><Link to="/consent-history">Consent History</Link></li>
             </ul>
           </div>
@@ -64,14 +85,26 @@ export const PublicShell = () => {
             <ul className="footer-links">
               <li><Link to="/help">Help Center</Link></li>
               <li><a href="https://github.com/caredroid" target="_blank" rel="noopener noreferrer">Documentation</a></li>
-              <li><a href="mailto:support@caredroid.ai">Contact Support</a></li>
+              <li>
+                {supportUrl ? (
+                  <a href={supportUrl} target="_blank" rel="noopener noreferrer">Contact Support</a>
+                ) : (
+                  <a href="mailto:support@caredroid.ai">Contact Support</a>
+                )}
+              </li>
             </ul>
           </div>
 
           <div className="footer-section">
             <h4>Compliance</h4>
             <ul className="footer-links">
-              <li><a href="#hipaa">HIPAA Compliance</a></li>
+              <li>
+                {hipaaUrl ? (
+                  <a href={hipaaUrl} target="_blank" rel="noopener noreferrer">HIPAA Compliance</a>
+                ) : (
+                  <a href="#hipaa">HIPAA Compliance</a>
+                )}
+              </li>
               <li><a href="#security">Security Practices</a></li>
               <li><a href="#audit">Audit Logs</a></li>
             </ul>

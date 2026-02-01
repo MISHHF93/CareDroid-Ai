@@ -1,3 +1,4 @@
+import './observability/datadog';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
@@ -55,8 +56,15 @@ async function bootstrap() {
   // app.use(LoggingMiddleware);
 
   // CORS configuration (allow same-origin since frontend is proxied)
+  const defaultOrigins = ['http://localhost:8000', 'http://localhost:5173'];
+  const envOrigins = (process.env.FRONTEND_URL || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+  const allowedOrigins = envOrigins.length > 0 ? envOrigins : defaultOrigins;
+
   app.enableCors({
-    origin: ['http://localhost:8000', 'http://localhost:5173'],
+    origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],

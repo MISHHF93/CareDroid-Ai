@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
-import { winstonLogger } from '../../config/logger.config';
+import { ConfigService } from '@nestjs/config';
+import loggerConfig from '../../config/logger.config';
 
 /**
  * Common Logger Module
@@ -11,7 +12,11 @@ import { winstonLogger } from '../../config/logger.config';
   providers: [
     {
       provide: 'LOGGER',
-      useValue: winstonLogger,
+      useFactory: (configService: ConfigService) => {
+        const config = configService.get<any>('logger');
+        return config?.createLogger ? config.createLogger() : loggerConfig().createLogger();
+      },
+      inject: [ConfigService],
     },
   ],
   exports: ['LOGGER'],

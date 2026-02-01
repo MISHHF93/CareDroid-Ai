@@ -3,22 +3,26 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, VerifyCallback } from 'passport-google-oauth20';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from '../auth.service';
-import { oauthConfig } from '../../../config/auth.config';
 import { OAuthProvider } from '../../users/entities/oauth-account.entity';
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
+  private readonly configService: ConfigService;
+  private readonly authService: AuthService;
+
   constructor(
-    private readonly configService: ConfigService,
-    private readonly authService: AuthService,
+    configService: ConfigService,
+    authService: AuthService,
   ) {
-    const config = oauthConfig(configService);
+    const config = configService.get<any>('oauth');
     super({
       clientID: config.google.clientId,
       clientSecret: config.google.clientSecret,
       callbackURL: config.google.callbackUrl,
       scope: ['email', 'profile'],
     });
+    this.configService = configService;
+    this.authService = authService;
   }
 
   async validate(

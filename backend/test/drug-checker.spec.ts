@@ -6,8 +6,8 @@
  */
 
 import { Test, TestingModule } from '@nestjs/testing';
-import { DrugCheckerService } from '../../../src/modules/medical-control-plane/tool-orchestrator/services/drug-checker.service';
-import { AIService } from '../../../src/modules/ai/ai.service';
+import { DrugCheckerService } from '../src/modules/medical-control-plane/tool-orchestrator/services/drug-checker.service';
+import { AIService } from '../src/modules/ai/ai.service';
 
 describe('DrugCheckerService', () => {
   let service: DrugCheckerService;

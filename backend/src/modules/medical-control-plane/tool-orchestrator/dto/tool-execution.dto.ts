@@ -45,5 +45,7 @@ export class ToolListDto {
     }>;
   }>;
   count: number;
+  tier?: string;
+  message?: string;
 }
 

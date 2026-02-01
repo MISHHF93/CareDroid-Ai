@@ -6,12 +6,12 @@
  */
 
 import { Test, TestingModule } from '@nestjs/testing';
-import { ToolOrchestratorService } from '../../../src/modules/medical-control-plane/tool-orchestrator/tool-orchestrator.service';
-import { SofaCalculatorService } from '../../../src/modules/medical-control-plane/tool-orchestrator/services/sofa-calculator.service';
-import { DrugCheckerService } from '../../../src/modules/medical-control-plane/tool-orchestrator/services/drug-checker.service';
-import { LabInterpreterService } from '../../../src/modules/medical-control-plane/tool-orchestrator/services/lab-interpreter.service';
-import { AuditService } from '../../../src/modules/audit/audit.service';
-import { AIService } from '../../../src/modules/ai/ai.service';
+import { ToolOrchestratorService } from '../src/modules/medical-control-plane/tool-orchestrator/tool-orchestrator.service';
+import { SofaCalculatorService } from '../src/modules/medical-control-plane/tool-orchestrator/services/sofa-calculator.service';
+import { DrugCheckerService } from '../src/modules/medical-control-plane/tool-orchestrator/services/drug-checker.service';
+import { LabInterpreterService } from '../src/modules/medical-control-plane/tool-orchestrator/services/lab-interpreter.service';
+import { AuditService } from '../src/modules/audit/audit.service';
+import { AIService } from '../src/modules/ai/ai.service';
 import { NotFoundException } from '@nestjs/common';
 
 describe('ToolOrchestratorService', () => {

@@ -3,6 +3,8 @@
  * Tracks user behavior, feature usage, and application performance
  */
 
+import { apiFetch } from './apiClient';
+
 class AnalyticsService {
   private userId: string | null = null;
   private sessionId: string;
@@ -115,7 +117,7 @@ class AnalyticsService {
     this.queue = [];
 
     try {
-      const response = await fetch('/api/analytics/events', {
+      const response = await apiFetch('/api/analytics/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

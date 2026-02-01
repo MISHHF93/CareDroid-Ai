@@ -10,12 +10,14 @@ import { DocumentChunk, IngestDocumentDto } from '../dto/medical-source.dto';
 
 export class DocumentChunker {
   private encoder: any;
-  private readonly DEFAULT_CHUNK_SIZE = 512;
-  private readonly DEFAULT_OVERLAP = 50;
+  private readonly chunkSize: number;
+  private readonly overlap: number;
 
-  constructor() {
+  constructor(chunkSize: number = 512, overlap: number = 50) {
     // Initialize tiktoken encoder for GPT models
     this.encoder = encoding_for_model('gpt-4');
+    this.chunkSize = chunkSize;
+    this.overlap = overlap;
   }
 
   /**
@@ -35,8 +37,8 @@ export class DocumentChunker {
       chunkingOptions = {},
     } = dto;
 
-    const chunkSize = chunkingOptions.chunkSize || this.DEFAULT_CHUNK_SIZE;
-    const overlap = chunkingOptions.overlap || this.DEFAULT_OVERLAP;
+    const chunkSize = chunkingOptions.chunkSize || this.chunkSize;
+    const overlap = chunkingOptions.overlap || this.overlap;
     const respectBoundaries = chunkingOptions.respectBoundaries ?? true;
 
     // Split into sentences for boundary-aware chunking

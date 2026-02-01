@@ -13,12 +13,20 @@ import OpenAI from 'openai';
 export class OpenAIEmbeddingsService {
   private readonly logger = new Logger(OpenAIEmbeddingsService.name);
   private readonly openai: OpenAI;
-  private readonly model = 'text-embedding-ada-002';
-  private readonly dimension = 1536;
-  private readonly maxBatchSize = 100; // OpenAI limit
+  private readonly model: string;
+  private readonly dimension: number;
+  private readonly maxBatchSize: number;
 
   constructor(private readonly configService: ConfigService) {
-    const apiKey = this.configService.get<string>('OPENAI_API_KEY');
+    const ragConfig = this.configService.get<any>('rag');
+    const ragEmbeddings = ragConfig?.embeddings || {};
+    const openaiConfig = this.configService.get<any>('openai');
+
+    this.model = ragEmbeddings.model || 'text-embedding-ada-002';
+    this.dimension = ragEmbeddings.dimension || 1536;
+    this.maxBatchSize = ragEmbeddings.batchSize || 100;
+
+    const apiKey = openaiConfig?.apiKey;
     
     if (!apiKey) {
       this.logger.warn('OPENAI_API_KEY is not configured. Embeddings service will not function.');

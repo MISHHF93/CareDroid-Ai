@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
+import appConfig from '../config/appConfig';
 import './LegalPages.css';
 
 const PrivacyPolicy = () => {
@@ -8,7 +9,10 @@ const PrivacyPolicy = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/legal/PRIVACY_POLICY.md')
+    // Use configured URL if available, otherwise fall back to default path
+    const url = appConfig.legal?.privacyPolicyUrl || '/legal/PRIVACY_POLICY.md';
+    
+    fetch(url)
       .then(res => res.text())
       .then(text => {
         setContent(text);

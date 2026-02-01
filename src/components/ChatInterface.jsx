@@ -5,6 +5,7 @@ import Citations, { CitationModal } from './Citations';
 import ConfidenceBadge from './ConfidenceBadge';
 import { getInventoryItem } from '../data/featureInventory';
 import { featureInventory } from '../data/featureInventory';
+import { apiFetch } from '../services/apiClient';
 
 const ChatInterface = ({
   isSidebarOpen,
@@ -64,7 +65,7 @@ const ChatInterface = ({
         headers.Authorization = `Bearer ${authToken}`;
       }
 
-      const response = await fetch('/api/chat/message', {
+      const response = await apiFetch('/api/chat/message', {
         method: 'POST',
         headers,
         body: JSON.stringify({

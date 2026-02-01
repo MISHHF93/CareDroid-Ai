@@ -27,4 +27,5 @@ export default registerAs('email', () => ({
       subject: 'Your two-factor authentication code',
     },
   },
+  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
 }));

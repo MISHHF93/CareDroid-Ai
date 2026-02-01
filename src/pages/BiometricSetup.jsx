@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { apiAxios } from '../services/apiClient';
 import { NativeBiometric, BiometricOptions } from '@capacitor/biometric';
 import './BiometricSetup.css';
+import appConfig from '../config/appConfig';
 
 const BiometricSetup = () => {
   const navigate = useNavigate();
@@ -14,6 +15,10 @@ const BiometricSetup = () => {
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
+    if (!appConfig.features.enableBiometricAuth) {
+      return;
+    }
+
     checkBiometricAvailability();
     loadBiometricConfig();
   }, []);
@@ -32,7 +37,7 @@ const BiometricSetup = () => {
   const loadBiometricConfig = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('/api/auth/biometric/config', {
+      const response = await apiAxios.get('/api/auth/biometric/config', {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -41,7 +46,7 @@ const BiometricSetup = () => {
       }
 
       // Load stats
-      const statsResponse = await axios.get('/api/auth/biometric/stats', {
+      const statsResponse = await apiAxios.get('/api/auth/biometric/stats', {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -62,7 +67,7 @@ const BiometricSetup = () => {
 
       // Call backend to enroll
       const token = localStorage.getItem('token');
-      const response = await axios.post(
+      const response = await apiAxios.post(
         '/api/auth/biometric/enroll',
         {
           biometricType: biometricType || 'fingerprint',
@@ -119,7 +124,7 @@ const BiometricSetup = () => {
       const deviceId = await getDeviceId();
       const userId = getUserIdFromToken();
 
-      const response = await axios.post('/api/auth/biometric/verify', {
+      const response = await apiAxios.post('/api/auth/biometric/verify', {
         userId,
         deviceId,
         challengeResponse: credentials.password,
@@ -147,7 +152,7 @@ const BiometricSetup = () => {
       const token = localStorage.getItem('token');
       const deviceId = await getDeviceId();
 
-      await axios.delete(`/api/auth/biometric/disable/${deviceId}`, {
+      await apiAxios.delete(`/api/auth/biometric/disable/${deviceId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -190,6 +195,22 @@ const BiometricSetup = () => {
       return null;
     }
   };
+
+  if (!appConfig.features.enableBiometricAuth) {
+    return (
+      <div className="biometric-setup">
+        <div className="biometric-container">
+          <div className="biometric-unavailable">
+            <h2>🔒 Biometric Disabled</h2>
+            <p>Biometric authentication is disabled by configuration.</p>
+            <button onClick={() => navigate('/settings')} className="btn-secondary">
+              Back to Settings
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!biometricAvailable) {
     return (

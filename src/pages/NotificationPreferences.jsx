@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import { apiAxios } from '../services/apiClient';
 import './NotificationPreferences.css';
 
 const NotificationPreferences = () => {
@@ -31,7 +31,7 @@ const NotificationPreferences = () => {
   const loadPreferences = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('/api/notifications/preferences', {
+      const response = await apiAxios.get('/api/notifications/preferences', {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -69,7 +69,7 @@ const NotificationPreferences = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.patch(
+      await apiAxios.patch(
         '/api/notifications/preferences',
         preferences,
         {
@@ -90,7 +90,7 @@ const NotificationPreferences = () => {
   const handleToggleAll = async (enabled) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.post(
+      await apiAxios.post(
         '/api/notifications/preferences/toggle-all',
         { enabled },
         {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { apiAxios } from '../services/apiClient';
 import './ConsentFlow.css';
 
 const ConsentFlow = () => {
@@ -27,7 +27,7 @@ const ConsentFlow = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await axios.get('/api/legal/consent/status', {
+      const response = await apiAxios.get('/api/legal/consent/status', {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -70,7 +70,7 @@ const ConsentFlow = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post(
+      const response = await apiAxios.post(
         '/api/legal/consent',
         {
           privacy: consents.privacy,

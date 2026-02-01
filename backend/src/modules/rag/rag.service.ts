@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { OpenAIEmbeddingsService } from './embeddings/openai-embeddings.service';
 import { PineconeService } from './vector-db/pinecone.service';
+import { CohereRankerService } from './reranking/cohere-ranker.service';
 import { DocumentChunker } from './utils/document-chunker';
 import { ToolMetricsService } from '../metrics/tool-metrics.service';
 import {
@@ -28,14 +29,32 @@ import { v4 as uuidv4 } from 'uuid';
 export class RAGService {
   private readonly logger = new Logger(RAGService.name);
   private documentChunker: DocumentChunker;
+  private readonly enabled: boolean;
+  private readonly defaultTopK: number;
+  private readonly defaultMinScore: number;
 
   constructor(
     private readonly embeddingsService: OpenAIEmbeddingsService,
     private readonly vectorDb: PineconeService,
     private readonly configService: ConfigService,
     private readonly toolMetrics: ToolMetricsService,
+    private readonly rankerService?: CohereRankerService,
   ) {
-    this.documentChunker = new DocumentChunker();
+    const ragConfig = this.configService.get<any>('rag') || {};
+    this.enabled = ragConfig?.enabled !== false;
+    
+    // Wire RAG configuration parameters
+    const chunkingConfig = ragConfig.chunking || {};
+    const retrievalConfig = ragConfig.retrieval || {};
+    
+    this.defaultTopK = retrievalConfig.defaultTopK || 5;
+    this.defaultMinScore = retrievalConfig.minScore || 0.7;
+    
+    const chunkSize = chunkingConfig.chunkSize || 512;
+    const chunkOverlap = chunkingConfig.overlap || 50;
+    
+    this.documentChunker = new DocumentChunker(chunkSize, chunkOverlap);
+    this.logger.log(`RAG configured: topK=${this.defaultTopK}, minScore=${this.defaultMinScore}, chunkSize=${chunkSize}, overlap=${chunkOverlap}`);
   }
 
   /**
@@ -46,12 +65,25 @@ export class RAGService {
     query: string,
     options: RAGRetrievalOptions = {},
   ): Promise<RAGContext> {
+    if (!this.enabled) {
+      this.logger.warn('RAG is disabled. Returning empty context.');
+      return {
+        chunks: [],
+        sources: [],
+        confidence: 0,
+        query,
+        timestamp: new Date(),
+        totalRetrieved: 0,
+        latencyMs: 0,
+      };
+    }
+
     const startTime = Date.now();
 
     try {
-      // Set defaults
-      const topK = options.topK || 5;
-      const minScore = options.minScore || 0.7;
+      // Set defaults from config
+      const topK = options.topK || this.defaultTopK;
+      const minScore = options.minScore || this.defaultMinScore;
       const includeEmbeddings = options.includeEmbeddings || false;
 
       this.logger.debug(`Retrieving context for query: "${query.substring(0, 100)}..."`);
@@ -78,13 +110,18 @@ export class RAGService {
       });
 
       // 4. Map to RetrievedChunks
-      const chunks: RetrievedChunk[] = queryResult.matches.map((match) => ({
+      let chunks: RetrievedChunk[] = queryResult.matches.map((match) => ({
         id: match.id,
         text: match.text,
         score: match.score,
         metadata: match.metadata,
         embedding: match.vector,
       }));
+
+      // 4a. Rerank results if enabled
+      if (this.rankerService?.isEnabled() && chunks.length > 0) {
+        chunks = await this.rankerService.rerank(query, chunks, topK);
+      }
 
       // Record RAG metrics
       if (chunks.length === 0) {
@@ -137,6 +174,9 @@ export class RAGService {
     chunksIngested: number;
     sourceId: string;
   }> {
+    if (!this.enabled) {
+      throw new Error('RAG is disabled. Ingestion is not available.');
+    }
     try {
       this.logger.log(`Ingesting document: ${dto.source.title}`);
 
@@ -185,6 +225,9 @@ export class RAGService {
     failed: number;
     totalChunks: number;
   }> {
+    if (!this.enabled) {
+      throw new Error('RAG is disabled. Batch ingestion is not available.');
+    }
     let successful = 0;
     let failed = 0;
     let totalChunks = 0;
@@ -231,6 +274,15 @@ export class RAGService {
     embeddingModel: string;
     embeddingDimension: number;
   }> {
+    if (!this.enabled) {
+      return {
+        totalVectors: 0,
+        indexName: 'disabled',
+        embeddingModel: this.embeddingsService.getModel(),
+        embeddingDimension: this.embeddingsService.getDimension(),
+      };
+    }
+
     const indexStats = await this.vectorDb.getStats();
 
     return {
@@ -251,6 +303,16 @@ export class RAGService {
       vectorDb: boolean;
     };
   }> {
+    if (!this.enabled) {
+      return {
+        healthy: true,
+        components: {
+          embeddings: true,
+          vectorDb: true,
+        },
+      };
+    }
+
     const [embeddingsHealthy, vectorDbHealthy] = await Promise.all([
       this.embeddingsService.healthCheck(),
       this.vectorDb.healthCheck(),
@@ -295,23 +357,39 @@ export class RAGService {
   /**
    * Calculate overall confidence score from chunk scores
    * Uses weighted average: top chunks have more weight
+   * Returns normalized score between 0 and 1
    */
   private calculateConfidence(chunks: RetrievedChunk[]): number {
     if (chunks.length === 0) {
       return 0;
     }
 
+    // Validate and normalize chunk scores (should be 0-1 from vector DB)
+    const validChunks = chunks.filter(chunk => 
+      typeof chunk.score === 'number' && chunk.score >= 0 && chunk.score <= 1
+    );
+
+    if (validChunks.length === 0) {
+      // Fallback: if no valid scores, return count-based confidence (min 10 chunks = 1.0)
+      return Math.min(chunks.length / 10, 1.0);
+    }
+
     // Weight chunks by position (first chunk has highest weight)
+    // Formula: weight = 1 / (index + 1) for exponential decay
     let totalWeight = 0;
     let weightedSum = 0;
 
-    chunks.forEach((chunk, index) => {
-      const weight = 1 / (index + 1); // 1, 0.5, 0.33, 0.25, ...
-      weightedSum += chunk.score * weight;
+    validChunks.forEach((chunk, index) => {
+      const weight = 1 / Math.pow(index + 1, 1.2); // Smooth exponential decay
+      // Ensure score is in 0-1 range
+      const normalizedScore = Math.min(Math.max(chunk.score, 0), 1);
+      weightedSum += normalizedScore * weight;
       totalWeight += weight;
     });
 
-    return weightedSum / totalWeight;
+    const confidence = totalWeight > 0 ? weightedSum / totalWeight : 0;
+    // Return confidence clamped to 0-1 range
+    return Math.min(Math.max(confidence, 0), 1);
   }
 
   /**

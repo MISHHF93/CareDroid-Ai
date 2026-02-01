@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './index.css';
+import appConfig from './config/appConfig';
 
 // Import services for initialization
 import CrashReportingService from './services/crashReportingService';
@@ -14,13 +15,14 @@ import offlineService from './services/offlineService';
 // ================================
 // Initialize Crash Reporting (Sentry)
 // ================================
-if (import.meta.env.VITE_ENABLE_CRASH_REPORTING === 'true' && import.meta.env.VITE_SENTRY_DSN) {
+if (appConfig.crashReporting.enabled && appConfig.crashReporting.dsn) {
   try {
     CrashReportingService.initialize({
-      dsn: import.meta.env.VITE_SENTRY_DSN,
-      environment: import.meta.env.VITE_SENTRY_ENVIRONMENT || 'development',
-      tracesSampleRate: parseFloat(import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE) || 0.1,
-      debug: import.meta.env.VITE_DEBUG === 'true',
+      dsn: appConfig.crashReporting.dsn,
+      environment: appConfig.crashReporting.environment,
+      tracesSampleRate: appConfig.crashReporting.tracesSampleRate,
+      profilesSampleRate: appConfig.crashReporting.profilesSampleRate,
+      debug: appConfig.crashReporting.debug,
     });
     console.log('✓ Sentry crash reporting initialized');
   } catch (error) {
@@ -31,17 +33,17 @@ if (import.meta.env.VITE_ENABLE_CRASH_REPORTING === 'true' && import.meta.env.VI
 // ================================
 // Initialize Analytics Service
 // ================================
-if (import.meta.env.VITE_ENABLE_ANALYTICS === 'true') {
+if (appConfig.analytics.enabled) {
   try {
-    if (import.meta.env.VITE_SEGMENT_WRITE_KEY) {
+    if (appConfig.analytics.segmentWriteKey) {
       // Initialize with Segment if available
-      AnalyticsService.initializeSegment(import.meta.env.VITE_SEGMENT_WRITE_KEY);
+      AnalyticsService.initializeSegment(appConfig.analytics.segmentWriteKey);
     }
     AnalyticsService.trackEvent({
       event: 'app_initialized',
       properties: {
-        app_version: import.meta.env.VITE_APP_VERSION,
-        app_environment: import.meta.env.VITE_APP_ENVIRONMENT,
+        app_version: appConfig.app.version,
+        app_environment: appConfig.app.environment,
       }
     });
     console.log('✓ Analytics service initialized');
@@ -53,12 +55,13 @@ if (import.meta.env.VITE_ENABLE_ANALYTICS === 'true') {
 // ================================
 // Initialize Notifications
 // ================================
-if (import.meta.env.VITE_ENABLE_PUSH_NOTIFICATIONS === 'true') {
+if (appConfig.features.enablePushNotifications) {
   // Request notification permission on app start
   NotificationService.requestPermission()
     .then((granted) => {
       if (granted) {
         console.log('✓ Notification permissions granted');
+        NotificationService.registerPushToken().catch(() => {});
       } else {
         console.log('ℹ Notification permissions not granted');
       }
@@ -69,7 +72,7 @@ if (import.meta.env.VITE_ENABLE_PUSH_NOTIFICATIONS === 'true') {
 // ================================
 // Initialize Offline Mode (Dexie + Sync Service)
 // ================================
-if (import.meta.env.VITE_ENABLE_OFFLINE_MODE === 'true') {
+if (appConfig.features.enableOfflineMode) {
   try {
     // Initialize offline storage
     offlineService.initialize()
@@ -98,7 +101,7 @@ if ('serviceWorker' in navigator) {
       .then(registration => {
         console.log('✓ Service Worker registered:', registration);
         // Set up periodic background sync if offline mode enabled
-        if (import.meta.env.VITE_ENABLE_OFFLINE_MODE === 'true' && 'periodicSync' in registration) {
+        if (appConfig.features.enableOfflineMode && 'periodicSync' in registration) {
           registration.periodicSync.register('sync-data', { minInterval: 24 * 60 * 60 * 1000 })
             .then(() => console.log('✓ Periodic background sync registered'))
             .catch(err => console.log('ℹ Periodic background sync not available:', err));
@@ -112,7 +115,7 @@ if ('serviceWorker' in navigator) {
 // Global Error Handler (Integrates with Sentry)
 // ================================
 window.addEventListener('error', (event) => {
-  if (import.meta.env.VITE_ENABLE_CRASH_REPORTING === 'true') {
+  if (appConfig.crashReporting.enabled) {
     try {
       CrashReportingService.captureException(event.error, {
         tags: {
@@ -126,7 +129,7 @@ window.addEventListener('error', (event) => {
 });
 
 window.addEventListener('unhandledrejection', (event) => {
-  if (import.meta.env.VITE_ENABLE_CRASH_REPORTING === 'true') {
+  if (appConfig.crashReporting.enabled) {
     try {
       CrashReportingService.captureException(event.reason, {
         tags: {

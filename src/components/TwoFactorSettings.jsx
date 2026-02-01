@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
+import { apiFetch } from '../services/apiClient';
 
 /**
  * TwoFactorSettings Component
@@ -23,7 +24,7 @@ const TwoFactorSettings = ({ authToken, onAddToast }) => {
   const fetchTwoFactorStatus = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/two-factor/status', {
+      const response = await apiFetch('/api/two-factor/status', {
         headers: {
           'Authorization': `Bearer ${authToken}`,
         },
@@ -55,7 +56,7 @@ const TwoFactorSettings = ({ authToken, onAddToast }) => {
 
     setDisabling(true);
     try {
-      const response = await fetch('/api/two-factor/disable', {
+      const response = await apiFetch('/api/two-factor/disable', {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${authToken}`,

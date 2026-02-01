@@ -50,9 +50,12 @@ export class EmailService {
     }
 
     try {
-      const emailConfig = this.configService.get('email');
+      const emailConfig = this.configService.get('email') || {};
+      const fromAddress = emailConfig?.from?.address;
+      const fromName = emailConfig?.from?.name;
+      const fromValue = fromName && fromAddress ? `${fromName} <${fromAddress}>` : fromAddress;
       const result = await this.transporter.sendMail({
-        from: emailConfig.from.address,
+        from: fromValue,
         to: options.to,
         subject: options.subject,
         html: options.html,
@@ -67,44 +70,58 @@ export class EmailService {
     }
   }
 
-  async sendVerificationEmail(email: string, token: string, baseUrl: string = 'http://localhost:5173'): Promise<boolean> {
-    const verificationLink = `${baseUrl}/verify-email?token=${token}`;
+  async sendVerificationEmail(email: string, token: string, baseUrl?: string): Promise<boolean> {
+    const emailConfig = this.configService.get('email') || {};
+    const verificationTemplate = emailConfig?.templates?.verification || {};
+    const expiryMinutes = verificationTemplate?.expiryMinutes ?? 60;
+    const subject = verificationTemplate?.subject || 'Verify your email - CareDroid';
+    const resolvedBaseUrl = baseUrl || this.getFrontendBaseUrl();
+    const verificationLink = `${resolvedBaseUrl}/verify-email?token=${token}`;
     const html = `
       <h2>Verify your email</h2>
       <p>Click the link below to verify your email address:</p>
       <a href="${verificationLink}">Verify Email</a>
       <p>Or copy this link: ${verificationLink}</p>
-      <p>This link expires in 60 minutes.</p>
+      <p>This link expires in ${expiryMinutes} minutes.</p>
     `;
 
     return this.sendEmail({
       to: email,
-      subject: 'Verify your email - CareDroid',
+      subject,
       html,
       text: `Verify your email: ${verificationLink}`,
     });
   }
 
-  async sendPasswordResetEmail(email: string, token: string, baseUrl: string = 'http://localhost:5173'): Promise<boolean> {
-    const resetLink = `${baseUrl}/reset-password?token=${token}`;
+  async sendPasswordResetEmail(email: string, token: string, baseUrl?: string): Promise<boolean> {
+    const emailConfig = this.configService.get('email') || {};
+    const resetTemplate = emailConfig?.templates?.passwordReset || {};
+    const expiryMinutes = resetTemplate?.expiryMinutes ?? 30;
+    const subject = resetTemplate?.subject || 'Reset your password - CareDroid';
+    const resolvedBaseUrl = baseUrl || this.getFrontendBaseUrl();
+    const resetLink = `${resolvedBaseUrl}/reset-password?token=${token}`;
     const html = `
       <h2>Reset your password</h2>
       <p>Click the link below to reset your password:</p>
       <a href="${resetLink}">Reset Password</a>
       <p>Or copy this link: ${resetLink}</p>
-      <p>This link expires in 30 minutes.</p>
+      <p>This link expires in ${expiryMinutes} minutes.</p>
       <p>If you didn't request this, please ignore this email.</p>
     `;
 
     return this.sendEmail({
       to: email,
-      subject: 'Reset your password - CareDroid',
+      subject,
       html,
       text: `Reset your password: ${resetLink}`,
     });
   }
 
   async sendTwoFactorCode(email: string, code: string): Promise<boolean> {
+    const emailConfig = this.configService.get('email') || {};
+    const subject =
+      emailConfig?.templates?.twoFactorCode?.subject ||
+      'Your two-factor authentication code - CareDroid';
     const html = `
       <h2>Two-Factor Authentication Code</h2>
       <p>Your authentication code is:</p>
@@ -115,7 +132,7 @@ export class EmailService {
 
     return this.sendEmail({
       to: email,
-      subject: 'Your two-factor authentication code - CareDroid',
+      subject,
       html,
       text: `Your 2FA code: ${code}`,
     });
@@ -135,5 +152,10 @@ export class EmailService {
       html,
       text: `Welcome to CareDroid, ${name}!`,
     });
+  }
+
+  private getFrontendBaseUrl(): string {
+    const emailConfig = this.configService.get<any>('email');
+    return emailConfig?.frontendUrl || 'http://localhost:5173';
   }
 }

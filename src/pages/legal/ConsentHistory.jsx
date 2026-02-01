@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Spinner } from '../../components/ui/Spinner';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { apiFetch } from '../../services/apiClient';
 import './ConsentHistory.css';
 
 /**
@@ -21,7 +22,7 @@ export const ConsentHistory = () => {
 
   const fetchConsentHistory = async () => {
     try {
-      const response = await fetch('/api/consent/history', {
+      const response = await apiFetch('/api/consent/history', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
         },

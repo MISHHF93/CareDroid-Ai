@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, forwardRef } from 'react';
+import { apiFetch } from '../../services/apiClient';
 import './OfflineSupport.css';
 
 /**
@@ -251,7 +252,7 @@ export const useOfflineStatus = () => {
 
     try {
       // Example: Sync conversations
-      const response = await fetch('/api/sync', {
+      const response = await apiFetch('/api/sync', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

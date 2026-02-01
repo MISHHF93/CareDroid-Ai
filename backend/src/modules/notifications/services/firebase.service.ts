@@ -1,10 +1,13 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import * as admin from 'firebase-admin';
 
 @Injectable()
 export class FirebaseService implements OnModuleInit {
   private readonly logger = new Logger(FirebaseService.name);
   private firebaseApp: admin.app.App;
+
+  constructor(private readonly configService: ConfigService) {}
 
   onModuleInit() {
     this.initializeFirebase();
@@ -19,12 +22,12 @@ export class FirebaseService implements OnModuleInit {
         return;
       }
 
-      //Initialize Firebase Admin SDK
-      const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
-        ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-        : null;
+      // Get Firebase configuration
+      const firebaseConfig = this.configService.get<any>('firebase');
+      const serviceAccount = firebaseConfig?.serviceAccount;
+      const credentialsPath = firebaseConfig?.credentialsPath;
 
-      if (!serviceAccount && !process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+      if (!serviceAccount && !credentialsPath) {
         this.logger.warn(
           'Firebase credentials not configured. Push notifications will fail. ' +
             'Set FIREBASE_SERVICE_ACCOUNT or GOOGLE_APPLICATION_CREDENTIALS environment variable.'
@@ -32,14 +35,25 @@ export class FirebaseService implements OnModuleInit {
         return;
       }
 
+      const projectId = firebaseConfig?.projectId || serviceAccount?.project_id;
+      const storageBucket = firebaseConfig?.storageBucket || serviceAccount?.storage_bucket;
+      const messagingSenderId = firebaseConfig?.messagingSenderId;
+
       const config: admin.AppOptions = serviceAccount
         ? {
             credential: admin.credential.cert(serviceAccount),
-            projectId: serviceAccount.project_id,
+            projectId,
+            storageBucket,
           }
         : {
             credential: admin.credential.applicationDefault(),
+            projectId,
+            storageBucket,
           };
+
+      if (messagingSenderId) {
+        (config as admin.AppOptions & { messagingSenderId?: string }).messagingSenderId = messagingSenderId;
+      }
 
       this.firebaseApp = admin.initializeApp(config);
       this.logger.log('Firebase Admin SDK initialized successfully');

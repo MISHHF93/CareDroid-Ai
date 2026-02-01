@@ -4,6 +4,10 @@
  * Service for managing notification-related API calls and browser notifications
  */
 
+import { apiFetch, buildStreamUrl } from './apiClient';
+import appConfig from '../config/appConfig';
+import { getFirebaseMessagingToken } from './firebaseClient';
+
 export const NotificationService = {
   /**
    * Request browser notification permission
@@ -27,6 +31,49 @@ export const NotificationService = {
   },
 
   /**
+   * Register device token for push notifications
+   */
+  async registerPushToken() {
+    try {
+      if (!appConfig.features.enablePushNotifications) {
+        return false;
+      }
+
+      const authToken = localStorage.getItem('caredroid_access_token');
+      if (!authToken) {
+        return false;
+      }
+
+      const token = await getFirebaseMessagingToken();
+      if (!token) {
+        return false;
+      }
+
+      const payload = {
+        token,
+        platform: 'web',
+        deviceModel: navigator.userAgent,
+        osVersion: navigator.platform,
+        appVersion: appConfig.app.version,
+      };
+
+      const response = await apiFetch('/api/notifications/devices/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      return response.ok;
+    } catch (error) {
+      console.error('Failed to register push token:', error);
+      return false;
+    }
+  },
+
+  /**
    * Send browser notification
    */
   sendBrowserNotification(title, options = {}) {
@@ -44,7 +91,7 @@ export const NotificationService = {
    */
   async fetchNotificationHistory(limit = 50) {
     try {
-      const response = await fetch(`/api/notifications?limit=${limit}`, {
+      const response = await apiFetch(`/api/notifications?limit=${limit}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
         },
@@ -66,7 +113,7 @@ export const NotificationService = {
    */
   async markAsRead(notificationId) {
     try {
-      const response = await fetch(`/api/notifications/${notificationId}/read`, {
+      const response = await apiFetch(`/api/notifications/${notificationId}/read`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
@@ -89,7 +136,7 @@ export const NotificationService = {
    */
   async deleteNotification(notificationId) {
     try {
-      const response = await fetch(`/api/notifications/${notificationId}`, {
+      const response = await apiFetch(`/api/notifications/${notificationId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
@@ -112,7 +159,7 @@ export const NotificationService = {
    */
   async getPreferences() {
     try {
-      const response = await fetch('/api/notifications/preferences', {
+      const response = await apiFetch('/api/notifications/preferences', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
         },
@@ -134,7 +181,7 @@ export const NotificationService = {
    */
   async updatePreferences(preferences) {
     try {
-      const response = await fetch('/api/notifications/preferences', {
+      const response = await apiFetch('/api/notifications/preferences', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -161,7 +208,7 @@ export const NotificationService = {
     const token = localStorage.getItem('authToken');
     
     const eventSource = new EventSource(
-      `/api/notifications/stream?token=${token}`
+      buildStreamUrl(`/api/notifications/stream?token=${token}`)
     );
 
     eventSource.onmessage = (event) => {
@@ -190,7 +237,7 @@ export const NotificationService = {
    */
   async sendTestNotification() {
     try {
-      const response = await fetch('/api/notifications/test', {
+      const response = await apiFetch('/api/notifications/test', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,

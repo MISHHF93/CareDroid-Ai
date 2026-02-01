@@ -4,6 +4,7 @@ apply plugin: 'kotlin-android'
 android {
     namespace "com.caredroid.clinical"
     compileSdk rootProject.ext.compileSdkVersion
+    def apiBaseUrl = project.findProperty('API_BASE_URL') ?: System.getenv('API_BASE_URL') ?: 'http://10.0.2.2:8000'
     
     defaultConfig {
         applicationId "com.caredroid.clinical"
@@ -15,6 +16,8 @@ android {
         
         vectorDrawables.useSupportLibrary = true
         multiDexEnabled true
+
+        buildConfigField "String", "API_BASE_URL", "\"${apiBaseUrl}\""
     }
     
     buildTypes {

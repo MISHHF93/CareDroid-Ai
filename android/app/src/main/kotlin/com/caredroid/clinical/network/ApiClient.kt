@@ -5,12 +5,13 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
+import com.caredroid.clinical.BuildConfig
 
 object ApiClient {
     
     // Backend API base URL
-    private const val BASE_URL = "http://10.0.2.2:8000"  // Android emulator localhost
-    // For physical device use your computer's IP: "http://192.168.x.x:8000"
+    private const val BASE_URL = BuildConfig.API_BASE_URL
+    // Override via Gradle property or environment: API_BASE_URL
     
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY

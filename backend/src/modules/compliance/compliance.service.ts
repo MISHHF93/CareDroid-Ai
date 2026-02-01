@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../users/entities/user.entity';
@@ -12,6 +12,8 @@ import { AuditAction } from '../audit/entities/audit-log.entity';
 
 @Injectable()
 export class ComplianceService {
+  private readonly logger = new Logger(ComplianceService.name);
+
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
@@ -189,28 +191,59 @@ export class ComplianceService {
   async updateConsent(userId: string, consentType: string, granted: boolean) {
     const user = await this.userRepository.findOne({
       where: { id: userId },
+      relations: ['profile'],
     });
 
     if (!user) {
       throw new Error('User not found');
     }
 
-    // In a real implementation, store consent preferences in UserProfile
-    // For now, just audit log the change
+    // Get or create user's profile
+    let profile = user.profile;
+    if (!profile) {
+      profile = this.profileRepository.create({
+        userId,
+        fullName: user.email,
+      });
+    }
+
+    // Update consent preferences based on type
+    const now = new Date();
+    switch (consentType) {
+      case 'marketing':
+        profile.consentMarketingCommunications = granted;
+        profile.consentMarketingUpdatedAt = now;
+        break;
+      case 'data_processing':
+        profile.consentDataProcessing = granted;
+        profile.consentDataProcessingUpdatedAt = now;
+        break;
+      case 'third_party_sharing':
+        profile.consentThirdPartySharing = granted;
+        profile.consentThirdPartySharingUpdatedAt = now;
+        break;
+    }
+
+    // Save updated profile
+    await this.profileRepository.save(profile);
+
+    // Audit log the change
     await this.auditService.log({
       userId,
       action: AuditAction.PROFILE_UPDATE,
       resource: 'compliance/consent',
-      details: { consentType, granted },
+      details: { consentType, granted, timestamp: now.toISOString() },
       ipAddress: '0.0.0.0',
       userAgent: 'system',
     });
+
+    this.logger.log(`User ${userId} consent updated: ${consentType} = ${granted}`);
 
     return {
       success: true,
       consentType,
       granted,
-      updatedAt: new Date().toISOString(),
+      updatedAt: now.toISOString(),
     };
   }
 }

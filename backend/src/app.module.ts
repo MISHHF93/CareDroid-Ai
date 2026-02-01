@@ -11,13 +11,18 @@ import { AppController } from './app.controller';
 
 // Configuration
 import { databaseConfig } from './config/database.config';
+import { jwtConfig, oauthConfig, sessionConfig } from './config/auth.config';
 import emailConfig from './config/email.config';
 import redisConfig from './config/redis.config';
 import stripeConfig from './config/stripe.config';
 import datadogConfig from './config/datadog.config';
 import openaiConfig from './config/openai.config';
 import encryptionConfig from './config/encryption.config';
+import loggerConfig from './config/logger.config';
 import ragConfig from './config/rag.config';
+import anomalyDetectionConfig from './config/anomaly-detection.config';
+import nluConfig from './config/nlu.config';
+import firebaseConfig from './config/firebase.config';
 
 // Modules
 import { AuthModule } from './modules/auth/auth.module';
@@ -47,7 +52,7 @@ import { MetricsModule } from './modules/metrics/metrics.module';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
-      load: [emailConfig, redisConfig, stripeConfig, datadogConfig, openaiConfig, encryptionConfig, ragConfig],
+      load: [jwtConfig, oauthConfig, sessionConfig, emailConfig, redisConfig, stripeConfig, datadogConfig, openaiConfig, encryptionConfig, loggerConfig, ragConfig, anomalyDetectionConfig, nluConfig, firebaseConfig],
     }),
 
     // Database (load after ConfigModule so .env is available)

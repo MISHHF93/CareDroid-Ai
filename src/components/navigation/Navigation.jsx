@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './Navigation.css';
+import { apiFetch } from '../../services/apiClient';
 
 /**
  * Breadcrumbs Component
@@ -136,7 +137,7 @@ export const UserMenu = ({ user = {} }) => {
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/logout', {
+      await apiFetch('/api/auth/logout', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('caredroid_access_token')}`,

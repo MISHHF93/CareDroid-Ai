@@ -41,6 +41,7 @@ export class IntentClassifierService {
   private readonly nluResetMs = 30_000;
   private readonly llmFailureThreshold = 3;
   private readonly llmResetMs = 30_000;
+  private readonly nluEnabled: boolean;
 
   private readonly nluCircuitBreaker = {
     failureCount: 0,
@@ -57,8 +58,10 @@ export class IntentClassifierService {
     private readonly configService: ConfigService,
     private readonly nluMetrics: NluMetricsService,
   ) {
-    const baseUrl = this.configService.get<string>('NLU_SERVICE_URL') || 'http://localhost:8001';
+    const nluConfig = this.configService.get<any>('nlu');
+    const baseUrl = nluConfig?.url || 'http://localhost:8001';
     this.nluServiceUrl = baseUrl.replace(/\/$/, '');
+    this.nluEnabled = nluConfig?.enabled !== false;
   }
 
   /**
@@ -272,6 +275,11 @@ export class IntentClassifierService {
     message: string,
     context?: IntentClassificationContext,
   ): Promise<Omit<IntentClassification, 'isEmergency' | 'emergencyKeywords' | 'emergencySeverity' | 'method' | 'classifiedAt'> | null> {
+    if (!this.nluEnabled) {
+      this.logger.warn('NLU service disabled by configuration. Skipping NLU phase.');
+      return null;
+    }
+
     if (this.isCircuitOpen(this.nluCircuitBreaker)) {
       this.logger.warn('NLU circuit breaker is open. Skipping NLU phase.');
       return null;

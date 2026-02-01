@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { AIService } from '../ai/ai.service';
 import { IntentClassifierService } from '../medical-control-plane/intent-classifier/intent-classifier.service';
 import { ToolOrchestratorService } from '../medical-control-plane/tool-orchestrator/tool-orchestrator.service';
@@ -41,6 +42,9 @@ interface QueryResponse {
 @Injectable()
 export class ChatService {
   private readonly logger = new Logger(ChatService.name);
+  private readonly ragEnabled: boolean;
+  private readonly anomalyDetectionEnabled: boolean;
+  private readonly anomalyDetectionUrl: string;
 
   constructor(
     private readonly aiService: AIService,
@@ -50,7 +54,14 @@ export class ChatService {
     private readonly auditService: AuditService,
     private readonly ragService: RAGService,
     private readonly nluMetrics: NluMetricsService,
-  ) {}
+    private readonly configService: ConfigService,
+  ) {
+    const ragConfig = this.configService.get<any>('rag');
+    this.ragEnabled = ragConfig?.enabled !== false;
+    const anomalyConfig = this.configService.get<any>('anomalyDetection') || {};
+    this.anomalyDetectionEnabled = anomalyConfig.enabled !== false;
+    this.anomalyDetectionUrl = anomalyConfig.url || '';
+  }
 
   async processQuery(
     patientId: string,
@@ -74,6 +85,7 @@ export class ChatService {
     feature?: string,
     conversationId?: number,
     userId?: string,
+    userRole?: string,
   ): Promise<QueryResponse> {
     this.logger.log(`💬 Processing chat message: "${message}"`);
 
@@ -85,7 +97,7 @@ export class ChatService {
       classification = await this.intentClassifier.classify(message, {
         userId: userId || 'anonymous',
         conversationId,
-        userRole: 'clinician', // TODO: Get from user context
+        userRole: userRole || 'clinician',
       });
 
       this.logger.log(
@@ -187,10 +199,14 @@ export class ChatService {
       let toolResults: any = undefined;
 
       try {
-        ragContext = await this.ragService.retrieve(message, {
-          topK: 3,
-          minScore: 0.7,
-        });
+        if (this.ragEnabled) {
+          ragContext = await this.ragService.retrieve(message, {
+            topK: 3,
+            minScore: 0.7,
+          });
+        } else {
+          ragContext = { chunks: [], sources: [], confidence: 0, latencyMs: 0 };
+        }
 
         if (ragContext.chunks.length > 0) {
           this.logger.log(`📖 RAG: Retrieved ${ragContext.chunks.length} chunks for general query`);
@@ -506,6 +522,19 @@ Return ONLY a JSON object with the extracted values. Return null for any paramet
   ): Promise<QueryResponse> {
     this.logger.log(`📚 Handling medical reference query with RAG`);
 
+    if (!this.ragEnabled) {
+      return {
+        text: 'RAG is disabled in the current environment. Unable to retrieve medical references.',
+        suggestions: ['General information', 'Rephrase query'],
+        confidence: 0,
+        ragContext: {
+          chunksRetrieved: 0,
+          sourcesFound: 0,
+        },
+        intentClassification: classification,
+      };
+    }
+
     try {
       // ========================================
       // STEP 1: RETRIEVE RELEVANT CONTEXT VIA RAG
@@ -790,14 +819,22 @@ Return ONLY a JSON object with the extracted values. Return null for any paramet
     }
 
     if (lowerMessage.includes('vital')) {
+      const vitalsSuggestions = ['Vital trends', 'Anomaly detection', 'Alert thresholds']
+        .filter((suggestion) => this.anomalyDetectionEnabled || suggestion !== 'Anomaly detection');
+      const anomalyInsights = await this.fetchAnomalyInsights(context?.vitals);
       return {
         text: `Current vital signs analysis. Patient vitals are being monitored in real-time.`,
-        suggestions: ['Vital trends', 'Anomaly detection', 'Alert thresholds'],
+        suggestions: anomalyInsights?.suggestions?.length
+          ? Array.from(new Set([...vitalsSuggestions, ...anomalyInsights.suggestions]))
+          : vitalsSuggestions,
         visualizations: [
           {
             type: 'vitals',
             data: context?.vitals || {},
           },
+          ...(anomalyInsights?.summary
+            ? [{ type: 'anomaly-detection', data: anomalyInsights.summary }]
+            : []),
         ],
       };
     }
@@ -837,5 +874,37 @@ Return ONLY a JSON object with the extracted values. Return null for any paramet
       ipAddress: '0.0.0.0',
       userAgent: 'system',
     });
+  }
+
+  private async fetchAnomalyInsights(vitals?: Record<string, any>): Promise<{ summary?: any; suggestions?: string[] } | null> {
+    if (!this.anomalyDetectionEnabled || !this.anomalyDetectionUrl || !vitals) {
+      return null;
+    }
+
+    try {
+      const response = await fetch(this.anomalyDetectionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ vitals }),
+      });
+
+      if (!response.ok) {
+        this.logger.warn(`Anomaly detection request failed: ${response.status}`);
+        return null;
+      }
+
+      const data = await response.json().catch(() => ({}));
+      const suggestions = Array.isArray(data?.suggestions) ? data.suggestions : undefined;
+      const summary = data?.summary ?? data;
+
+      return { summary, suggestions };
+    } catch (error) {
+      this.logger.warn(
+        `Anomaly detection request error: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return null;
+    }
   }
 }

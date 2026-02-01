@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import Input from '../components/ui/Input';
+import { apiFetch } from '../services/apiClient';
 
 /**
  * TwoFactorSetup Component
@@ -29,7 +30,7 @@ const TwoFactorSetup = ({ authToken, onAddToast }) => {
   const generateSecret = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/two-factor/generate', {
+      const response = await apiFetch('/api/two-factor/generate', {
         headers: {
           'Authorization': `Bearer ${authToken}`,
         },
@@ -60,7 +61,7 @@ const TwoFactorSetup = ({ authToken, onAddToast }) => {
 
     setLoading(true);
     try {
-      const response = await fetch('/api/two-factor/enable', {
+      const response = await apiFetch('/api/two-factor/enable', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${authToken}`,

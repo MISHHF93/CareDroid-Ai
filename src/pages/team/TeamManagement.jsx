@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import './TeamManagement.css';
+import { apiFetch } from '../../services/apiClient';
 
 /**
  * TeamManagement Page Component
@@ -26,7 +27,7 @@ export const TeamManagement = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/team/users', {
+      const response = await apiFetch('/api/team/users', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
         },
@@ -78,7 +79,7 @@ export const TeamManagement = () => {
 
   const handleSaveUser = async (updatedUser) => {
     try {
-      const response = await fetch(`/api/team/users/${selectedUser.id}`, {
+      const response = await apiFetch(`/api/team/users/${selectedUser.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -107,7 +108,7 @@ export const TeamManagement = () => {
     }
 
     try {
-      const response = await fetch(`/api/team/users/${userId}`, {
+      const response = await apiFetch(`/api/team/users/${userId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
@@ -128,7 +129,7 @@ export const TeamManagement = () => {
     if (!inviteEmail) return;
 
     try {
-      const response = await fetch('/api/team/invite', {
+      const response = await apiFetch('/api/team/invite', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -13,13 +13,14 @@ import {
   Request,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { ToolOrchestratorService } from './tool-orchestrator.service';
 import { ExecuteToolDto, ToolExecutionResponseDto, ToolListDto } from './dto/tool-execution.dto';
 
 @Controller('tools')
-// TODO: Add JwtAuthGuard when auth is fully configured
-// @UseGuards(JwtAuthGuard)
+@UseGuards(AuthGuard('jwt'))
 export class ToolOrchestratorController {
   constructor(private readonly toolOrchestratorService: ToolOrchestratorService) {}
 
@@ -31,6 +32,18 @@ export class ToolOrchestratorController {
   @HttpCode(HttpStatus.OK)
   listTools(): ToolListDto {
     return this.toolOrchestratorService.listAvailableTools();
+  }
+
+  /**
+   * GET /tools/available
+   * Get tools available for user's current subscription tier
+   */
+  @Get('available')
+  @UseGuards(AuthGuard('jwt'))
+  @HttpCode(HttpStatus.OK)
+  getAvailableTools(@Request() req: any): ToolListDto {
+    const tier = req.user?.subscriptionTier || 'free';
+    return this.toolOrchestratorService.getToolsBySubscriptionTier(tier);
   }
 
   /**

@@ -81,8 +81,9 @@ export class ChatController {
   @Post('message')
   @RequirePermission(Permission.USE_AI_CHAT)
   async sendMessage(@Body() dto: ChatMessageDto, @Req() req?: any): Promise<ChatResponseDto> {
-    // Extract userId from request if authenticated
+    // Extract userId and role from request if authenticated
     const userId = req?.user?.id || 'anonymous';
+    const userRole = req?.user?.role || null;
     
     const response = await this.chatService.processMessage(
       dto.message,
@@ -90,6 +91,7 @@ export class ChatController {
       dto.feature,
       dto.conversationId,
       userId,
+      userRole,
     );
 
     return {

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { apiFetch } from '../services/apiClient';
 
 /**
  * User Context for managing authentication and role-based access
@@ -156,7 +157,7 @@ export const UserProvider = ({ children }) => {
 
     const fetchUserProfile = async () => {
       try {
-        const response = await fetch('/api/users/profile', {
+        const response = await apiFetch('/api/users/profile', {
           headers: {
             'Authorization': `Bearer ${authToken}`,
             'Content-Type': 'application/json',

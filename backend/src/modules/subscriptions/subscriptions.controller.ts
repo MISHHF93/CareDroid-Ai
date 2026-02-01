@@ -15,7 +15,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
 import { SubscriptionsService } from './subscriptions.service';
 import { CreateCheckoutDto } from './dto/create-checkout.dto';
-import { stripeConfig } from '../../config/stripe.config';
+import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
 
 @ApiTags('subscriptions')
@@ -23,8 +23,12 @@ import Stripe from 'stripe';
 export class SubscriptionsController {
   private stripe: Stripe;
 
-  constructor(private readonly subscriptionsService: SubscriptionsService) {
-    this.stripe = new Stripe(stripeConfig.secretKey, {
+  constructor(
+    private readonly subscriptionsService: SubscriptionsService,
+    private readonly configService: ConfigService,
+  ) {
+    const stripeSecret = this.configService.get<string>('stripe.secretKey');
+    this.stripe = new Stripe(stripeSecret, {
       apiVersion: '2023-10-16',
     });
   }
@@ -34,6 +38,14 @@ export class SubscriptionsController {
   @ApiResponse({ status: 200, description: 'List of subscription plans' })
   async getPlans() {
     return this.subscriptionsService.getSubscriptionPlans();
+  }
+
+  @Get('config')
+  @ApiOperation({ summary: 'Get Stripe public configuration' })
+  @ApiResponse({ status: 200, description: 'Stripe publishable key' })
+  async getStripeConfig() {
+    const publishableKey = this.configService.get<string>('stripe.publishableKey') || '';
+    return { publishableKey };
   }
 
   @Post('create-checkout')
@@ -75,11 +87,8 @@ export class SubscriptionsController {
     let event: Stripe.Event;
 
     try {
-      event = this.stripe.webhooks.constructEvent(
-        req.rawBody,
-        signature,
-        stripeConfig.webhookSecret,
-      );
+      const webhookSecret = this.configService.get<string>('stripe.webhookSecret');
+      event = this.stripe.webhooks.constructEvent(req.rawBody, signature, webhookSecret);
     } catch (err) {
       console.error('Webhook signature verification failed:', err instanceof Error ? err.message : String(err));
       return { error: 'Webhook signature verification failed' };

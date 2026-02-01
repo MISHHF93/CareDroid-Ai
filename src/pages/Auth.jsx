@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import Input from '../components/ui/Input';
+import appConfig from '../config/appConfig';
+import { apiFetch } from '../services/apiClient';
 
 const Auth = ({ onAddToast, onAuthSuccess }) => {
   const [mode, setMode] = useState('login');
@@ -11,7 +13,7 @@ const Auth = ({ onAddToast, onAuthSuccess }) => {
   const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
   const [userId, setUserId] = useState(null);
   const [twoFactorToken, setTwoFactorToken] = useState('');
-  const bypassToken = import.meta.env.VITE_DEV_BEARER_TOKEN || 'dev-bypass-token';
+  const bypassToken = appConfig.dev.bearerToken;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,7 +23,7 @@ const Auth = ({ onAddToast, onAuthSuccess }) => {
         ? { email: form.email, password: form.password }
         : { email: form.email, password: form.password, fullName: form.name };
 
-      const response = await fetch(endpoint, {
+      const response = await apiFetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -60,7 +62,7 @@ const Auth = ({ onAddToast, onAuthSuccess }) => {
     }
 
     try {
-      const response = await fetch('/api/auth/verify-2fa', {
+      const response = await apiFetch('/api/auth/verify-2fa', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, token: twoFactorToken })
@@ -95,7 +97,7 @@ const Auth = ({ onAddToast, onAuthSuccess }) => {
     }
 
     try {
-      const response = await fetch('/api/auth/magic-link', {
+      const response = await apiFetch('/api/auth/magic-link', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: magicEmail })
@@ -207,7 +209,7 @@ const Auth = ({ onAddToast, onAuthSuccess }) => {
           <button
             onClick={async () => {
               try {
-                const response = await fetch('/api/auth/oidc');
+                const response = await apiFetch('/api/auth/oidc');
                 const data = await response.json().catch(() => ({}));
                 onAddToast?.(data?.message || 'OIDC SSO is not configured.', 'info');
               } catch (error) {
@@ -229,7 +231,7 @@ const Auth = ({ onAddToast, onAuthSuccess }) => {
           <button
             onClick={async () => {
               try {
-                const response = await fetch('/api/auth/saml');
+                const response = await apiFetch('/api/auth/saml');
                 const data = await response.json().catch(() => ({}));
                 onAddToast?.(data?.message || 'SAML SSO is not configured.', 'info');
               } catch (error) {

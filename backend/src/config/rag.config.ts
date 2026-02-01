@@ -8,6 +8,7 @@ import { registerAs } from '@nestjs/config';
  */
 
 export default registerAs('rag', () => ({
+  enabled: process.env.RAG_ENABLED !== 'false',
   /**
    * Pinecone Configuration
    */
@@ -16,13 +17,14 @@ export default registerAs('rag', () => ({
     indexName: process.env.PINECONE_INDEX_NAME || 'caredroid-medical',
     dimension: parseInt(process.env.PINECONE_DIMENSION || '1536', 10),
     environment: process.env.PINECONE_ENVIRONMENT || 'gcp-starter',
+    namespace: process.env.PINECONE_NAMESPACE || '',
   },
 
   /**
    * Embeddings Configuration
    */
   embeddings: {
-    model: process.env.EMBEDDING_MODEL || 'text-embedding-ada-002',
+    model: process.env.RAG_MODEL || process.env.EMBEDDING_MODEL || 'text-embedding-ada-002',
     dimension: parseInt(process.env.EMBEDDING_DIMENSION || '1536', 10),
     batchSize: parseInt(process.env.EMBEDDING_BATCH_SIZE || '100', 10),
   },

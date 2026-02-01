@@ -21,9 +21,12 @@ import AuthShell from './layout/AuthShell';
 import AppShell from './layout/AppShell';
 import { UserProvider, useUser, Permission } from './contexts/UserContext';
 import { NotificationProvider } from './contexts/NotificationContext';
+import { SystemConfigProvider } from './contexts/SystemConfigContext';
 import PermissionGate from './components/PermissionGate';
 import AnalyticsService from './services/analyticsService';
 import CrashReportingService from './services/crashReportingService';
+import { apiFetch } from './services/apiClient';
+import { NotificationService } from './services/NotificationService';
 
 const SESSION_KEY = 'caredroid_session_id';
 const AUTH_TOKEN_KEY = 'caredroid_access_token';
@@ -110,7 +113,7 @@ function AppContent() {
 
     const checkHealth = async () => {
       try {
-        const response = await fetch('/health');
+        const response = await apiFetch('/health');
         if (!isActive) return;
         setHealthStatus(response.ok ? 'online' : 'offline');
       } catch (error) {
@@ -174,6 +177,8 @@ function AppContent() {
     setAuthToken(token);
     console.log('=== setAuthToken called - state updated ===');
     console.log('isAuthed should now be:', !!token);
+
+    NotificationService.registerPushToken().catch(() => {});
     
     addToast('Signed in successfully.', 'success');
   };
@@ -217,7 +222,7 @@ function AppContent() {
       }]
     };
 
-    fetch('/api/analytics/events', {
+    apiFetch('/api/analytics/events', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -462,7 +467,9 @@ function App() {
   return (
     <UserProvider>
       <NotificationProvider>
-        <AppContent />
+        <SystemConfigProvider>
+          <AppContent />
+        </SystemConfigProvider>
       </NotificationProvider>
     </UserProvider>
   );

@@ -6,8 +6,8 @@
  */
 
 import { Test, TestingModule } from '@nestjs/testing';
-import { LabInterpreterService } from '../../../src/modules/medical-control-plane/tool-orchestrator/services/lab-interpreter.service';
-import { AIService } from '../../../src/modules/ai/ai.service';
+import { LabInterpreterService } from '../src/modules/medical-control-plane/tool-orchestrator/services/lab-interpreter.service';
+import { AIService } from '../src/modules/ai/ai.service';
 
 describe('LabInterpreterService', () => {
   let service: LabInterpreterService;

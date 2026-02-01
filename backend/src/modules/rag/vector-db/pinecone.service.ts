@@ -25,11 +25,16 @@ export class PineconeService implements IVectorDatabase, OnModuleInit {
   private index: Index<RecordMetadata>;
   private indexName: string;
   private dimension: number;
+  private namespace: string;
   private initialized = false;
 
   constructor(private readonly configService: ConfigService) {
-    this.indexName = this.configService.get<string>('PINECONE_INDEX_NAME', 'caredroid-medical');
-    this.dimension = this.configService.get<number>('PINECONE_DIMENSION', 1536);
+    const ragConfig = this.configService.get<any>('rag');
+    const pineconeConfig = ragConfig?.pinecone || {};
+    
+    this.indexName = pineconeConfig.indexName || 'caredroid-medical';
+    this.dimension = pineconeConfig.dimension || 1536;
+    this.namespace = (pineconeConfig.namespace || '').trim();
   }
 
   async onModuleInit() {
@@ -45,7 +50,9 @@ export class PineconeService implements IVectorDatabase, OnModuleInit {
     }
 
     try {
-      const apiKey = this.configService.get<string>('PINECONE_API_KEY');
+      const ragConfig = this.configService.get<any>('rag');
+      const pineconeConfig = ragConfig?.pinecone || {};
+      const apiKey = pineconeConfig.apiKey;
 
       if (!apiKey) {
         this.logger.warn('PINECONE_API_KEY is not configured. Vector database functionality will be disabled.');
@@ -65,7 +72,10 @@ export class PineconeService implements IVectorDatabase, OnModuleInit {
       await this.getStats();
 
       this.initialized = true;
-      this.logger.log(`Successfully connected to Pinecone index: ${this.indexName}`);
+      this.logger.log(
+        `Successfully connected to Pinecone index: ${this.indexName}` +
+          (this.namespace ? ` (namespace: ${this.namespace})` : '')
+      );
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
       this.logger.error(`Failed to initialize Pinecone: ${err.message}`, err.stack);
@@ -107,7 +117,7 @@ export class PineconeService implements IVectorDatabase, OnModuleInit {
         queryRequest.filter = this.buildFilter(filter);
       }
 
-      const response = await this.index.query(queryRequest);
+      const response = await this.getIndexClient().query(queryRequest);
 
       // Filter by minimum score and map to VectorMatch
       const matches: VectorMatch[] = response.matches
@@ -164,7 +174,7 @@ export class PineconeService implements IVectorDatabase, OnModuleInit {
       const batchSize = 100;
       for (let i = 0; i < vectors.length; i += batchSize) {
         const batch = vectors.slice(i, i + batchSize);
-        await this.index.upsert(batch);
+        await this.getIndexClient().upsert(batch);
         this.logger.debug(`Upserted batch ${i / batchSize + 1} (${batch.length} vectors)`);
       }
 
@@ -189,7 +199,7 @@ export class PineconeService implements IVectorDatabase, OnModuleInit {
     }
 
     try {
-      await this.index.deleteMany(ids);
+      await this.getIndexClient().deleteMany(ids);
       this.logger.log(`Deleted ${ids.length} vectors`);
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
@@ -208,7 +218,7 @@ export class PineconeService implements IVectorDatabase, OnModuleInit {
 
     try {
       const pineconeFilter = this.buildFilter(filter);
-      await this.index.deleteMany(pineconeFilter);
+      await this.getIndexClient().deleteMany(pineconeFilter);
       this.logger.log(`Deleted vectors matching filter`);
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
@@ -279,6 +289,15 @@ export class PineconeService implements IVectorDatabase, OnModuleInit {
     }
 
     return pineconeFilter;
+  }
+
+  private getIndexClient(): Index<RecordMetadata> {
+    if (!this.namespace) {
+      return this.index;
+    }
+
+    const namespacedIndex = (this.index as any).namespace?.(this.namespace);
+    return namespacedIndex || this.index;
   }
 
   /**

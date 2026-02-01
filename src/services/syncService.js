@@ -4,6 +4,7 @@
  */
 import { db, initializeDatabase } from '../db/offline.db';
 import offlineService from './offlineService';
+import { apiFetch } from './apiClient';
 
 class SyncService {
   constructor() {
@@ -142,7 +143,7 @@ class SyncService {
 
     for (const message of messages) {
       try {
-        const response = await fetch(
+        const response = await apiFetch(
           '/api/chat/messages',
           {
             method: 'POST',
@@ -190,7 +191,7 @@ class SyncService {
 
     for (const conversation of conversations) {
       try {
-        const response = await fetch(
+        const response = await apiFetch(
           '/api/chat/conversations',
           {
             method: 'POST',
@@ -235,7 +236,7 @@ class SyncService {
 
     for (const result of toolResults) {
       try {
-        const response = await fetch(
+        const response = await apiFetch(
           '/api/tools/results',
           {
             method: 'POST',
@@ -277,7 +278,7 @@ class SyncService {
       try {
         if (notification.read && notification.serverId) {
           // Mark as read on server
-          const response = await fetch(
+          const response = await apiFetch(
             `/api/notifications/${notification.serverId}/read`,
             {
               method: 'PATCH',
@@ -314,7 +315,7 @@ class SyncService {
 
     for (const log of auditLogs) {
       try {
-        const response = await fetch(
+        const response = await apiFetch(
           '/api/audit/sync',
           {
             method: 'POST',
@@ -352,7 +353,7 @@ class SyncService {
       console.log('Downloading latest data from server...');
 
       // Get user profile
-      const profileResponse = await fetch('/api/user/profile', {
+      const profileResponse = await apiFetch('/api/user/profile', {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -367,7 +368,7 @@ class SyncService {
       }
 
       // Get latest notifications
-      const notificationsResponse = await fetch('/api/notifications?limit=50', {
+      const notificationsResponse = await apiFetch('/api/notifications?limit=50', {
         headers: { Authorization: `Bearer ${token}` },
       });
 

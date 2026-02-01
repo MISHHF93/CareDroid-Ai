@@ -1,6 +1,6 @@
 import * as winston from 'winston';
-import * as path from 'path';
-import * as fs from 'fs';
+import 'winston-daily-rotate-file';
+import { registerAs } from '@nestjs/config';
 
 /**
  * Winston Logger Configuration
@@ -8,8 +8,6 @@ import * as fs from 'fs';
  * - Console (development)
  * JSON formatting for structured logging
  */
-
-const isProduction = process.env.NODE_ENV === 'production';
 
 // JSON formatter for structured logging
 const jsonFormatter = winston.format.combine(
@@ -28,19 +26,59 @@ const consoleFormatter = winston.format.combine(
   }),
 );
 
-export const winstonLogger = winston.createLogger({
-  level: isProduction ? 'info' : 'debug',
-  format: jsonFormatter,
-  defaultMeta: {
-    service: 'caredroid-backend',
-    environment: process.env.NODE_ENV || 'development',
-  },
-  transports: [
+export default registerAs('logger', () => {
+  const isProduction = (process.env.NODE_ENV || 'development') === 'production';
+  const logLevel = process.env.LOG_LEVEL || (isProduction ? 'info' : 'debug');
+  const logDir = process.env.LOG_DIR || 'logs';
+  const maxSize = process.env.LOG_MAX_SIZE || '20m';
+  const maxDaysCombined = isProduction
+    ? (process.env.LOG_MAX_DAYS_PROD_COMBINED || '30')
+    : (process.env.LOG_MAX_DAYS_COMBINED || '7');
+  const maxDaysErrors = isProduction
+    ? (process.env.LOG_MAX_DAYS_PROD_ERRORS || '60')
+    : (process.env.LOG_MAX_DAYS_ERRORS || '14');
+
+  const transports: winston.transport[] = [
     new winston.transports.Console({
       format: consoleFormatter,
-      level: isProduction ? 'warn' : 'debug',
+      level: isProduction ? 'warn' : logLevel,
     }),
-  ],
-});
+  ];
 
-export default winstonLogger;
+  if (logDir) {
+    transports.push(
+      new winston.transports.DailyRotateFile({
+        dirname: logDir,
+        filename: 'combined-%DATE%.log',
+        datePattern: 'YYYY-MM-DD',
+        maxSize,
+        maxFiles: maxDaysCombined,
+        level: logLevel,
+        format: jsonFormatter,
+      }) as any,
+      new winston.transports.DailyRotateFile({
+        dirname: logDir,
+        filename: 'error-%DATE%.log',
+        datePattern: 'YYYY-MM-DD',
+        maxSize,
+        maxFiles: maxDaysErrors,
+        level: 'error',
+        format: jsonFormatter,
+      }) as any,
+    );
+  }
+  
+  return {
+    level: logLevel,
+    format: jsonFormatter,
+    createLogger: () => winston.createLogger({
+      level: logLevel,
+      format: jsonFormatter,
+      defaultMeta: {
+        service: 'caredroid-backend',
+        environment: process.env.NODE_ENV || 'development',
+      },
+      transports,
+    }),
+  };
+});

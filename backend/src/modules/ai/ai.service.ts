@@ -2,9 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, MoreThanOrEqual } from 'typeorm';
 import { User } from '../users/entities/user.entity';
 import { Subscription, SubscriptionTier } from '../subscriptions/entities/subscription.entity';
+import { AIQuery, QueryStatus } from './entities/ai-query.entity';
 import { AuditService } from '../audit/audit.service';
 import { AuditAction } from '../audit/entities/audit-log.entity';
 import { MetricsService } from '../metrics/metrics.service';
@@ -36,9 +37,12 @@ export class AIService {
   private readonly rateLimits: Map<SubscriptionTier, RateLimitConfig>;
   private readonly openaiPricing: Map<string, OpenaiPricing>;
   private readonly toolDefinitions: ToolDefinition[];
+  private readonly temperature: number;
 
   constructor(
     private readonly configService: ConfigService,
+    @InjectRepository(AIQuery)
+    private readonly aiQueryRepository: Repository<AIQuery>,
     @InjectRepository(Subscription)
     private readonly subscriptionRepository: Repository<Subscription>,
     @InjectRepository(User)
@@ -46,6 +50,12 @@ export class AIService {
     private readonly auditService: AuditService,
     private readonly metricsService: MetricsService,
   ) {
+    const openaiConfig = this.configService.get<any>('openai') || {};
+    const openaiRateLimits = openaiConfig.rateLimits || {};
+    const defaultModel = openaiConfig.model || 'gpt-4o';
+    const defaultMaxTokens = openaiConfig.maxTokens || 2000;
+    this.temperature = openaiConfig.temperature ?? 0.7;
+
     const apiKey = this.configService.get<string>('OPENAI_API_KEY');
     if (apiKey) {
       this.openai = new OpenAI({
@@ -55,9 +65,30 @@ export class AIService {
 
     // Rate limits from openai.config.ts
     this.rateLimits = new Map([
-      [SubscriptionTier.FREE, { dailyLimit: 10, model: 'gpt-4o-mini', maxTokens: 1000 }],
-      [SubscriptionTier.PROFESSIONAL, { dailyLimit: 1000, model: 'gpt-4o', maxTokens: 4000 }],
-      [SubscriptionTier.INSTITUTIONAL, { dailyLimit: 10000, model: 'gpt-4o', maxTokens: 8000 }],
+      [
+        SubscriptionTier.FREE,
+        {
+          dailyLimit: openaiRateLimits.free?.dailyLimit ?? 10,
+          model: openaiRateLimits.free?.model ?? defaultModel,
+          maxTokens: openaiRateLimits.free?.maxTokens ?? defaultMaxTokens,
+        },
+      ],
+      [
+        SubscriptionTier.PROFESSIONAL,
+        {
+          dailyLimit: openaiRateLimits.professional?.dailyLimit ?? 1000,
+          model: openaiRateLimits.professional?.model ?? defaultModel,
+          maxTokens: openaiRateLimits.professional?.maxTokens ?? defaultMaxTokens,
+        },
+      ],
+      [
+        SubscriptionTier.INSTITUTIONAL,
+        {
+          dailyLimit: openaiRateLimits.institutional?.dailyLimit ?? 10000,
+          model: openaiRateLimits.institutional?.model ?? defaultModel,
+          maxTokens: openaiRateLimits.institutional?.maxTokens ?? defaultMaxTokens,
+        },
+      ],
     ]);
 
     // OpenAI pricing (USD per 1K tokens, as of Jan 2026)
@@ -211,12 +242,14 @@ export class AIService {
       messages.push({ role: 'user', content: prompt });
 
       // Call OpenAI
+      const startTime = Date.now();
       const response = await this.openai.chat.completions.create({
         model: config.model,
         messages,
         max_tokens: config.maxTokens,
-        temperature: 0.7,
+        temperature: this.temperature,
       });
+      const latencyMs = Date.now() - startTime;
 
       const result = {
         content: response.choices[0].message.content,
@@ -232,6 +265,29 @@ export class AIService {
         response.usage?.completion_tokens || 0,
       );
       this.metricsService.recordOpenaiCost(config.model, userId, costUsd);
+
+      // Log query to database
+      await this.logQuery({
+        userId,
+        prompt,
+        response: result.content,
+        status: QueryStatus.SUCCESS,
+        model: config.model,
+        promptTokens: response.usage?.prompt_tokens || 0,
+        completionTokens: response.usage?.completion_tokens || 0,
+        totalTokens: response.usage?.total_tokens || 0,
+        cost: costUsd,
+        latencyMs,
+        feature: context?.feature || 'chat',
+        conversationId: context?.conversationId,
+        intentClassified: context?.intent,
+        toolUsed: context?.toolId,
+        metadata: {
+          temperature: this.temperature,
+          maxTokens: config.maxTokens,
+          finishReason: result.finishReason,
+        },
+      });
 
       // Audit log
       await this.auditService.log({
@@ -249,6 +305,19 @@ export class AIService {
 
       return result;
     } catch (error) {
+      // Log failed query
+      await this.logQuery({
+        userId,
+        prompt,
+        response: null,
+        status: QueryStatus.ERROR,
+        model: config.model,
+        feature: context?.feature || 'chat',
+        conversationId: context?.conversationId,
+        metadata: {
+          error: error instanceof Error ? error.message : String(error),
+        },
+      });
       throw new Error(`AI query failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
@@ -288,7 +357,7 @@ export class AIService {
           },
         ],
         max_tokens: config.maxTokens,
-        temperature: 0.3,
+        temperature: Math.min(this.temperature, 0.5),
         response_format: { type: 'json_object' },
       });
 
@@ -327,8 +396,6 @@ export class AIService {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    // This would query an ai_queries table in a real implementation
-    // For now, return mock data from audit logs
     const subscription = await this.subscriptionRepository.findOne({
       where: { userId },
       order: { createdAt: 'DESC' },
@@ -337,20 +404,113 @@ export class AIService {
     const tier = subscription?.tier || SubscriptionTier.FREE;
     const config = this.rateLimits.get(tier);
 
+    // Calculate usage for the period
+    const queries = await this.aiQueryRepository.find({
+      where: {
+        userId,
+        status: QueryStatus.SUCCESS,
+        createdAt: MoreThanOrEqual(startDate),
+      },
+    });
+
+    const usedThisMonth = queries.length;
+    const totalCost = queries.reduce((sum, query) => sum + Number(query.cost), 0);
+
     return {
       userId,
       tier,
       dailyLimit: config.dailyLimit,
       usedToday: await this.getUsageToday(userId),
-      usedThisMonth: 0, // Would query ai_queries table
-      totalCost: 0, // Would calculate from ai_queries table
+      usedThisMonth,
+      totalCost,
     };
   }
 
+  async getRemainingQueries(userId: string) {
+    const subscription = await this.subscriptionRepository.findOne({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+    });
+
+    const tier = subscription?.tier || SubscriptionTier.FREE;
+    const config = this.rateLimits.get(tier);
+    const usedToday = await this.getUsageToday(userId);
+    const remaining = Math.max(0, config.dailyLimit - usedToday);
+
+    return {
+      userId,
+      tier,
+      dailyLimit: config.dailyLimit,
+      usedToday,
+      remaining,
+      resetAt: this.getNextResetTime(),
+    };
+  }
+
+  private getNextResetTime(): string {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    return tomorrow.toISOString();
+  }
+
+  /**
+   * Log AI query to database for usage tracking and analytics
+   */
+  private async logQuery(data: {
+    userId: string;
+    prompt: string;
+    response: string | null;
+    status: QueryStatus;
+    model: string;
+    promptTokens?: number;
+    completionTokens?: number;
+    totalTokens?: number;
+    cost?: number;
+    latencyMs?: number;
+    conversationId?: string;
+    feature?: string;
+    intentClassified?: string;
+    toolUsed?: string;
+    metadata?: Record<string, any>;
+  }): Promise<void> {
+    try {
+      await this.aiQueryRepository.save({
+        userId: data.userId,
+        prompt: data.prompt,
+        response: data.response,
+        status: data.status,
+        model: data.model,
+        promptTokens: data.promptTokens || 0,
+        completionTokens: data.completionTokens || 0,
+        totalTokens: data.totalTokens || 0,
+        cost: data.cost || 0,
+        latencyMs: data.latencyMs,
+        conversationId: data.conversationId,
+        feature: data.feature,
+        intentClassified: data.intentClassified,
+        toolUsed: data.toolUsed,
+        metadata: data.metadata,
+      });
+    } catch (error) {
+      // Log error but don't fail the request
+      console.error('Failed to log AI query:', error);
+    }
+  }
+
   private async getUsageToday(userId: string): Promise<number> {
-    // In a real implementation, this would query an ai_queries table
-    // For now, return 0 to allow testing
-    return 0;
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const count = await this.aiQueryRepository.count({
+      where: {
+        userId,
+        status: QueryStatus.SUCCESS,
+        createdAt: MoreThanOrEqual(startOfDay),
+      },
+    });
+
+    return count;
   }
 
   /**
@@ -425,7 +585,7 @@ Use tools judiciously - only invoke them when truly needed for the query.`,
         model: config.model,
         messages,
         max_tokens: config.maxTokens,
-        temperature: 0.3,
+        temperature: Math.min(this.temperature, 0.5),
         tools: this.toolDefinitions.map((tool) => ({
           type: 'function',
           function: {

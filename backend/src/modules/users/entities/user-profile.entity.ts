@@ -73,6 +73,28 @@ export class UserProfile {
   @Column({ type: 'int', nullable: true })
   encryptionKeyVersion: number; // Which key version was used
 
+  // Consent Management (GDPR/CCPA compliance)
+  @Column({ type: 'boolean', default: false })
+  consentMarketingCommunications: boolean;
+
+  @Column({ type: 'boolean', default: false })
+  consentDataProcessing: boolean;
+
+  @Column({ type: 'boolean', default: false })
+  consentThirdPartySharing: boolean;
+
+  @Column({ type: 'boolean', default: true })
+  consentEssentialCookies: boolean;
+
+  @Column({ type: 'datetime', nullable: true })
+  consentMarketingUpdatedAt: Date;
+
+  @Column({ type: 'datetime', nullable: true })
+  consentDataProcessingUpdatedAt: Date;
+
+  @Column({ type: 'datetime', nullable: true })
+  consentThirdPartySharingUpdatedAt: Date;
+
   @CreateDateColumn()
   createdAt: Date;
 

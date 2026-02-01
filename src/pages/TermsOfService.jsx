@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
+import appConfig from '../config/appConfig';
 import './LegalPages.css';
 
 const TermsOfService = () => {
@@ -8,7 +9,10 @@ const TermsOfService = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/legal/TERMS_OF_SERVICE.md')
+    // Use configured URL if available, otherwise fall back to default path
+    const url = appConfig.legal?.termsOfServiceUrl || '/legal/TERMS_OF_SERVICE.md';
+    
+    fetch(url)
       .then(res => res.text())
       .then(text => {
         setContent(text);

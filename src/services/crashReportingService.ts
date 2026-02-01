@@ -6,8 +6,10 @@
 
 class CrashReportingService {
   private initialized: boolean = false;
+  private config: any = {};
 
   initialize(config: any) {
+    this.config = config;
     this.initialized = true;
     console.log('✓ Crash reporting service initialized');
   }

@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { RAGService } from './rag.service';
 import { OpenAIEmbeddingsService } from './embeddings/openai-embeddings.service';
 import { PineconeService } from './vector-db/pinecone.service';
+import { CohereRankerService } from './reranking/cohere-ranker.service';
 import { MetricsModule } from '../metrics/metrics.module';
 
 /**
@@ -20,9 +21,11 @@ import { MetricsModule } from '../metrics/metrics.module';
     RAGService,
     OpenAIEmbeddingsService,
     PineconeService,
+    CohereRankerService,
   ],
   exports: [
     RAGService,
+    CohereRankerService,
   ],
 })
 export class RAGModule {}

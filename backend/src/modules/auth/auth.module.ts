@@ -16,8 +16,8 @@ import { OAuthAccount } from '../users/entities/oauth-account.entity';
 import { Subscription } from '../subscriptions/entities/subscription.entity';
 import { AuditLog } from '../audit/entities/audit-log.entity';
 import { BiometricConfig } from './entities/biometric-config.entity';
-import { jwtConfig } from '../../config/auth.config';
 import { UsersModule } from '../users/users.module';
+
 import { AuditModule } from '../audit/audit.module';
 import { TwoFactorModule } from '../two-factor/two-factor.module';
 import { AuthorizationGuard } from './guards/authorization.guard';
@@ -29,7 +29,7 @@ import { AuthorizationGuard } from './guards/authorization.guard';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
-        const config = jwtConfig(configService);
+        const config = configService.get<any>('jwt');
         return {
           secret: config.secret,
           signOptions: {

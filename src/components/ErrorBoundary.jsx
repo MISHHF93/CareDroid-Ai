@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { apiFetch } from '../services/apiClient';
 
 const SESSION_KEY = 'caredroid_session_id';
 
@@ -25,7 +26,7 @@ const reportCrash = (error, errorInfo) => {
     environment: (import.meta?.env?.MODE || 'development'),
   };
 
-  fetch('/api/crashes', {
+  apiFetch('/api/crashes', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),

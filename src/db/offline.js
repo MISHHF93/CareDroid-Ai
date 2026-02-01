@@ -1,4 +1,5 @@
 // Offline database using LocalStorage with sync queue
+import appConfig from '../config/appConfig';
 
 class OfflineDB {
   constructor() {
@@ -128,7 +129,7 @@ class OfflineDB {
 
   // Sync individual item
   async syncItem(item) {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    const apiUrl = appConfig.api.baseUrl || 'http://localhost:8000';
     
     const response = await fetch(`${apiUrl}/api/sync`, {
       method: 'POST',

@@ -1,5 +1,7 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-kapt'
+apply plugin: 'dagger.hilt.android.plugin'
 
 android {
     namespace "com.caredroid.clinical"
@@ -45,11 +47,17 @@ android {
     
     kotlinOptions {
         jvmTarget = '17'
+        freeCompilerArgs += "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api"
+        freeCompilerArgs += "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi"
     }
     
     buildFeatures {
         buildConfig true
-        viewBinding true
+        compose true
+    }
+    
+    composeOptions {
+        kotlinCompilerExtensionVersion '1.5.7'
     }
 }
 
@@ -61,6 +69,23 @@ repositories {
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     
+    // Jetpack Compose BOM
+    implementation platform("androidx.compose:compose-bom:$composeBomVersion")
+    implementation 'androidx.compose.ui:ui'
+    implementation 'androidx.compose.ui:ui-graphics'
+    implementation 'androidx.compose.ui:ui-tooling-preview'
+    implementation 'androidx.compose.material3:material3'
+    implementation 'androidx.compose.foundation:foundation'
+    implementation 'androidx.compose.material:material-icons-extended'
+    
+    // Activity Compose
+    implementation "androidx.activity:activity-compose:$activityComposeVersion"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycleViewmodelComposeVersion"
+    
+    // Navigation Compose
+    implementation "androidx.navigation:navigation-compose:$navigationVersion"
+    implementation "androidx.hilt:hilt-navigation-compose:$hiltAndroidxVersion"
+    
     // AndroidX Core
     implementation "androidx.core:core-ktx:$androidxCoreVersion"
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
@@ -69,24 +94,59 @@ dependencies {
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:$androidxLifecycleVersion"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$androidxLifecycleVersion"
     
-    // Material Design
+    // Material Design 3
     implementation "com.google.android.material:material:$materialVersion"
+    implementation "androidx.compose.material3:material3:$material3Version"
+    
+    // Accompanist (System UI, Permissions, etc)
+    implementation "com.google.accompanist:accompanist-systemuicontroller:$accompanistVersion"
+    implementation "com.google.accompanist:accompanist-permissions:$accompanistVersion"
+    
+    // Hilt Dependency Injection
+    implementation "com.google.dagger:hilt-android:$hiltVersion"
+    kapt "com.google.dagger:hilt-compiler:$hiltVersion"
+    implementation "androidx.hilt:hilt-navigation-compose:$hiltAndroidxVersion"
     
     // Networking
     implementation "com.squareup.retrofit2:retrofit:$retrofitVersion"
     implementation "com.squareup.retrofit2:converter-gson:$retrofitVersion"
     implementation "com.squareup.okhttp3:okhttp:$okhttpVersion"
     implementation "com.squareup.okhttp3:logging-interceptor:$okhttpVersion"
+    implementation "com.google.code.gson:gson:$gsonVersion"
     
     // Coroutines
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutinesVersion"
     
+    // Room Database
+    implementation "androidx.room:room-runtime:$roomVersion"
+    implementation "androidx.room:room-ktx:$roomVersion"
+    kapt "androidx.room:room-compiler:$roomVersion"
+    
+    // DataStore Preferences
+    implementation "androidx.datastore:datastore-preferences:$dataStoreVersion"
+    
     // Kotlin
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
     
+    // Firebase (BOM for version management)
+    implementation platform("com.google.firebase:firebase-bom:$firebaseBoM")
+    implementation 'com.google.firebase:firebase-analytics-ktx'
+    implementation 'com.google.firebase:firebase-messaging-ktx'
+    
+    // Compose Debug Dependencies
+    debugImplementation 'androidx.compose.ui:ui-tooling'
+    debugImplementation 'androidx.compose.ui:ui-test-manifest'
+    
     // Testing
     testImplementation "junit:junit:$junitVersion"
+    testImplementation "org.mockito.kotlin:mockito-kotlin:$mockitoKotlinVersion"
+    testImplementation "app.cash.turbine:turbine:$turbineVersion"
+    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutinesVersion"
+    
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    androidTestImplementation platform("androidx.compose:compose-bom:$composeBomVersion")
+    androidTestImplementation 'androidx.compose.ui:ui-test-junit4'
 }
+

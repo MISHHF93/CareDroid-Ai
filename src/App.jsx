@@ -1,35 +1,103 @@
-import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import ChatInterface from './components/ChatInterface';
-import ErrorBoundary from './components/ErrorBoundary';
-import Toast from './components/Toast';
-import { getInventoryItem } from './data/featureInventory';
-import Auth from './pages/Auth';
-import Onboarding from './pages/Onboarding';
-import Settings from './pages/Settings';
-import AuthCallback from './pages/AuthCallback';
-import Profile from './pages/Profile';
-import ProfileSettings from './pages/ProfileSettings';
-import AuditLogs from './pages/AuditLogs';
-import { TeamManagement } from './pages/team/TeamManagement';
-import { PrivacyPolicy } from './pages/legal/PrivacyPolicy';
-import { TermsOfService } from './pages/legal/TermsOfService';
-import { ConsentFlow } from './pages/legal/ConsentFlow';
-import { ConsentHistory } from './pages/legal/ConsentHistory';
-import { PublicShell } from './layout/PublicShell';
-import AuthShell from './layout/AuthShell';
-import AppShell from './layout/AppShell';
-import AppRoute from './components/AppRoute';
-import { UserProvider, useUser, Permission } from './contexts/UserContext';
-import { NotificationProvider } from './contexts/NotificationContext';
-import { SystemConfigProvider } from './contexts/SystemConfigContext.jsx';
-import PermissionGate from './components/PermissionGate';
-import AnalyticsService from './services/analyticsService';
-import CrashReportingService from './services/crashReportingService';
-import { apiFetch } from './services/apiClient';
-import { NotificationService } from './services/NotificationService';
+import React from 'react';
+import { UserProvider } from './contexts/UserContext';
 
-console.log('✓ App.jsx loaded successfully');
+console.log('✓ App.jsx loaded');
+
+function AppContent() {
+  console.log('✓ AppContent rendering');
+  
+  return (
+    <div style={{
+      width: '100vw',
+      height: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'linear-gradient(135deg, #0b1220 0%, #1a3a52 100%)',
+      color: '#fff',
+      fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
+      overflow: 'hidden',
+      margin: 0,
+      padding: 0
+    }}>
+      <div style={{
+        textAlign: 'center',
+        maxWidth: '600px',
+        padding: '40px'
+      }}>
+        <h1 style={{
+          fontSize: '48px',
+          marginBottom: '20px',
+          background: 'linear-gradient(135deg, #00ff88, #00ffff)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text'
+        }}>
+          CareDroid AI
+        </h1>
+        
+        <p style={{
+          fontSize: '18px',
+          color: 'rgba(255,255,255,0.8)',
+          marginBottom: '40px'
+        }}>
+          Clinical AI Assistant Platform
+        </p>
+
+        <div style={{
+          background: 'rgba(0, 255, 136, 0.1)',
+          border: '1px solid rgba(0, 255, 136, 0.3)',
+          borderRadius: '12px',
+          padding: '20px',
+          marginBottom: '40px',
+          fontSize: '14px',
+          lineHeight: '1.8'
+        }}>
+          <p>✓ React is loaded</p>
+          <p>✓ UserProvider active</p>
+          <p>✓ App is rendering</p>
+        </div>
+
+        <button 
+          onClick={() => window.location.reload()}
+          style={{
+            padding: '12px 24px',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            background: 'linear-gradient(135deg, #00ff88, #00ffff)',
+            color: '#0b1220',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.transform = 'translateY(-2px)';
+            e.target.style.boxShadow = '0 8px 20px rgba(0, 255, 136, 0.3)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.transform = 'translateY(0)';
+            e.target.style.boxShadow = 'none';
+          }}
+        >
+          Reload
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  console.log('✓ App rendering');
+  
+  return (
+    <UserProvider>
+      <AppContent />
+    </UserProvider>
+  );
+}
+
+export default App;
 
 const SESSION_KEY = 'caredroid_session_id';
 const AUTH_TOKEN_KEY = 'caredroid_access_token';

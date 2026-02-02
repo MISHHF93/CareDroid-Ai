@@ -3,23 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { UserProvider, useUser } from './contexts/UserContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { SystemConfigProvider } from './contexts/SystemConfigContext';
-
-// Import pages (fix imports to match actual filenames)
-import Auth from './pages/Auth';
-import AuthCallback from './pages/AuthCallback';
-import PrivacyPolicy from './pages/PrivacyPolicy';
-import TermsOfService from './pages/TermsOfService';
-import ChatInterface from './components/ChatInterface';
-import Settings from './pages/Settings';
-import Profile from './pages/Profile';
-import ProfileSettings from './pages/ProfileSettings';
-import Onboarding from './pages/Onboarding';
-import AuditLogs from './pages/AuditLogs';
-import TeamManagement from './pages/team/TeamManagement';
 import ErrorBoundary from './components/ErrorBoundary';
-import PermissionGate from './components/PermissionGate';
 import Toast from './components/Toast';
-import { Permission } from './contexts/UserContext';
 
 console.log('✓ App.jsx loaded');
 
@@ -225,26 +210,6 @@ function App() {
 
 export default App;
 
-const SESSION_KEY = 'caredroid_session_id';
-const AUTH_TOKEN_KEY = 'caredroid_access_token';
-
-const getSessionId = () => {
-  if (typeof window === 'undefined') return 'session-server';
-  const existing = window.localStorage.getItem(SESSION_KEY);
-  if (existing) return existing;
-  const generated = (window.crypto?.randomUUID?.() || `session-${Date.now()}-${Math.random().toString(16).slice(2)}`);
-  window.localStorage.setItem(SESSION_KEY, generated);
-  return generated;
-};
-
-const createInitialMessages = () => ([{
-  role: 'assistant',
-  content: 'Hello! I\'m CareDroid, your AI clinical assistant. How can I help you today?',
-  timestamp: new Date()
-}]);
-
-function AppContent() {
-  console.log('✓ AppContent component rendering...');
   
   const { authToken, setAuthToken, signOut: userSignOut, user, isAuthenticated, setUser } = useUser();
   const navigate = useNavigate();
@@ -612,19 +577,3 @@ function AppContent() {
     </ErrorBoundary>
   );
 }
-
-function App() {
-  console.log('✓ App() function called - rendering providers...');
-  
-  return (
-    <UserProvider>
-      <NotificationProvider>
-        <SystemConfigProvider>
-          <AppContent />
-        </SystemConfigProvider>
-      </NotificationProvider>
-    </UserProvider>
-  );
-}
-
-export default App;

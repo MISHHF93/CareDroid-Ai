@@ -167,8 +167,8 @@ function AppRoutes() {
       ) : (
         // Authenticated routes (to be added progressively)
         <>
-          <Route path="/" element={<ChatInterface />} />
-          <Route path="/chat" element={<ChatInterface />} />
+          <Route path="/" element={<ChatInterface conversationId={1} messages={[]} onAppendMessage={() => {}} onTrackEvent={() => {}} onAddToast={() => {}} authToken={null} />} />
+          <Route path="/chat" element={<ChatInterface conversationId={1} messages={[]} onAppendMessage={() => {}} onTrackEvent={() => {}} onAddToast={() => {}} authToken={null} />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile-settings" element={<ProfileSettings />} />

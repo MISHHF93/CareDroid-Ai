@@ -1,11 +1,21 @@
-import React from 'react';
-import { UserProvider } from './contexts/UserContext';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { UserProvider, useUser } from './contexts/UserContext';
+import { NotificationProvider } from './contexts/NotificationContext';
+import { SystemConfigProvider } from './contexts/SystemConfigContext';
+
+// Import pages (fix imports to match actual filenames)
+import Auth from './pages/Auth';
+import AuthCallback from './pages/AuthCallback';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
 
 console.log('✓ App.jsx loaded');
 
-function AppContent() {
-  console.log('✓ AppContent rendering');
-  
+/**
+ * LandingPage - Simple startup confirmation screen
+ */
+function LandingPage() {
   return (
     <div style={{
       width: '100vw',
@@ -54,12 +64,12 @@ function AppContent() {
           lineHeight: '1.8'
         }}>
           <p>✓ React is loaded</p>
-          <p>✓ UserProvider active</p>
-          <p>✓ App is rendering</p>
+          <p>✓ Context providers ready</p>
+          <p>✓ Router initialized</p>
         </div>
 
         <button 
-          onClick={() => window.location.reload()}
+          onClick={() => window.location.href = '/auth'}
           style={{
             padding: '12px 24px',
             fontSize: '16px',
@@ -80,20 +90,82 @@ function AppContent() {
             e.target.style.boxShadow = 'none';
           }}
         >
-          Reload
+          Go to Login
         </button>
       </div>
     </div>
   );
 }
 
+/**
+ * AppRoutes - Main routing component with auth checks
+ */
+function AppRoutes() {
+  const { user, isAuthenticated } = useUser();
+  const [isChecking, setIsChecking] = useState(true);
+
+  useEffect(() => {
+    // Small delay to allow UserContext to hydrate from localStorage
+    const timer = setTimeout(() => setIsChecking(false), 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isChecking) {
+    return (
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100vh',
+        background: 'var(--navy-bg, #0b1220)',
+        color: 'var(--text-color, #fff)',
+        fontFamily: 'system-ui'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <h1>Initializing CareDroid...</h1>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Routes>
+      {!isAuthenticated ? (
+        // Unauthenticated routes
+        <>
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/" element={<LandingPage />} />
+          <Route path="*" element={<Navigate to="/auth" replace />} />
+        </>
+      ) : (
+        // Authenticated routes (to be added progressively)
+        <>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </>
+      )}
+    </Routes>
+  );
+}
+
 function App() {
-  console.log('✓ App rendering');
+  console.log('✓ App() rendering with all providers');
   
   return (
-    <UserProvider>
-      <AppContent />
-    </UserProvider>
+    <BrowserRouter>
+      <UserProvider>
+        <NotificationProvider>
+          <SystemConfigProvider>
+            <AppRoutes />
+          </SystemConfigProvider>
+        </NotificationProvider>
+      </UserProvider>
+    </BrowserRouter>
   );
 }
 

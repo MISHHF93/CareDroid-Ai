@@ -310,7 +310,22 @@ function AppContent() {
 
   return (
     <ErrorBoundary>
-      {!isAuthed ? (
+      {typeof isAuthed === 'undefined' ? (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100vh',
+          background: 'var(--navy-bg)',
+          color: 'var(--text-color)',
+          fontFamily: 'system-ui'
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <h1>Loading...</h1>
+            <p style={{ opacity: 0.7 }}>Initializing CareDroid</p>
+          </div>
+        </div>
+      ) : !isAuthed ? (
         // AUTH SECTION - Show when NOT logged in
         <Routes>
           <Route path="/auth" element={<AuthShell><Auth onAddToast={addToast} onAuthSuccess={handleAuthSuccess} /></AuthShell>} />

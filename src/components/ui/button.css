@@ -1,0 +1,201 @@
+/* Enhanced Button Styles with Animations */
+.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 500;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: inherit;
+  outline: none;
+  overflow: hidden;
+  user-select: none;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(255,255,255,0.2), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.btn:hover::before {
+  opacity: 1;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn:disabled:active {
+  transform: none;
+}
+
+/* Button Sizes */
+.btn-sm {
+  padding: 6px 12px;
+  font-size: var(--font-14);
+  border-radius: var(--radius-sm);
+}
+
+.btn-md {
+  padding: 10px 20px;
+  font-size: var(--font-16);
+}
+
+.btn-lg {
+  padding: 14px 28px;
+  font-size: var(--font-18);
+  border-radius: var(--radius-lg);
+}
+
+/* Button Variants */
+.btn-primary {
+  background: var(--accent-gradient);
+  color: var(--navy-ink);
+  box-shadow: 0 4px 12px rgba(0, 255, 136, 0.25);
+}
+
+.btn-primary:hover {
+  box-shadow: 0 6px 20px rgba(0, 255, 136, 0.4);
+  transform: translateY(-2px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background: var(--panel-bg);
+  color: var(--text-color);
+  border: 1px solid var(--panel-border);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--accent-green);
+  border: 1px solid transparent;
+}
+
+.btn-ghost:hover {
+  background: rgba(0, 255, 136, 0.08);
+  border-color: rgba(0, 255, 136, 0.2);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #ff6b6b, #ff5252);
+  color: white;
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.25);
+}
+
+.btn-danger:hover {
+  box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+  transform: translateY(-2px);
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #00ff88, #00e676);
+  color: var(--navy-ink);
+  box-shadow: 0 4px 12px rgba(0, 255, 136, 0.25);
+}
+
+.btn-success:hover {
+  box-shadow: 0 6px 20px rgba(0, 255, 136, 0.4);
+  transform: translateY(-2px);
+}
+
+/* Button Icons */
+.btn-icon-left,
+.btn-icon-right {
+  display: inline-flex;
+  align-items: center;
+  transition: transform 0.2s ease;
+}
+
+.btn:hover .btn-icon-right {
+  transform: translateX(2px);
+}
+
+.btn:hover .btn-icon-left {
+  transform: translateX(-2px);
+}
+
+/* Loading Spinner */
+.btn-spinner {
+  display: inline-flex;
+  animation: btn-spin 1s linear infinite;
+}
+
+@keyframes btn-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spinner-icon {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  animation: spinner-dash 1.5s ease-in-out infinite;
+}
+
+@keyframes spinner-dash {
+  0% {
+    stroke-dasharray: 1, 150;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -35;
+  }
+  100% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -124;
+  }
+}
+
+.btn-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* Ripple Effect */
+@keyframes ripple {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+.btn::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  width: 20px;
+  height: 20px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.btn:active::after {
+  animation: ripple 0.6s ease-out;
+}

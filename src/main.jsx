@@ -5,6 +5,16 @@ import App from './App';
 import './index.css';
 import appConfig from './config/appConfig';
 
+// Add global error handler first
+window.addEventListener('error', (event) => {
+  console.error('🔴 GLOBAL ERROR:', event.error);
+  console.error('Stack:', event.error?.stack);
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('🔴 UNHANDLED PROMISE REJECTION:', event.reason);
+});
+
 // Import services for initialization
 import CrashReportingService from './services/crashReportingService';
 import AnalyticsService from './services/analyticsService';
@@ -145,10 +155,34 @@ window.addEventListener('unhandledrejection', (event) => {
 // ================================
 // Mount React App
 // ================================
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
-  </React.StrictMode>
-);
+try {
+  const root = document.getElementById('root');
+  
+  if (!root) {
+    document.body.innerHTML = '<div style="padding: 20px; color: red;">ERROR: Root element not found</div>';
+  } else {
+    console.log('✓ Root element found, mounting React App...');
+    
+    ReactDOM.createRoot(root).render(
+      <React.StrictMode>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </React.StrictMode>
+    );
+    
+    console.log('✓ React App mounted successfully');
+  }
+} catch (error) {
+  console.error('🔴 FAILED TO MOUNT REACT APP:', error);
+  console.error('Stack:', error.stack);
+  
+  document.body.innerHTML = `
+    <div style="padding: 20px; font-family: monospace; color: red; white-space: pre-wrap; background: #f5f5f5;">
+      <h1>Error Loading Application</h1>
+      <p>Error: ${error.message}</p>
+      <p>Stack: ${error.stack}</p>
+      <button onclick="location.reload()" style="padding: 10px 20px; margin-top: 20px;">Reload Page</button>
+    </div>
+  `;
+}

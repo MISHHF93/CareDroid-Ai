@@ -29,6 +29,8 @@ import CrashReportingService from './services/crashReportingService';
 import { apiFetch } from './services/apiClient';
 import { NotificationService } from './services/NotificationService';
 
+console.log('✓ App.jsx loaded successfully');
+
 const SESSION_KEY = 'caredroid_session_id';
 const AUTH_TOKEN_KEY = 'caredroid_access_token';
 
@@ -48,6 +50,8 @@ const createInitialMessages = () => ([{
 }]);
 
 function AppContent() {
+  console.log('✓ AppContent component rendering...');
+  
   const { authToken, setAuthToken, signOut: userSignOut, user, isAuthenticated, setUser } = useUser();
   const navigate = useNavigate();
   const [currentTool, setCurrentTool] = useState(null);
@@ -401,6 +405,8 @@ function AppContent() {
 }
 
 function App() {
+  console.log('✓ App() function called - rendering providers...');
+  
   return (
     <UserProvider>
       <NotificationProvider>

@@ -10,10 +10,22 @@ import configService from '../services/configService';
 const SystemConfigContext = createContext();
 
 export function SystemConfigProvider({ children }) {
-  const [systemConfig, setSystemConfig] = useState(null);
-  const [aiUsage, setAiUsage] = useState(null);
-  const [availableTools, setAvailableTools] = useState(null);
-  const [subscription, setSubscription] = useState(null);
+  const [systemConfig, setSystemConfig] = useState({
+    rag: { enabled: false, topK: 5, minScore: 0.7 },
+    session: { idleTimeoutMs: 1800000, absoluteTimeoutMs: 28800000 },
+  });
+  const [aiUsage, setAiUsage] = useState({
+    tier: 'free',
+    dailyLimit: 10,
+    usedToday: 0,
+    remaining: 10,
+    resetAt: new Date(Date.now() + 86400000).toISOString(),
+  });
+  const [availableTools, setAvailableTools] = useState([]);
+  const [subscription, setSubscription] = useState({
+    tier: 'free',
+    status: 'active',
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -22,21 +34,29 @@ export function SystemConfigProvider({ children }) {
       setLoading(true);
       setError(null);
 
-      // Fetch all system data in parallel
-      const [config, usage, tools, sub] = await Promise.all([
-        configService.getSystemConfig(),
-        configService.getAIRemainingQueries(),
-        configService.getAvailableTools(),
-        configService.getCurrentSubscription(),
+      // Fetch all system data in parallel with timeout
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Config load timeout')), 5000)
+      );
+
+      const [config, usage, tools, sub] = await Promise.race([
+        Promise.all([
+          configService.getSystemConfig(),
+          configService.getAIRemainingQueries(),
+          configService.getAvailableTools(),
+          configService.getCurrentSubscription(),
+        ]),
+        timeoutPromise,
       ]);
 
-      setSystemConfig(config);
-      setAiUsage(usage);
-      setAvailableTools(tools);
-      setSubscription(sub);
+      setSystemConfig(config || systemConfig);
+      setAiUsage(usage || aiUsage);
+      setAvailableTools(tools || []);
+      setSubscription(sub || { tier: 'free', status: 'active' });
     } catch (err) {
-      console.error('Failed to load system config:', err);
+      console.warn('⚠️ Failed to load system config (using defaults):', err.message);
       setError(err.message);
+      // Keep defaults
     } finally {
       setLoading(false);
     }

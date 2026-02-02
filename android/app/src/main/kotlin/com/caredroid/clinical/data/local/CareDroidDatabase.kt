@@ -5,9 +5,11 @@ import androidx.room.RoomDatabase
 import com.caredroid.clinical.data.local.dao.ConversationDao
 import com.caredroid.clinical.data.local.dao.MessageDao
 import com.caredroid.clinical.data.local.dao.UserDao
+import com.caredroid.clinical.data.local.dao.PendingMessageDao
 import com.caredroid.clinical.data.local.entity.ConversationEntity
 import com.caredroid.clinical.data.local.entity.MessageEntity
 import com.caredroid.clinical.data.local.entity.UserEntity
+import com.caredroid.clinical.data.local.entity.PendingMessageEntity
 
 /**
  * CareDroid Room Database
@@ -17,9 +19,10 @@ import com.caredroid.clinical.data.local.entity.UserEntity
     entities = [
         MessageEntity::class,
         ConversationEntity::class,
-        UserEntity::class
+        UserEntity::class,
+        PendingMessageEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class CareDroidDatabase : RoomDatabase() {
@@ -38,4 +41,13 @@ abstract class CareDroidDatabase : RoomDatabase() {
      * Provides access to UserDao
      */
     abstract fun userDao(): UserDao
+    
+    /**
+     * Provides access to PendingMessageDao
+     */
+    abstract fun pendingMessageDao(): PendingMessageDao
+    
+    companion object {
+        const val DATABASE_NAME = "caredroid_db"
+    }
 }

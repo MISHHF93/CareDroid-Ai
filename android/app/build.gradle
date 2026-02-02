@@ -3,10 +3,19 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-kapt'
 apply plugin: 'dagger.hilt.android.plugin'
 
+// For Kotlin 2.0, Compose plugin is automatically applied
+
 android {
     namespace "com.caredroid.clinical"
     compileSdk rootProject.ext.compileSdkVersion
     def apiBaseUrl = project.findProperty('API_BASE_URL') ?: System.getenv('API_BASE_URL') ?: 'http://10.0.2.2:8000'
+    
+    // Load keystore properties for release signing
+    def keystorePropertiesFile = rootProject.file("app/keystore.properties")
+    def keystoreProperties = new Properties()
+    if (keystorePropertiesFile.exists()) {
+        keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+    }
     
     defaultConfig {
         applicationId "com.caredroid.clinical"
@@ -22,15 +31,35 @@ android {
         buildConfigField "String", "API_BASE_URL", "\"${apiBaseUrl}\""
     }
     
+    signingConfigs {
+        release {
+            if (keystorePropertiesFile.exists()) {
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
+    
     buildTypes {
         release {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             
+            if (keystorePropertiesFile.exists()) {
+                signingConfig signingConfigs.release
+            }
+            
             debuggable false
             jniDebuggable false
             renderscriptDebuggable false
+            
+            // Optimize for production
+            ndk {
+                abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
+            }
         }
         debug {
             minifyEnabled false
@@ -51,19 +80,42 @@ android {
         freeCompilerArgs += "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi"
     }
     
+    kapt {
+        correctErrorTypes = true
+        useBuildCache = false
+        arguments {
+            arg("incremental", "false")
+            arg("disableDiscoveryInRenderScript", "true")
+        }
+        javacOptions {
+            option("-source", "17")
+            option("-target", "17")
+        }
+    }
+    
     buildFeatures {
         buildConfig true
         compose true
     }
     
     composeOptions {
-        kotlinCompilerExtensionVersion '1.5.7'
+        kotlinCompilerExtensionVersion '1.5.14'
     }
 }
 
 repositories {
     google()
     mavenCentral()
+}
+
+configurations.all {
+    resolutionStrategy {
+        force "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+        force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+        force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
+        force "org.jetbrains.kotlin:kotlin-stdlib-common:$kotlinVersion"
+        force "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
+    }
 }
 
 dependencies {

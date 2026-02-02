@@ -4,7 +4,7 @@ ext {
     targetSdkVersion = 35
     
     // Kotlin
-    kotlinVersion = '1.9.22'
+    kotlinVersion = '1.9.24'
     
     // AndroidX
     androidxCoreVersion = '1.15.0'
@@ -28,7 +28,7 @@ ext {
     lifecycleViewmodelComposeVersion = '2.7.0'
     
     // Hilt Dependency Injection
-    hiltVersion = '2.50'
+    hiltVersion = '2.51.1'
     hiltAndroidxVersion = '1.1.0'
     
     // Accompanist

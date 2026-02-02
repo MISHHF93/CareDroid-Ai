@@ -18,6 +18,7 @@ import AuditLogs from './pages/AuditLogs';
 import TeamManagement from './pages/team/TeamManagement';
 import ErrorBoundary from './components/ErrorBoundary';
 import PermissionGate from './components/PermissionGate';
+import Toast from './components/Toast';
 import { Permission } from './contexts/UserContext';
 
 console.log('✓ App.jsx loaded');
@@ -113,12 +114,25 @@ function LandingPage() {
 function AppRoutes() {
   const { user, isAuthenticated } = useUser();
   const [isChecking, setIsChecking] = useState(true);
+  const [toasts, setToasts] = useState([]);
 
   useEffect(() => {
     // Small delay to allow UserContext to hydrate from localStorage
     const timer = setTimeout(() => setIsChecking(false), 100);
     return () => clearTimeout(timer);
   }, []);
+
+  const addToast = (message, type = 'info') => {
+    const id = `toast-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((toast) => toast.id !== id));
+    }, 4000);
+  };
+
+  const dismissToast = (id) => {
+    setToasts((prev) => prev.filter((toast) => toast.id !== id));
+  };
 
   if (isChecking) {
     return (
@@ -187,6 +201,7 @@ function AppRoutes() {
         </>
       )}
     </Routes>
+    <Toast toasts={toasts} onDismiss={dismissToast} />
   );
 }
 

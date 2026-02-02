@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import Card from '../components/ui/Card';
-import Button from '../components/ui/Button';
+import Card from '../components/ui/card';
+import Button from '../components/ui/button';
 
 const Settings = ({ onAddToast }) => {
   const [notifications, setNotifications] = useState(true);

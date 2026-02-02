@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import Button from '../components/ui/Button';
-import Card from '../components/ui/Card';
-import Input from '../components/ui/Input';
+import Button from '../components/ui/button';
+import Card from '../components/ui/card';
+import Input from '../components/ui/input';
 import appConfig from '../config/appConfig';
 import { apiFetch } from '../services/apiClient';
 

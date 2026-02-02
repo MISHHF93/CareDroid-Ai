@@ -9,6 +9,11 @@ import Auth from './pages/Auth';
 import AuthCallback from './pages/AuthCallback';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
+import ChatInterface from './components/ChatInterface';
+import Settings from './pages/Settings';
+import Profile from './pages/Profile';
+import ProfileSettings from './pages/ProfileSettings';
+import Onboarding from './pages/Onboarding';
 
 console.log('✓ App.jsx loaded');
 
@@ -143,7 +148,12 @@ function AppRoutes() {
       ) : (
         // Authenticated routes (to be added progressively)
         <>
-          <Route path="/" element={<LandingPage />} />
+          <Route path="/" element={<ChatInterface />} />
+          <Route path="/chat" element={<ChatInterface />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/profile-settings" element={<ProfileSettings />} />
+          <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="*" element={<Navigate to="/" replace />} />

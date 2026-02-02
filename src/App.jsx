@@ -17,6 +17,8 @@ import Onboarding from './pages/Onboarding';
 import AuditLogs from './pages/AuditLogs';
 import TeamManagement from './pages/team/TeamManagement';
 import ErrorBoundary from './components/ErrorBoundary';
+import PermissionGate from './components/PermissionGate';
+import { Permission } from './contexts/UserContext';
 
 console.log('✓ App.jsx loaded');
 
@@ -157,8 +159,28 @@ function AppRoutes() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile-settings" element={<ProfileSettings />} />
           <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/audit-logs" element={<AuditLogs />} />
-          <Route path="/team" element={<TeamManagement />} />
+          <Route 
+            path="/audit-logs" 
+            element={
+              <PermissionGate 
+                permission={Permission.VIEW_AUDIT_LOGS}
+                fallback={<Navigate to="/" replace />}
+              >
+                <AuditLogs />
+              </PermissionGate>
+            } 
+          />
+          <Route 
+            path="/team" 
+            element={
+              <PermissionGate 
+                permission={Permission.MANAGE_USERS}
+                fallback={<Navigate to="/" replace />}
+              >
+                <TeamManagement />
+              </PermissionGate>
+            } 
+          />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -14,6 +14,9 @@ import Settings from './pages/Settings';
 import Profile from './pages/Profile';
 import ProfileSettings from './pages/ProfileSettings';
 import Onboarding from './pages/Onboarding';
+import AuditLogs from './pages/AuditLogs';
+import TeamManagement from './pages/team/TeamManagement';
+import ErrorBoundary from './components/ErrorBoundary';
 
 console.log('✓ App.jsx loaded');
 
@@ -154,6 +157,8 @@ function AppRoutes() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile-settings" element={<ProfileSettings />} />
           <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/audit-logs" element={<AuditLogs />} />
+          <Route path="/team" element={<TeamManagement />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="*" element={<Navigate to="/" replace />} />
@@ -171,7 +176,9 @@ function App() {
       <UserProvider>
         <NotificationProvider>
           <SystemConfigProvider>
-            <AppRoutes />
+            <ErrorBoundary>
+              <AppRoutes />
+            </ErrorBoundary>
           </SystemConfigProvider>
         </NotificationProvider>
       </UserProvider>

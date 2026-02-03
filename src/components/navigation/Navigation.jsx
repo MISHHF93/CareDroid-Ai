@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './Navigation.css';
 import { apiFetch } from '../../services/apiClient';
+import logger from '../../utils/logger';
 
 /**
  * Breadcrumbs Component
@@ -19,7 +20,7 @@ export const Breadcrumbs = ({ breadcrumbs: customBreadcrumbs }) => {
   const defaultBreadcrumbs = (() => {
     const path = location.pathname;
     const segments = path.split('/').filter(Boolean);
-    const crumbs = [{ label: 'Home', path: '/' }];
+    const crumbs = [{ label: 'Home', path: '/dashboard' }];
 
     let currentPath = '';
     segments.forEach((segment, index) => {
@@ -144,7 +145,7 @@ export const UserMenu = ({ user = {} }) => {
         },
       });
     } catch (error) {
-      console.error('Logout error:', error);
+      logger.error('Logout error', { error });
     }
 
     localStorage.removeItem('caredroid_access_token');
@@ -295,7 +296,7 @@ export const HeaderNav = ({ user, notificationCount = 0, showBreadcrumbs = true 
   const navigate = useNavigate();
 
   const navItems = [
-    { id: 'chat', label: 'Chat', path: '/', icon: '💬' },
+    { id: 'chat', label: 'Dashboard', path: '/dashboard', icon: '💬' },
     { id: 'profile', label: 'Profile', path: '/profile', icon: '👤' },
     { id: 'team', label: 'Team', path: '/team', icon: '👥' },
     { id: 'settings', label: 'Settings', path: '/settings', icon: '⚙️' },
@@ -308,7 +309,7 @@ export const HeaderNav = ({ user, notificationCount = 0, showBreadcrumbs = true 
         <div className="header-nav-logo">
           <button
             className="header-logo-btn"
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/dashboard')}
             title="CareDroid Home"
           >
             <span className="header-logo-icon">🏥</span>

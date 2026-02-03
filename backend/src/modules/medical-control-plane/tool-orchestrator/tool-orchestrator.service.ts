@@ -6,6 +6,8 @@
  */
 
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { AuditService } from '../../audit/audit.service';
 import { AuditAction } from '../../audit/entities/audit-log.entity';
 import { ToolMetricsService } from '../../metrics/tool-metrics.service';
@@ -19,6 +21,7 @@ import { SofaCalculatorService } from './services/sofa-calculator.service';
 import { DrugCheckerService } from './services/drug-checker.service';
 import { LabInterpreterService } from './services/lab-interpreter.service';
 import { ExecuteToolDto, ToolExecutionResponseDto, ToolListDto } from './dto/tool-execution.dto';
+import { ToolResult } from './entities/tool-result.entity';
 
 interface ToolRegistry {
   [toolId: string]: ClinicalToolService;
@@ -43,6 +46,8 @@ export class ToolOrchestratorService {
     private readonly labInterpreterService: LabInterpreterService,
     private readonly auditService: AuditService,
     private readonly toolMetrics: ToolMetricsService,
+    @InjectRepository(ToolResult)
+    private readonly toolResultRepository: Repository<ToolResult>,
   ) {
     this.initializeRegistry();
   }
@@ -450,6 +455,29 @@ export class ToolOrchestratorService {
       throw new NotFoundException(`Tool not found: ${toolId}`);
     }
     return tool;
+  }
+
+  /**
+   * Persist tool result for analytics and sync
+   */
+  async saveToolResult(payload: {
+    userId?: string;
+    toolType: string;
+    input?: Record<string, any>;
+    output?: Record<string, any>;
+    timestamp?: string | Date;
+  }) {
+    const timestamp = payload.timestamp ? new Date(payload.timestamp) : new Date();
+
+    const entity = this.toolResultRepository.create({
+      userId: payload.userId,
+      toolType: payload.toolType,
+      input: payload.input || {},
+      output: payload.output || {},
+      timestamp,
+    });
+
+    return this.toolResultRepository.save(entity);
   }
 
   /**

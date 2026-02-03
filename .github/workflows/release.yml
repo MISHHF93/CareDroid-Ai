@@ -91,10 +91,6 @@ jobs:
             - Enable "Install from Unknown Sources"
             - Install the APK
             
-            ### iOS
-            - Download from TestFlight (beta testers only)
-            - Or download from App Store
-            
             ## What's Changed
             ${{ steps.changelog.outputs.changelog }}
           draft: false
@@ -168,47 +164,3 @@ jobs:
           releaseFiles: android/app/build/outputs/apk/release/app-release-signed.apk
           track: production
           status: completed
-          
-  build-release-ios:
-    needs: create-release
-    runs-on: macos-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          
-      - name: Update version
-        run: |
-          npm version ${{ needs.create-release.outputs.version }} --no-git-tag-version
-          
-      - name: Install dependencies
-        run: npm ci
-        
-      - name: Build production bundle
-        run: npm run build
-        env:
-          VITE_API_URL: ${{ secrets.VITE_PROD_API_URL }}
-          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-          
-      - name: Sync Capacitor
-        run: npx cap sync ios
-        
-      - name: Setup Fastlane
-        run: |
-          gem install fastlane
-          cd ios/App
-          fastlane install_plugins
-          
-      - name: Build and upload to App Store
-        run: |
-          cd ios/App
-          fastlane release
-        env:
-          FASTLANE_APPLE_ID: ${{ secrets.APPLE_ID }}
-          FASTLANE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          FASTLANE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}

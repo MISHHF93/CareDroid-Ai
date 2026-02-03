@@ -1,6 +1,7 @@
 /**
  * Offline Service - Manages offline data storage and retrieval
  */
+import logger from '../utils/logger';
 class OfflineService {
   constructor() {
     this.isInitialized = false;
@@ -16,7 +17,7 @@ class OfflineService {
         const module = await import('../db/offline.db');
         this.db = module.db;
       } catch (error) {
-        console.error('Failed to load offline database:', error);
+        logger.error('Failed to load offline database', { error });
         throw error;
       }
     }
@@ -30,10 +31,10 @@ class OfflineService {
     try {
       await db.open();
       this.isInitialized = true;
-      console.log('OfflineService initialized');
+      logger.info('OfflineService initialized');
       return true;
     } catch (error) {
-      console.error('Failed to initialize OfflineService:', error);
+      logger.error('Failed to initialize OfflineService', { error });
       return false;
     }
   }
@@ -56,10 +57,10 @@ class OfflineService {
         synced: false,
       });
 
-      console.log(`Message saved offline with ID: ${id}`);
+      logger.info(`Message saved offline with ID: ${id}`);
       return id;
     } catch (error) {
-      console.error('Failed to save message offline:', error);
+      logger.error('Failed to save message offline', { error });
       throw error;
     }
   }
@@ -78,7 +79,7 @@ class OfflineService {
 
       return messages.reverse(); // Return in chronological order
     } catch (error) {
-      console.error('Failed to get messages:', error);
+      logger.error('Failed to get messages', { error });
       return [];
     }
   }
@@ -94,10 +95,10 @@ class OfflineService {
         synced: false,
       });
 
-      console.log(`Conversation saved offline with ID: ${id}`);
+      logger.info(`Conversation saved offline with ID: ${id}`);
       return id;
     } catch (error) {
-      console.error('Failed to save conversation offline:', error);
+      logger.error('Failed to save conversation offline', { error });
       throw error;
     }
   }
@@ -115,7 +116,7 @@ class OfflineService {
 
       return conversations;
     } catch (error) {
-      console.error('Failed to get conversations:', error);
+      logger.error('Failed to get conversations', { error });
       return [];
     }
   }
@@ -131,10 +132,10 @@ class OfflineService {
         synced: false,
       });
 
-      console.log(`Tool result saved offline with ID: ${id}`);
+      logger.info(`Tool result saved offline with ID: ${id}`);
       return id;
     } catch (error) {
-      console.error('Failed to save tool result offline:', error);
+      logger.error('Failed to save tool result offline', { error });
       throw error;
     }
   }
@@ -153,7 +154,7 @@ class OfflineService {
 
       return await query.reverse().toArray();
     } catch (error) {
-      console.error('Failed to get tool results:', error);
+      logger.error('Failed to get tool results', { error });
       return [];
     }
   }
@@ -169,9 +170,9 @@ class OfflineService {
         lastSyncedAt: new Date().toISOString(),
       });
 
-      console.log('User profile saved offline');
+      logger.info('User profile saved offline');
     } catch (error) {
-      console.error('Failed to save user profile:', error);
+      logger.error('Failed to save user profile', { error });
       throw error;
     }
   }
@@ -183,7 +184,7 @@ class OfflineService {
     try {
       return await db.userProfile.get(userId);
     } catch (error) {
-      console.error('Failed to get user profile:', error);
+      logger.error('Failed to get user profile', { error });
       return null;
     }
   }
@@ -203,9 +204,9 @@ class OfflineService {
         expiresAt: expiresAt.toISOString(),
       });
 
-      console.log('Knowledge cached offline');
+      logger.info('Knowledge cached offline');
     } catch (error) {
-      console.error('Failed to cache knowledge:', error);
+      logger.error('Failed to cache knowledge', { error });
     }
   }
 
@@ -231,7 +232,7 @@ class OfflineService {
 
       return validResults[0].response;
     } catch (error) {
-      console.error('Failed to get cached knowledge:', error);
+      logger.error('Failed to get cached knowledge', { error });
       return null;
     }
   }
@@ -250,10 +251,10 @@ class OfflineService {
       if (expired.length > 0) {
         const expiredIds = expired.map(item => item.id);
         await db.knowledgeCache.bulkDelete(expiredIds);
-        console.log(`Cleaned up ${expired.length} expired cache entries`);
+        logger.info(`Cleaned up ${expired.length} expired cache entries`);
       }
     } catch (error) {
-      console.error('Failed to cleanup cache:', error);
+      logger.error('Failed to cleanup cache', { error });
     }
   }
 
@@ -269,10 +270,10 @@ class OfflineService {
         synced: false,
       });
 
-      console.log(`Notification saved offline with ID: ${id}`);
+      logger.info(`Notification saved offline with ID: ${id}`);
       return id;
     } catch (error) {
-      console.error('Failed to save notification offline:', error);
+      logger.error('Failed to save notification offline', { error });
       throw error;
     }
   }
@@ -289,7 +290,7 @@ class OfflineService {
         .limit(limit)
         .toArray();
     } catch (error) {
-      console.error('Failed to get notifications:', error);
+      logger.error('Failed to get notifications', { error });
       return [];
     }
   }
@@ -305,9 +306,9 @@ class OfflineService {
         lastUpdated: new Date().toISOString(),
       });
 
-      console.log(`Setting ${key} saved offline`);
+      logger.info(`Setting ${key} saved offline`);
     } catch (error) {
-      console.error('Failed to save setting:', error);
+      logger.error('Failed to save setting', { error });
       throw error;
     }
   }
@@ -320,7 +321,7 @@ class OfflineService {
       const setting = await db.settings.get(key);
       return setting ? setting.value : defaultValue;
     } catch (error) {
-      console.error('Failed to get setting:', error);
+      logger.error('Failed to get setting', { error });
       return defaultValue;
     }
   }
@@ -346,7 +347,7 @@ class OfflineService {
                auditLogs.length + notifications.length,
       };
     } catch (error) {
-      console.error('Failed to get unsynced items:', error);
+      logger.error('Failed to get unsynced items', { error });
       return {
         messages: [],
         conversations: [],
@@ -364,9 +365,9 @@ class OfflineService {
   async markAsSynced(table, id) {
     try {
       await db[table].update(id, { synced: true });
-      console.log(`Marked ${table}/${id} as synced`);
+      logger.info(`Marked ${table}/${id} as synced`);
     } catch (error) {
-      console.error(`Failed to mark ${table}/${id} as synced:`, error);
+      logger.error(`Failed to mark ${table}/${id} as synced`, { error });
     }
   }
 
@@ -393,7 +394,7 @@ class OfflineService {
                cacheCount + notificationCount + auditLogCount,
       };
     } catch (error) {
-      console.error('Failed to get storage stats:', error);
+      logger.error('Failed to get storage stats', { error });
       return null;
     }
   }

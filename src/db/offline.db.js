@@ -1,4 +1,5 @@
 import Dexie from 'dexie';
+import logger from '../utils/logger';
 
 /**
  * IndexedDB Database Schema for CareDroid-AI Offline Storage
@@ -48,10 +49,10 @@ export const db = new CareDroidDB();
 export const initializeDatabase = async () => {
   try {
     await db.open();
-    console.log('IndexedDB initialized successfully');
+    logger.info('IndexedDB initialized successfully');
     return true;
   } catch (error) {
-    console.error('Failed to initialize IndexedDB:', error);
+    logger.error('Failed to initialize IndexedDB', { error });
     return false;
   }
 };
@@ -71,9 +72,9 @@ export const clearDatabase = async () => {
     await db.notifications.clear();
     await db.settings.clear();
     
-    console.log('Database cleared successfully');
+    logger.info('Database cleared successfully');
   } catch (error) {
-    console.error('Failed to clear database:', error);
+    logger.error('Failed to clear database', { error });
     throw error;
   }
 };
@@ -94,7 +95,7 @@ export const exportDatabase = async () => {
     
     return JSON.stringify(data, null, 2);
   } catch (error) {
-    console.error('Failed to export database:', error);
+    logger.error('Failed to export database', { error });
     throw error;
   }
 };
@@ -115,9 +116,9 @@ export const importDatabase = async (jsonData) => {
     if (data.notifications) await db.notifications.bulkAdd(data.notifications);
     if (data.settings) await db.settings.bulkAdd(data.settings);
     
-    console.log('Database imported successfully');
+    logger.info('Database imported successfully');
   } catch (error) {
-    console.error('Failed to import database:', error);
+    logger.error('Failed to import database', { error });
     throw error;
   }
 };

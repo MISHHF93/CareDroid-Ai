@@ -1,5 +1,6 @@
 // Offline database using LocalStorage with sync queue
 import appConfig from '../config/appConfig';
+import logger from '../utils/logger';
 
 class OfflineDB {
   constructor() {
@@ -9,7 +10,7 @@ class OfflineDB {
 
   // Initialize database
   init() {
-    console.log('[OfflineDB] Initializing...');
+    logger.info('[OfflineDB] Initializing');
     this.loadSyncQueue();
   }
 
@@ -18,10 +19,10 @@ class OfflineDB {
     try {
       const serialized = JSON.stringify(data);
       localStorage.setItem(`${this.dbName}_${key}`, serialized);
-      console.log(`[OfflineDB] Saved: ${key}`);
+      logger.info(`[OfflineDB] Saved: ${key}`);
       return true;
     } catch (error) {
-      console.error('[OfflineDB] Save failed:', error);
+      logger.error('[OfflineDB] Save failed', { error });
       return false;
     }
   }
@@ -35,7 +36,7 @@ class OfflineDB {
       }
       return JSON.parse(serialized);
     } catch (error) {
-      console.error('[OfflineDB] Load failed:', error);
+      logger.error('[OfflineDB] Load failed', { error });
       return null;
     }
   }
@@ -44,10 +45,10 @@ class OfflineDB {
   delete(key) {
     try {
       localStorage.removeItem(`${this.dbName}_${key}`);
-      console.log(`[OfflineDB] Deleted: ${key}`);
+      logger.info(`[OfflineDB] Deleted: ${key}`);
       return true;
     } catch (error) {
-      console.error('[OfflineDB] Delete failed:', error);
+      logger.error('[OfflineDB] Delete failed', { error });
       return false;
     }
   }
@@ -61,10 +62,10 @@ class OfflineDB {
           localStorage.removeItem(key);
         }
       });
-      console.log('[OfflineDB] Cleared all data');
+      logger.info('[OfflineDB] Cleared all data');
       return true;
     } catch (error) {
-      console.error('[OfflineDB] Clear failed:', error);
+      logger.error('[OfflineDB] Clear failed', { error });
       return false;
     }
   }
@@ -80,7 +81,7 @@ class OfflineDB {
     
     this.syncQueue.push(syncItem);
     this.saveSyncQueue();
-    console.log('[OfflineDB] Queued for sync:', action);
+    logger.info('[OfflineDB] Queued for sync', { action });
   }
 
   // Save sync queue
@@ -93,9 +94,9 @@ class OfflineDB {
     try {
       const queue = localStorage.getItem(`${this.dbName}_sync_queue`);
       this.syncQueue = queue ? JSON.parse(queue) : [];
-      console.log(`[OfflineDB] Loaded sync queue: ${this.syncQueue.length} items`);
+      logger.info(`[OfflineDB] Loaded sync queue: ${this.syncQueue.length} items`);
     } catch (error) {
-      console.error('[OfflineDB] Failed to load sync queue:', error);
+      logger.error('[OfflineDB] Failed to load sync queue', { error });
       this.syncQueue = [];
     }
   }
@@ -103,20 +104,20 @@ class OfflineDB {
   // Process sync queue
   async processSyncQueue() {
     if (this.syncQueue.length === 0) {
-      console.log('[OfflineDB] No items to sync');
+      logger.info('[OfflineDB] No items to sync');
       return;
     }
 
-    console.log(`[OfflineDB] Processing ${this.syncQueue.length} sync items...`);
+    logger.info(`[OfflineDB] Processing ${this.syncQueue.length} sync items`);
     
     const failedItems = [];
     
     for (const item of this.syncQueue) {
       try {
         await this.syncItem(item);
-        console.log(`[OfflineDB] Synced: ${item.action}`);
+        logger.info(`[OfflineDB] Synced: ${item.action}`);
       } catch (error) {
-        console.error(`[OfflineDB] Sync failed for ${item.action}:`, error);
+        logger.error(`[OfflineDB] Sync failed for ${item.action}`, { error });
         failedItems.push(item);
       }
     }
@@ -124,7 +125,7 @@ class OfflineDB {
     this.syncQueue = failedItems;
     this.saveSyncQueue();
     
-    console.log('[OfflineDB] Sync complete');
+    logger.info('[OfflineDB] Sync complete');
   }
 
   // Sync individual item
@@ -172,7 +173,7 @@ class OfflineDB {
     const maxCacheAge = 24 * 60 * 60 * 1000; // 24 hours
 
     if (cacheAge > maxCacheAge) {
-      console.log(`[OfflineDB] Cache expired for ${dataType}`);
+      logger.info(`[OfflineDB] Cache expired for ${dataType}`);
       return null;
     }
 

@@ -4,14 +4,16 @@ import Card from '../components/ui/card';
 import Button from '../components/ui/button';
 import Input from '../components/ui/input';
 import TwoFactorSettings from '../components/TwoFactorSettings';
+import { useNotificationActions } from '../hooks/useNotificationActions';
 
-const ProfileSettings = ({ onAddToast, authToken }) => {
+const ProfileSettings = ({ authToken }) => {
   const [displayName, setDisplayName] = useState('');
   const [institution, setInstitution] = useState('');
   const [role, setRole] = useState('');
+  const { success } = useNotificationActions();
 
   const handleSave = () => {
-    onAddToast?.('Profile settings saved.', 'success');
+    success('Profile saved', 'Profile settings saved.');
   };
 
   return (
@@ -51,7 +53,7 @@ const ProfileSettings = ({ onAddToast, authToken }) => {
         </Card>
 
         {/* Two-Factor Authentication Settings */}
-        <TwoFactorSettings authToken={authToken} onAddToast={onAddToast} />
+        <TwoFactorSettings authToken={authToken} />
       </div>
     </div>
   );

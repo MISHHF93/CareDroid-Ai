@@ -3,6 +3,7 @@
  * Simplified implementation for error tracking
  * In production, integrate with Sentry by installing @sentry/react
  */
+import logger from '../utils/logger';
 
 class CrashReportingService {
   private initialized: boolean = false;
@@ -11,17 +12,17 @@ class CrashReportingService {
   initialize(config: any) {
     this.config = config;
     this.initialized = true;
-    console.log('✓ Crash reporting service initialized');
+    logger.info('Crash reporting service initialized');
   }
 
   captureException(error: Error, context?: Record<string, any>) {
     if (!this.initialized) return;
-    console.error('Exception captured:', error.message, context);
+    logger.error('Exception captured', { message: error.message, context });
   }
 
   captureMessage(message: string, level: string = 'error') {
     if (!this.initialized) return;
-    console.warn(`[${level}] ${message}`);
+    logger.warn(`[${level}] ${message}`);
   }
 
   setUser(userId: string, email?: string, name?: string) {
@@ -35,7 +36,7 @@ class CrashReportingService {
 
   addBreadcrumb(message: string, category: string = 'default', data?: Record<string, any>) {
     if (!this.initialized) return;
-    console.debug(`[${category}] ${message}`, data);
+    logger.debug(`[${category}] ${message}`, { data });
   }
 
   isInitialized(): boolean {

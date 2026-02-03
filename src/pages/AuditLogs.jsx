@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './AuditLogs.css';
 import { apiFetch } from '../services/apiClient';
+import logger from '../utils/logger';
 
 export default function AuditLogs() {
   const [logs, setLogs] = useState([]);
@@ -64,7 +65,7 @@ export default function AuditLogs() {
       setError(null);
     } catch (err) {
       setError(err.message);
-      console.error('Error fetching audit logs:', err);
+      logger.error('Error fetching audit logs', { err });
     } finally {
       setLoading(false);
     }
@@ -83,7 +84,7 @@ export default function AuditLogs() {
       const data = await response.json();
       setIntegrityStatus(data.data.isValid ? 'VALID' : 'TAMPERED');
     } catch (err) {
-      console.error('Error verifying integrity:', err);
+      logger.error('Error verifying integrity', { err });
       setIntegrityStatus('ERROR');
     }
   };
@@ -101,7 +102,7 @@ export default function AuditLogs() {
       const data = await response.json();
       setStats(data.data);
     } catch (err) {
-      console.error('Error fetching statistics:', err);
+      logger.error('Error fetching statistics', { err });
     }
   };
 

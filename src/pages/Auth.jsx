@@ -5,8 +5,10 @@ import Card from '../components/ui/card';
 import Input from '../components/ui/input';
 import appConfig from '../config/appConfig';
 import { apiFetch } from '../services/apiClient';
+import { useNotificationActions } from '../hooks/useNotificationActions';
+import logger from '../utils/logger';
 
-const Auth = ({ onAddToast, onAuthSuccess }) => {
+const Auth = ({ onAuthSuccess }) => {
   const [mode, setMode] = useState('login');
   const [form, setForm] = useState({ email: '', password: '', name: '' });
   const [magicEmail, setMagicEmail] = useState('');
@@ -14,6 +16,7 @@ const Auth = ({ onAddToast, onAuthSuccess }) => {
   const [userId, setUserId] = useState(null);
   const [twoFactorToken, setTwoFactorToken] = useState('');
   const bypassToken = appConfig.dev.bearerToken;
+  const { success, error, info } = useNotificationActions();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -39,17 +42,17 @@ const Auth = ({ onAddToast, onAuthSuccess }) => {
       if (data?.requiresTwoFactor) {
         setRequiresTwoFactor(true);
         setUserId(data.userId);
-        onAddToast?.('Please enter your 2FA code', 'info');
+        info('Two-factor required', 'Please enter your 2FA code.');
         return;
       }
 
       if (data?.accessToken) {
         onAuthSuccess?.(data.accessToken);
       } else {
-        onAddToast?.('Registration successful. Please verify your email.', 'success');
+        success('Registration complete', 'Please verify your email.');
       }
     } catch (error) {
-      onAddToast?.('Unable to authenticate. Check your credentials.', 'error');
+      error('Authentication failed', 'Unable to authenticate. Check your credentials.');
     }
   };
 
@@ -57,7 +60,7 @@ const Auth = ({ onAddToast, onAuthSuccess }) => {
     e.preventDefault();
     
     if (!twoFactorToken || twoFactorToken.length < 6) {
-      onAddToast?.('Please enter a valid 6-digit code', 'error');
+      error('Invalid code', 'Please enter a valid 6-digit code.');
       return;
     }
 
@@ -76,10 +79,10 @@ const Auth = ({ onAddToast, onAuthSuccess }) => {
 
       if (data?.accessToken) {
         onAuthSuccess?.(data.accessToken);
-        onAddToast?.('Successfully authenticated!', 'success');
+        success('Signed in', 'Successfully authenticated.');
       }
     } catch (error) {
-      onAddToast?.('Invalid 2FA code. Please try again.', 'error');
+      error('Invalid 2FA code', 'Please try again.');
     }
   };
 
@@ -92,7 +95,7 @@ const Auth = ({ onAddToast, onAuthSuccess }) => {
   const handleMagicLink = async (e) => {
     e.preventDefault();
     if (!magicEmail) {
-      onAddToast?.('Enter your institutional email to receive a link.', 'info');
+      info('Email required', 'Enter your institutional email to receive a link.');
       return;
     }
 
@@ -107,9 +110,9 @@ const Auth = ({ onAddToast, onAuthSuccess }) => {
         throw new Error('Magic link failed');
       }
 
-      onAddToast?.('Magic link sent. Check your email.', 'success');
+      success('Magic link sent', 'Check your email.');
     } catch (error) {
-      onAddToast?.('Unable to send magic link.', 'error');
+      error('Magic link failed', 'Unable to send magic link.');
     }
   };
 
@@ -211,9 +214,9 @@ const Auth = ({ onAddToast, onAuthSuccess }) => {
               try {
                 const response = await apiFetch('/api/auth/oidc');
                 const data = await response.json().catch(() => ({}));
-                onAddToast?.(data?.message || 'OIDC SSO is not configured.', 'info');
+                info('SSO status', data?.message || 'OIDC SSO is not configured.');
               } catch (error) {
-                onAddToast?.('OIDC SSO is not available.', 'info');
+                info('SSO unavailable', 'OIDC SSO is not available.');
               }
             }}
             style={{
@@ -233,9 +236,9 @@ const Auth = ({ onAddToast, onAuthSuccess }) => {
               try {
                 const response = await apiFetch('/api/auth/saml');
                 const data = await response.json().catch(() => ({}));
-                onAddToast?.(data?.message || 'SAML SSO is not configured.', 'info');
+                info('SSO status', data?.message || 'SAML SSO is not configured.');
               } catch (error) {
-                onAddToast?.('SAML SSO is not available.', 'info');
+                info('SSO unavailable', 'SAML SSO is not available.');
               }
             }}
             style={{
@@ -287,9 +290,9 @@ const Auth = ({ onAddToast, onAuthSuccess }) => {
           </a>
           <Button
             onClick={() => {
-              console.log('\n\n=== 🚀 DIRECT SIGN-IN CLICKED ===');
-              console.log('bypassToken:', bypassToken);
-              console.log('onAuthSuccess exists:', !!onAuthSuccess);
+              logger.info('Direct sign-in clicked');
+              logger.debug('bypassToken present', { hasToken: Boolean(bypassToken) });
+              logger.debug('onAuthSuccess present', { hasHandler: Boolean(onAuthSuccess) });
               
               try {
                 // Create mock user profile for dev mode
@@ -308,24 +311,22 @@ const Auth = ({ onAddToast, onAuthSuccess }) => {
                 localStorage.setItem('caredroid_user_profile', JSON.stringify(mockUser));
                 localStorage.setItem('caredroid_access_token', bypassToken);
                 
-                console.log('✅ Saved to localStorage:');
-                console.log('- Token:', localStorage.getItem('caredroid_access_token'));
-                console.log('- Profile:', JSON.parse(localStorage.getItem('caredroid_user_profile')));
+                logger.info('Saved auth data to localStorage');
+                logger.debug('Stored token present', { hasToken: Boolean(localStorage.getItem('caredroid_access_token')) });
                 
                 // Call onAuthSuccess with BOTH token and user
                 if (onAuthSuccess) {
-                  console.log('🔄 Calling onAuthSuccess...');
+                  logger.info('Calling onAuthSuccess');
                   onAuthSuccess(bypassToken, mockUser);
-                  console.log('✅ onAuthSuccess completed');
+                  logger.info('onAuthSuccess completed');
                 } else {
-                  console.error('❌ ERROR: onAuthSuccess is not defined!');
+                  logger.error('onAuthSuccess is not defined');
                 }
               } catch (error) {
-                console.error('❌ Error in Direct Sign-In:', error);
-                console.error('Error stack:', error.stack);
+                logger.error('Error in direct sign-in', { error });
               }
               
-              onAddToast?.('Signing in...', 'info');
+              info('Signing in', 'Signing in...');
             }}
             variant="ghost"
             style={{ borderStyle: 'dashed', textAlign: 'left' }}

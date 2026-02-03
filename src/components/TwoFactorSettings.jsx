@@ -3,19 +3,22 @@ import { useNavigate } from 'react-router-dom';
 import Button from '../components/ui/button';
 import Card from '../components/ui/card';
 import { apiFetch } from '../services/apiClient';
+import { useNotificationActions } from '../hooks/useNotificationActions';
+import logger from '../utils/logger';
 
 /**
  * TwoFactorSettings Component
  * 
  * Manages 2FA settings in ProfileSettings page
  */
-const TwoFactorSettings = ({ authToken, onAddToast }) => {
+const TwoFactorSettings = ({ authToken }) => {
   const navigate = useNavigate();
   const [twoFactorStatus, setTwoFactorStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [disabling, setDisabling] = useState(false);
   const [disableToken, setDisableToken] = useState('');
   const [showDisableModal, setShowDisableModal] = useState(false);
+  const { success, error, info } = useNotificationActions();
 
   useEffect(() => {
     fetchTwoFactorStatus();
@@ -37,8 +40,8 @@ const TwoFactorSettings = ({ authToken, onAddToast }) => {
       const data = await response.json();
       setTwoFactorStatus(data);
     } catch (error) {
-      console.error(error);
-      onAddToast?.('Failed to load 2FA status', 'error');
+      logger.error('Failed to load 2FA status', { error });
+      error('2FA status', 'Failed to load 2FA status.');
     } finally {
       setLoading(false);
     }
@@ -50,7 +53,7 @@ const TwoFactorSettings = ({ authToken, onAddToast }) => {
 
   const handleDisableTwoFactor = async () => {
     if (!disableToken || disableToken.length < 6) {
-      onAddToast?.('Please enter your 2FA code', 'error');
+      info('Code required', 'Please enter your 2FA code.');
       return;
     }
 
@@ -69,13 +72,13 @@ const TwoFactorSettings = ({ authToken, onAddToast }) => {
         throw new Error('Invalid 2FA code');
       }
 
-      onAddToast?.('2FA disabled successfully', 'success');
+      success('2FA disabled', 'Two-factor authentication disabled.');
       setShowDisableModal(false);
       setDisableToken('');
       fetchTwoFactorStatus();
     } catch (error) {
-      onAddToast?.('Failed to disable 2FA. Check your code.', 'error');
-      console.error(error);
+      error('Disable failed', 'Failed to disable 2FA. Check your code.');
+      logger.error('Failed to disable 2FA', { error });
     } finally {
       setDisabling(false);
     }

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useUser } from '../contexts/UserContext';
+import logger from '../utils/logger';
 
 /**
  * PermissionGate Component
@@ -70,7 +71,7 @@ const PermissionGate = ({
   }
 
   // Invalid permission prop
-  console.warn('PermissionGate: permission prop must be a string or array');
+  logger.warn('PermissionGate: permission prop must be a string or array');
   return <>{fallback}</>;
 };
 

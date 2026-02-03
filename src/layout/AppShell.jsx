@@ -33,7 +33,7 @@ const AppShell = ({
       overflow: 'hidden',
       position: 'relative'
     }}>
-      {/* Sidebar */}
+      {/* Sidebar - Fixed Position */}
       <Sidebar
         conversations={conversations}
         activeConversation={activeConversation}
@@ -45,13 +45,15 @@ const AppShell = ({
         onToolSelect={onToolSelect}
       />
 
-      {/* Main Content Area */}
+      {/* Main Content Area - Pushed by sidebar width */}
       <div style={{ 
         flex: 1, 
         display: 'flex', 
         flexDirection: 'column',
         marginLeft: '280px',
         minWidth: 0,
+        height: '100vh',
+        overflow: 'hidden',
         transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
       }}>
         {children}

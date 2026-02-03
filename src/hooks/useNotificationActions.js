@@ -1,5 +1,4 @@
-import React from 'react';
-import { useNotifications } from '../../contexts/NotificationContext';
+import { useNotifications } from '../contexts/NotificationContext';
 
 /**
  * Hook for easily adding notifications from any component
@@ -46,7 +45,7 @@ export const useNotificationActions = () => {
      */
     warning: (title, message, action = null) => {
       return addNotification({
-        type: 'alert',
+        type: 'warning',
         title,
         message,
         action,
@@ -83,7 +82,7 @@ export const useNotificationActions = () => {
      */
     update: (title, message, action = null) => {
       return addNotification({
-        type: 'update',
+        type: 'info',
         title,
         message,
         action,
@@ -95,7 +94,7 @@ export const useNotificationActions = () => {
      */
     announcement: (title, message, action = null) => {
       return addNotification({
-        type: 'announcement',
+        type: 'info',
         title,
         message,
         action,

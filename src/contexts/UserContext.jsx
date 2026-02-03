@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { apiFetch } from '../services/apiClient';
+import logger from '../utils/logger';
 
 /**
  * User Context for managing authentication and role-based access
@@ -115,47 +116,48 @@ export const UserProvider = ({ children }) => {
 
   // Initialize from localStorage on mount
   useEffect(() => {
-    console.log('\n\n=== 🎬 UserContext INITIALIZATION ===');
+    logger.info('UserContext initialization');
     
     const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
     const storedProfile = localStorage.getItem(USER_PROFILE_KEY);
 
-    console.log('📦 localStorage contents:');
-    console.log('- Token exists:', !!storedToken);
-    console.log('- Token value:', storedToken);
-    console.log('- Profile exists:', !!storedProfile);
+    logger.debug('localStorage snapshot', {
+      hasToken: Boolean(storedToken),
+      hasProfile: Boolean(storedProfile),
+      tokenValue: storedToken,
+    });
     if (storedProfile) {
       try {
-        console.log('- Profile data:', JSON.parse(storedProfile));
+        logger.debug('Stored profile data', { profile: JSON.parse(storedProfile) });
       } catch (e) {
-        console.log('- Profile parse error:', e);
+        logger.warn('Stored profile parse error', { error: e });
       }
     }
 
     // Load token
     if (storedToken) {
-      console.log('✅ Loading token into state');
+      logger.info('Loading token into state');
       setAuthTokenState(storedToken);
     } else {
-      console.log('⚠️ No token in localStorage');
+      logger.warn('No token in localStorage');
     }
 
     // Load profile
     if (storedProfile) {
       try {
         const profile = JSON.parse(storedProfile);
-        console.log('✅ Loading profile into state:', profile);
+        logger.info('Loading profile into state', { profile });
         setUserState(profile);
       } catch (error) {
-        console.error('❌ Failed to parse stored user profile:', error);
+        logger.error('Failed to parse stored user profile', { error });
         localStorage.removeItem(USER_PROFILE_KEY);
       }
     } else {
-      console.log('⚠️ No profile in localStorage');
+      logger.warn('No profile in localStorage');
     }
 
     setIsLoading(false);
-    console.log('✅ UserContext Init Complete\n\n');
+    logger.info('UserContext init complete');
   }, []);
 
   // Fetch user profile when token changes
@@ -182,23 +184,23 @@ export const UserProvider = ({ children }) => {
             try {
               const profile = JSON.parse(storedProfile);
               setUserState(profile);
-              console.log('Using stored mock profile from localStorage');
+              logger.info('Using stored mock profile from localStorage');
             } catch (e) {
-              console.error('Failed to parse stored profile');
+              logger.error('Failed to parse stored profile');
             }
           }
         }
       } catch (error) {
-        console.error('Failed to fetch user profile:', error);
+        logger.error('Failed to fetch user profile', { error });
         // Try to use stored mock profile if backend is unavailable
         const storedProfile = localStorage.getItem(USER_PROFILE_KEY);
         if (storedProfile) {
           try {
             const profile = JSON.parse(storedProfile);
             setUserState(profile);
-            console.log('Using stored mock profile (backend unavailable)');
+            logger.info('Using stored mock profile (backend unavailable)');
           } catch (e) {
-            console.error('Failed to parse stored profile');
+            logger.error('Failed to parse stored profile');
           }
         }
       } finally {
@@ -265,12 +267,13 @@ export const UserProvider = ({ children }) => {
 
   // Debug logging for authentication state changes
   useEffect(() => {
-    console.log('=== UserContext isAuthenticated changed ===');
-    console.log('authToken:', !!authToken);
-    console.log('user:', !!user);
-    console.log('isAuthenticated:', isAuthenticated);
+    logger.debug('UserContext auth state changed', {
+      hasAuthToken: Boolean(authToken),
+      hasUser: Boolean(user),
+      isAuthenticated,
+    });
     if (user) {
-      console.log('user details:', { id: user.id, email: user.email, role: user.role });
+      logger.debug('User details', { id: user.id, email: user.email, role: user.role });
     }
   }, [isAuthenticated, authToken, user]);
 

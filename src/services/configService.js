@@ -4,6 +4,7 @@
  */
 
 import apiClient from './apiClient';
+import logger from '../utils/logger';
 
 class ConfigService {
   /**
@@ -14,7 +15,7 @@ class ConfigService {
       const response = await apiClient.get('/config/system');
       return response.data;
     } catch (error) {
-      console.error('Failed to fetch system config:', error);
+      logger.error('Failed to fetch system config', { error });
       // Return sensible defaults if fetch fails
       return {
         rag: {
@@ -38,7 +39,7 @@ class ConfigService {
       const response = await apiClient.get('/ai/remaining-queries');
       return response.data;
     } catch (error) {
-      console.error('Failed to fetch AI remaining queries:', error);
+      logger.error('Failed to fetch AI remaining queries', { error });
       return {
         tier: 'free',
         dailyLimit: 10,
@@ -57,7 +58,7 @@ class ConfigService {
       const response = await apiClient.get('/tools/available');
       return response.data;
     } catch (error) {
-      console.error('Failed to fetch available tools:', error);
+      logger.error('Failed to fetch available tools', { error });
       // Return empty tools list on error
       return {
         tools: [],
@@ -75,7 +76,7 @@ class ConfigService {
       const response = await apiClient.get('/subscriptions/current');
       return response.data;
     } catch (error) {
-      console.error('Failed to fetch subscription:', error);
+      logger.error('Failed to fetch subscription', { error });
       return null;
     }
   }
@@ -88,7 +89,7 @@ class ConfigService {
       const response = await apiClient.get('/subscriptions/plans');
       return response.data;
     } catch (error) {
-      console.error('Failed to fetch subscription plans:', error);
+      logger.error('Failed to fetch subscription plans', { error });
       return [];
     }
   }

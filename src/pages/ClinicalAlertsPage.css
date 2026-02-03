@@ -1,0 +1,365 @@
+.clinical-alerts-page {
+  padding: 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.alerts-header {
+  margin-bottom: 32px;
+}
+
+.alerts-header h1 {
+  margin: 0 0 8px;
+  font-size: 28px;
+  color: var(--text-primary);
+}
+
+.alerts-header p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.alerts-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.control-group label {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+}
+
+.search-input,
+.severity-select {
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.search-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+.search-input:focus,
+.severity-select:focus {
+  outline: none;
+  border-color: rgba(79, 70, 229, 0.5);
+  background: rgba(79, 70, 229, 0.1);
+}
+
+.severity-select option {
+  background: #1a1a1a;
+  color: white;
+}
+
+.summary-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.summary-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.summary-badge strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.summary-badge.total {
+  border-color: rgba(79, 70, 229, 0.3);
+}
+
+.summary-badge.unacknowledged {
+  border-color: rgba(255, 77, 79, 0.3);
+}
+
+.summary-badge.acknowledged {
+  border-color: rgba(82, 196, 26, 0.3);
+}
+
+.alerts-timeline {
+  margin-top: 24px;
+}
+
+.timeline-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.alerts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.alert-card {
+  background: rgba(0, 0, 0, 0.2);
+  border-left: 4px solid;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.alert-card.severity-critical {
+  border-color: #ff4d4f;
+  background: rgba(255, 77, 79, 0.08);
+}
+
+.alert-card.severity-high {
+  border-color: #ff7a45;
+  background: rgba(255, 122, 69, 0.08);
+}
+
+.alert-card.severity-moderate {
+  border-color: #faad14;
+  background: rgba(250, 173, 20, 0.08);
+}
+
+.alert-card.severity-low {
+  border-color: #52c41a;
+  background: rgba(82, 196, 26, 0.08);
+}
+
+.alert-card.status-acknowledged {
+  opacity: 0.7;
+}
+
+.alert-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+.card-header {
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.alert-meta {
+  display: flex;
+  gap: 12px;
+  flex: 1;
+}
+
+.severity-icon {
+  font-size: 24px;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+.alert-info {
+  flex: 1;
+}
+
+.alert-title {
+  margin: 0 0 4px;
+  font-size: 15px;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.alert-description {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.alert-source {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.badge-source {
+  display: inline-block;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.badge-time {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.alert-status-badge {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  font-weight: 700;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.card-findings {
+  padding: 0 16px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.findings-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.findings-list {
+  margin: 0;
+  padding-left: 18px;
+  list-style: disc;
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+.findings-list li {
+  margin-bottom: 2px;
+}
+
+.findings-list li:last-child {
+  margin-bottom: 0;
+}
+
+.card-actions {
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, 0.15);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.btn-acknowledge,
+.btn-export {
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-acknowledge:hover {
+  background: rgba(82, 196, 26, 0.2);
+  border-color: rgba(82, 196, 26, 0.4);
+  color: #52c41a;
+}
+
+.btn-export:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.status-text {
+  font-size: 12px;
+  color: #52c41a;
+  font-weight: 500;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 32px;
+  color: var(--text-secondary);
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.empty-state h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  color: var(--text-primary);
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .clinical-alerts-page {
+    padding: 16px;
+  }
+
+  .alerts-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .card-header {
+    flex-direction: column;
+  }
+
+  .card-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .btn-acknowledge,
+  .btn-export {
+    width: 100%;
+  }
+}

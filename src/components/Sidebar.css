@@ -360,6 +360,119 @@
   opacity: 1;
 }
 
+.tools-subsection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tools-subsection-header {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding: 2px 4px;
+}
+
+.tools-subsection-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tools-subsection-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.tool-action-buttons {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  gap: 4px;
+  z-index: 2;
+}
+
+.tool-action-btn {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(20, 20, 30, 0.6);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 10px;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.tool-action-btn.active {
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.7);
+  background: rgba(251, 191, 36, 0.15);
+}
+
+.tool-action-btn:hover {
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.recent-tools-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.recent-tool-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.recent-tool-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.recent-tool-icon {
+  font-size: 14px;
+}
+
+.recent-tool-name {
+  font-weight: 600;
+  text-align: left;
+}
+
+.tools-clear-btn {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tools-clear-btn:hover {
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
 .tool-icon {
   font-size: 24px;
 }

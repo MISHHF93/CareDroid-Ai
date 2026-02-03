@@ -4,6 +4,8 @@ import Button from '../components/ui/button';
 import Card from '../components/ui/card';
 import Input from '../components/ui/input';
 import { apiFetch } from '../services/apiClient';
+import { useNotificationActions } from '../hooks/useNotificationActions';
+import logger from '../utils/logger';
 
 /**
  * TwoFactorSetup Component
@@ -14,7 +16,7 @@ import { apiFetch } from '../services/apiClient';
  * 3. Verifying the first token
  * 4. Receiving backup codes
  */
-const TwoFactorSetup = ({ authToken, onAddToast }) => {
+const TwoFactorSetup = ({ authToken }) => {
   const navigate = useNavigate();
   const [step, setStep] = useState('generate'); // 'generate', 'verify', 'backup'
   const [qrCode, setQrCode] = useState(null);
@@ -22,6 +24,7 @@ const TwoFactorSetup = ({ authToken, onAddToast }) => {
   const [token, setToken] = useState('');
   const [backupCodes, setBackupCodes] = useState([]);
   const [loading, setLoading] = useState(false);
+  const { success, error, info } = useNotificationActions();
 
   useEffect(() => {
     generateSecret();
@@ -44,8 +47,8 @@ const TwoFactorSetup = ({ authToken, onAddToast }) => {
       setQrCode(data.qrCode);
       setSecret(data.secret);
     } catch (error) {
-      onAddToast?.('Failed to generate 2FA secret. Please try again.', 'error');
-      console.error(error);
+      error('2FA setup failed', 'Failed to generate 2FA secret. Please try again.');
+      logger.error('Failed to generate 2FA secret', { error });
     } finally {
       setLoading(false);
     }
@@ -55,7 +58,7 @@ const TwoFactorSetup = ({ authToken, onAddToast }) => {
     e.preventDefault();
 
     if (!token || token.length < 6) {
-      onAddToast?.('Please enter a valid 6-digit code', 'error');
+      info('Invalid code', 'Please enter a valid 6-digit code.');
       return;
     }
 
@@ -77,10 +80,10 @@ const TwoFactorSetup = ({ authToken, onAddToast }) => {
       const data = await response.json();
       setBackupCodes(data.backupCodes || []);
       setStep('backup');
-      onAddToast?.('2FA enabled successfully! Save your backup codes.', 'success');
+      success('2FA enabled', 'Save your backup codes.');
     } catch (error) {
-      onAddToast?.('Invalid code. Please try again.', 'error');
-      console.error(error);
+      error('Invalid code', 'Please try again.');
+      logger.error('Invalid 2FA verification code', { error });
     } finally {
       setLoading(false);
     }
@@ -89,9 +92,9 @@ const TwoFactorSetup = ({ authToken, onAddToast }) => {
   const handleCopyBackupCodes = () => {
     const codesText = backupCodes.join('\n');
     navigator.clipboard.writeText(codesText).then(() => {
-      onAddToast?.('Backup codes copied to clipboard', 'success');
+      success('Backup codes copied', 'Backup codes copied to clipboard.');
     }).catch(() => {
-      onAddToast?.('Failed to copy backup codes', 'error');
+      error('Copy failed', 'Failed to copy backup codes.');
     });
   };
 
@@ -106,7 +109,7 @@ const TwoFactorSetup = ({ authToken, onAddToast }) => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    onAddToast?.('Backup codes downloaded', 'success');
+    success('Backup codes downloaded', 'Backup codes downloaded.');
   };
 
   const handleFinish = () => {

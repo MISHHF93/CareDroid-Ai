@@ -7,6 +7,7 @@
 import { apiFetch, buildStreamUrl } from './apiClient';
 import appConfig from '../config/appConfig';
 import { getFirebaseMessagingToken } from './firebaseClient';
+import logger from '../utils/logger';
 
 export const NotificationService = {
   /**
@@ -14,7 +15,7 @@ export const NotificationService = {
    */
   async requestPermission() {
     if (!('Notification' in window)) {
-      console.warn('This browser does not support notifications');
+      logger.warn('This browser does not support notifications');
       return false;
     }
 
@@ -68,7 +69,7 @@ export const NotificationService = {
 
       return response.ok;
     } catch (error) {
-      console.error('Failed to register push token:', error);
+      logger.error('Failed to register push token', { error });
       return false;
     }
   },
@@ -103,7 +104,7 @@ export const NotificationService = {
 
       return await response.json();
     } catch (error) {
-      console.error('Error fetching notifications:', error);
+      logger.error('Error fetching notifications', { error });
       throw error;
     }
   },
@@ -126,7 +127,7 @@ export const NotificationService = {
 
       return await response.json();
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      logger.error('Error marking notification as read', { error });
       throw error;
     }
   },
@@ -149,7 +150,7 @@ export const NotificationService = {
 
       return true;
     } catch (error) {
-      console.error('Error deleting notification:', error);
+      logger.error('Error deleting notification', { error });
       throw error;
     }
   },
@@ -171,7 +172,7 @@ export const NotificationService = {
 
       return await response.json();
     } catch (error) {
-      console.error('Error fetching preferences:', error);
+      logger.error('Error fetching preferences', { error });
       throw error;
     }
   },
@@ -196,7 +197,7 @@ export const NotificationService = {
 
       return await response.json();
     } catch (error) {
-      console.error('Error updating preferences:', error);
+      logger.error('Error updating preferences', { error });
       throw error;
     }
   },
@@ -216,12 +217,12 @@ export const NotificationService = {
         const notification = JSON.parse(event.data);
         onNotification(notification);
       } catch (error) {
-        console.error('Error parsing notification:', error);
+        logger.error('Error parsing notification', { error });
       }
     };
 
     eventSource.onerror = (error) => {
-      console.error('Notification stream error:', error);
+      logger.error('Notification stream error', { error });
       onError?.(error);
       eventSource.close();
     };
@@ -250,7 +251,7 @@ export const NotificationService = {
 
       return await response.json();
     } catch (error) {
-      console.error('Error sending test notification:', error);
+      logger.error('Error sending test notification', { error });
       throw error;
     }
   },

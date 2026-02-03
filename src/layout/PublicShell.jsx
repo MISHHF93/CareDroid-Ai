@@ -1,4 +1,4 @@
-import { Link, Outlet, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import './PublicShell.css';
 import appConfig from '../config/appConfig';
 
@@ -10,7 +10,7 @@ import appConfig from '../config/appConfig';
  * - Full-width content area
  * - Footer with legal links
  */
-export const PublicShell = () => {
+export const PublicShell = ({ children }) => {
   const navigate = useNavigate();
   const appName = appConfig.app.name;
   const appVersion = appConfig.app.version;
@@ -44,7 +44,7 @@ export const PublicShell = () => {
       </header>
 
       <main className="public-main" id="main-content">
-        <Outlet />
+        {children}
       </main>
 
       <footer className="public-footer">
@@ -76,7 +76,6 @@ export const PublicShell = () => {
                   <Link to="/terms">Terms of Service</Link>
                 )}
               </li>
-              <li><Link to="/consent-history">Consent History</Link></li>
             </ul>
           </div>
 

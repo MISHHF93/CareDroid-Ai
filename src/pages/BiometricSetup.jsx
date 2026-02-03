@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiAxios } from '../services/apiClient';
-import { NativeBiometric, BiometricOptions } from '@capacitor/biometric';
 import './BiometricSetup.css';
 import appConfig from '../config/appConfig';
+import logger from '../utils/logger';
 
 const BiometricSetup = () => {
   const navigate = useNavigate();
@@ -13,23 +13,48 @@ const BiometricSetup = () => {
   const [biometricType, setBiometricType] = useState(null);
   const [enrolled, setEnrolled] = useState(false);
   const [stats, setStats] = useState(null);
+  const [biometricApi, setBiometricApi] = useState(null);
+  const [biometricReady, setBiometricReady] = useState(false);
 
   useEffect(() => {
     if (!appConfig.features.enableBiometricAuth) {
       return;
     }
+    const loadBiometricApi = async () => {
+      try {
+        const moduleName = '@capacitor/biometric';
+        const module = await import(/* @vite-ignore */ moduleName);
+        setBiometricApi(module);
+        setBiometricReady(true);
+      } catch (err) {
+        logger.error('Biometric plugin not available', { err });
+        setError('Biometric plugin is not available in this build.');
+        setBiometricAvailable(false);
+      }
+    };
+
+    loadBiometricApi();
+  }, []);
+
+  useEffect(() => {
+    if (!biometricReady || !biometricApi) {
+      return;
+    }
 
     checkBiometricAvailability();
     loadBiometricConfig();
-  }, []);
+  }, [biometricReady, biometricApi]);
 
   const checkBiometricAvailability = async () => {
+    if (!biometricApi?.NativeBiometric) {
+      return;
+    }
     try {
-      const result = await NativeBiometric.isAvailable();
+      const result = await biometricApi.NativeBiometric.isAvailable();
       setBiometricAvailable(result.isAvailable);
       setBiometricType(result.biometryType); // 'fingerprint', 'face', 'iris'
     } catch (err) {
-      console.error('Biometric not available:', err);
+      logger.error('Biometric not available', { err });
       setBiometricAvailable(false);
     }
   };
@@ -52,11 +77,15 @@ const BiometricSetup = () => {
 
       setStats(statsResponse.data.stats);
     } catch (err) {
-      console.error('Failed to load biometric config:', err);
+      logger.error('Failed to load biometric config', { err });
     }
   };
 
   const handleEnrollBiometric = async () => {
+    if (!biometricApi?.NativeBiometric) {
+      setError('Biometric plugin is not available.');
+      return;
+    }
     setLoading(true);
     setError(null);
 
@@ -81,7 +110,7 @@ const BiometricSetup = () => {
 
       // Store challenge token securely
       const { challengeToken } = response.data;
-      await NativeBiometric.setCredentials({
+      await biometricApi.NativeBiometric.setCredentials({
         username: 'caredroid_user',
         password: challengeToken,
         server: 'caredroid-ai.com',
@@ -93,7 +122,7 @@ const BiometricSetup = () => {
       alert('Biometric authentication enabled successfully!');
       loadBiometricConfig();
     } catch (err) {
-      console.error('Failed to enroll biometric:', err);
+      logger.error('Failed to enroll biometric', { err });
       setError(err.response?.data?.message || 'Failed to enable biometric authentication');
     } finally {
       setLoading(false);
@@ -101,12 +130,16 @@ const BiometricSetup = () => {
   };
 
   const handleTestBiometric = async () => {
+    if (!biometricApi?.NativeBiometric) {
+      setError('Biometric plugin is not available.');
+      return;
+    }
     setLoading(true);
     setError(null);
 
     try {
       // Retrieve stored credentials
-      const credentials = await NativeBiometric.getCredentials({
+      const credentials = await biometricApi.NativeBiometric.getCredentials({
         server: 'caredroid-ai.com',
       });
 
@@ -118,7 +151,7 @@ const BiometricSetup = () => {
         description: 'Place your finger on the sensor',
       };
 
-      await NativeBiometric.verifyIdentity(biometricOptions);
+      await biometricApi.NativeBiometric.verifyIdentity(biometricOptions);
 
       // If verification succeeds, call backend
       const deviceId = await getDeviceId();
@@ -130,10 +163,10 @@ const BiometricSetup = () => {
         challengeResponse: credentials.password,
       });
 
-      console.log('Biometric verification successful:', response.data);
+      logger.info('Biometric verification successful', { data: response.data });
       alert('Biometric authentication test passed!');
     } catch (err) {
-      console.error('Biometric test failed:', err);
+      logger.error('Biometric test failed', { err });
       setError('Biometric authentication failed');
     } finally {
       setLoading(false);
@@ -141,6 +174,10 @@ const BiometricSetup = () => {
   };
 
   const handleDisableBiometric = async () => {
+    if (!biometricApi?.NativeBiometric) {
+      setError('Biometric plugin is not available.');
+      return;
+    }
     if (!confirm('Are you sure you want to disable biometric authentication?')) {
       return;
     }
@@ -157,7 +194,7 @@ const BiometricSetup = () => {
       });
 
       // Delete stored credentials
-      await NativeBiometric.deleteCredentials({
+      await biometricApi.NativeBiometric.deleteCredentials({
         server: 'caredroid-ai.com',
       });
 
@@ -167,7 +204,7 @@ const BiometricSetup = () => {
       alert('Biometric authentication disabled');
       loadBiometricConfig();
     } catch (err) {
-      console.error('Failed to disable biometric:', err);
+      logger.error('Failed to disable biometric', { err });
       setError('Failed to disable biometric authentication');
     } finally {
       setLoading(false);

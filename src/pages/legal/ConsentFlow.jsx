@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Checkbox } from '../../components/forms/Checkbox';
 import { apiFetch } from '../../services/apiClient';
 import './ConsentFlow.css';
+import logger from '../../utils/logger';
 
 /**
  * ConsentFlow Component
@@ -96,7 +97,7 @@ export const ConsentFlow = ({ onComplete }) => {
         navigate('/');
       }
     } catch (error) {
-      console.error('Consent submission error:', error);
+      logger.error('Consent submission error', { error });
       setErrors({ submit: 'Failed to record your consent. Please try again.' });
     } finally {
       setIsSubmitting(false);

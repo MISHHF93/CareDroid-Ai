@@ -1,0 +1,73 @@
+.risk-factors-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.risk-factors-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.risk-factors-items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.risk-factor-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  border-left: 2px solid transparent;
+  font-size: 13px;
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+}
+
+.risk-factor-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.risk-factor-indicator {
+  font-size: 8px;
+  line-height: 1;
+}
+
+.risk-factor-item.severity-critical {
+  border-left-color: #ff4d4f;
+  background: rgba(255, 77, 79, 0.08);
+}
+
+.risk-factor-item.severity-critical .risk-factor-indicator {
+  color: #ff4d4f;
+}
+
+.risk-factor-item.severity-high {
+  border-left-color: #ff7a45;
+  background: rgba(255, 122, 69, 0.08);
+}
+
+.risk-factor-item.severity-high .risk-factor-indicator {
+  color: #ff7a45;
+}
+
+.risk-factor-item.severity-moderate {
+  border-left-color: #faad14;
+  background: rgba(250, 173, 20, 0.08);
+}
+
+.risk-factor-item.severity-moderate .risk-factor-indicator {
+  color: #faad14;
+}
+
+.risk-factor-text {
+  white-space: normal;
+  line-height: 1.4;
+}

@@ -6,6 +6,7 @@
 
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import configService from '../services/configService';
+import logger from '../utils/logger';
 
 const SystemConfigContext = createContext();
 
@@ -54,7 +55,7 @@ export function SystemConfigProvider({ children }) {
       setAvailableTools(tools || []);
       setSubscription(sub || { tier: 'free', status: 'active' });
     } catch (err) {
-      console.warn('⚠️ Failed to load system config (using defaults):', err.message);
+      logger.warn('Failed to load system config (using defaults)', { message: err.message });
       setError(err.message);
       // Keep defaults
     } finally {

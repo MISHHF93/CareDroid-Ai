@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Card from '../components/ui/card';
 import Button from '../components/ui/button';
+import { useNotificationActions } from '../hooks/useNotificationActions';
 
 const steps = [
   {
@@ -21,10 +22,11 @@ const steps = [
   }
 ];
 
-const Onboarding = ({ onAddToast }) => {
+const Onboarding = () => {
   const [stepIndex, setStepIndex] = useState(0);
   const [selection, setSelection] = useState({});
   const navigate = useNavigate();
+  const { success } = useNotificationActions();
   const step = steps[stepIndex];
 
   const handleNext = () => {
@@ -32,7 +34,7 @@ const Onboarding = ({ onAddToast }) => {
       setStepIndex(stepIndex + 1);
       return;
     }
-    onAddToast?.('Onboarding completed.', 'success');
+    success('Onboarding complete', 'Onboarding completed.');
     navigate('/');
   };
 

@@ -1,0 +1,128 @@
+.anomaly-banner {
+  padding: 16px;
+  border-radius: 10px;
+  border-left: 4px solid;
+  background: rgba(0, 0, 0, 0.2);
+  margin-bottom: 12px;
+}
+
+.anomaly-banner.severity-critical {
+  border-color: #ff4d4f;
+  background: rgba(255, 77, 79, 0.08);
+}
+
+.anomaly-banner.severity-high {
+  border-color: #ff7a45;
+  background: rgba(255, 122, 69, 0.08);
+}
+
+.anomaly-banner.severity-warning {
+  border-color: #faad14;
+  background: rgba(250, 173, 20, 0.08);
+}
+
+.anomaly-banner.severity-info {
+  border-color: #1890ff;
+  background: rgba(24, 144, 255, 0.08);
+}
+
+.anomaly-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.anomaly-icon {
+  font-size: 20px;
+  line-height: 1.4;
+}
+
+.anomaly-title {
+  flex: 1;
+}
+
+.anomaly-title h4 {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.anomaly-score {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.anomaly-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.anomaly-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.anomaly-types,
+.anomaly-recommendations {
+  margin-bottom: 8px;
+}
+
+.anomaly-types:last-child,
+.anomaly-recommendations:last-child {
+  margin-bottom: 0;
+}
+
+.anomaly-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.anomaly-type-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.anomaly-type-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.anomaly-rec-list {
+  margin: 0;
+  padding-left: 18px;
+  list-style: disc;
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.anomaly-rec-list li {
+  margin-bottom: 4px;
+}
+
+.anomaly-rec-list li:last-child {
+  margin-bottom: 0;
+}

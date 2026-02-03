@@ -4,6 +4,7 @@ import { Spinner } from '../../components/ui/Spinner';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { apiFetch } from '../../services/apiClient';
 import './ConsentHistory.css';
+import logger from '../../utils/logger';
 
 /**
  * ConsentHistory Component
@@ -35,7 +36,7 @@ export const ConsentHistory = () => {
       const data = await response.json();
       setConsents(data.consents || []);
     } catch (err) {
-      console.error('Error fetching consent history:', err);
+      logger.error('Error fetching consent history', { err });
       setError('Failed to load consent history');
     } finally {
       setLoading(false);

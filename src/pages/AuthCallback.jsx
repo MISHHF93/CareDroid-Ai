@@ -2,15 +2,17 @@ import React, { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import Card from '../components/ui/card';
 import Button from '../components/ui/button';
+import { useNotificationActions } from '../hooks/useNotificationActions';
 
-const AuthCallback = ({ onAddToast, onAuthSuccess }) => {
+const AuthCallback = ({ onAuthSuccess }) => {
   const [params] = useSearchParams();
   const initialToken = params.get('token') || '';
   const [token, setToken] = useState(initialToken);
+  const { info } = useNotificationActions();
 
   const handleSave = () => {
     if (!token) {
-      onAddToast?.('Paste an access token to continue.', 'info');
+      info('Token required', 'Paste an access token to continue.');
       return;
     }
     onAuthSuccess?.(token);

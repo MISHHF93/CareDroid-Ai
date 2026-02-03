@@ -2,14 +2,16 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Card from '../components/ui/card';
 import Button from '../components/ui/button';
+import { useNotificationActions } from '../hooks/useNotificationActions';
 
-const Settings = ({ onAddToast }) => {
+const Settings = () => {
   const [notifications, setNotifications] = useState(true);
   const [safetyBanner, setSafetyBanner] = useState(true);
   const [themePref, setThemePref] = useState('system');
+  const { success } = useNotificationActions();
 
   const handleSave = () => {
-    onAddToast?.('Settings saved.', 'success');
+    success('Settings saved', 'Settings saved.');
   };
 
   return (

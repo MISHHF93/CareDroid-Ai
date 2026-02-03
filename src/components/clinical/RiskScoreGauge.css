@@ -1,0 +1,130 @@
+.risk-score-gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.gauge-wrapper {
+  width: 100%;
+  aspect-ratio: 200 / 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gauge-svg {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.gauge-value {
+  font-size: 32px;
+  font-weight: 700;
+  fill: var(--text-primary);
+}
+
+.gauge-confidence {
+  font-size: 12px;
+  fill: var(--text-secondary);
+  font-weight: 500;
+}
+
+.gauge-progress {
+  transition: stroke-dashoffset 0.3s ease;
+  animation: gauge-fill 1s ease-out forwards;
+}
+
+@keyframes gauge-fill {
+  from {
+    stroke-dashoffset: 100%;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.gauge-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+}
+
+.gauge-category {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.gauge-category.low {
+  background: rgba(82, 196, 26, 0.15);
+  color: #52c41a;
+}
+
+.gauge-category.moderate {
+  background: rgba(250, 173, 20, 0.15);
+  color: #faad14;
+}
+
+.gauge-category.high {
+  background: rgba(255, 122, 69, 0.15);
+  color: #ff7a45;
+}
+
+.gauge-category.critical {
+  background: rgba(255, 77, 79, 0.15);
+  color: #ff4d4f;
+}
+
+/* Size variants */
+.gauge-small {
+  padding: 12px;
+}
+
+.gauge-small .gauge-value {
+  font-size: 24px;
+}
+
+.gauge-small .gauge-confidence {
+  font-size: 10px;
+}
+
+.gauge-medium {
+  padding: 16px;
+}
+
+.gauge-large {
+  padding: 24px;
+}
+
+.gauge-large .gauge-value {
+  font-size: 40px;
+}
+
+/* Severity-based borders */
+.risk-score-gauge.severity-critical {
+  border-color: rgba(255, 77, 79, 0.4);
+  box-shadow: 0 0 12px rgba(255, 77, 79, 0.15);
+}
+
+.risk-score-gauge.severity-high {
+  border-color: rgba(255, 122, 69, 0.4);
+  box-shadow: 0 0 12px rgba(255, 122, 69, 0.12);
+}
+
+.risk-score-gauge.severity-moderate {
+  border-color: rgba(250, 173, 20, 0.4);
+  box-shadow: 0 0 12px rgba(250, 173, 20, 0.12);
+}
+
+.risk-score-gauge.severity-low {
+  border-color: rgba(82, 196, 26, 0.4);
+  box-shadow: 0 0 12px rgba(82, 196, 26, 0.12);
+}

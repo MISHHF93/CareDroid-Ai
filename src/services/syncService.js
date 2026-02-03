@@ -5,6 +5,7 @@
 import { db, initializeDatabase } from '../db/offline.db';
 import offlineService from './offlineService';
 import { apiFetch } from './apiClient';
+import logger from '../utils/logger';
 
 class SyncService {
   constructor() {
@@ -26,14 +27,14 @@ class SyncService {
       this.startAutoSync();
     }
 
-    console.log('SyncService initialized');
+    logger.info('SyncService initialized');
   }
 
   /**
    * Handle coming online
    */
   handleOnline() {
-    console.log('Connection restored - starting sync');
+    logger.info('Connection restored - starting sync');
     this.syncAll();
     this.startAutoSync();
   }
@@ -42,7 +43,7 @@ class SyncService {
    * Handle going offline
    */
   handleOffline() {
-    console.log('Connection lost - stopping auto-sync');
+    logger.info('Connection lost - stopping auto-sync');
     this.stopAutoSync();
   }
 
@@ -58,7 +59,7 @@ class SyncService {
       }
     }, this.AUTO_SYNC_INTERVAL);
 
-    console.log('Auto-sync started');
+    logger.info('Auto-sync started');
   }
 
   /**
@@ -68,7 +69,7 @@ class SyncService {
     if (this.syncInterval) {
       clearInterval(this.syncInterval);
       this.syncInterval = null;
-      console.log('Auto-sync stopped');
+      logger.info('Auto-sync stopped');
     }
   }
 
@@ -77,12 +78,12 @@ class SyncService {
    */
   async syncAll() {
     if (this.isSyncing) {
-      console.log('Sync already in progress');
+      logger.info('Sync already in progress');
       return;
     }
 
     if (!navigator.onLine) {
-      console.log('Cannot sync - offline');
+      logger.info('Cannot sync - offline');
       return;
     }
 
@@ -91,16 +92,16 @@ class SyncService {
     try {
       const token = localStorage.getItem('caredroid_access_token');
       if (!token) {
-        console.log('No auth token - skipping sync');
+        logger.info('No auth token - skipping sync');
         this.isSyncing = false;
         return;
       }
 
-      console.log('Starting full sync...');
+      logger.info('Starting full sync');
 
       // Get all unsynced items
       const unsynced = await offlineService.getUnsyncedItems();
-      console.log(`Found ${unsynced.total} unsynced items`);
+      logger.info(`Found ${unsynced.total} unsynced items`);
 
       if (unsynced.total === 0) {
         this.isSyncing = false;
@@ -122,12 +123,12 @@ class SyncService {
       // Sync audit logs
       await this.syncAuditLogs(unsynced.auditLogs, token);
 
-      console.log('Full sync completed successfully');
+      logger.info('Full sync completed successfully');
 
       // Download latest data from server
       await this.downloadLatestData(token);
     } catch (error) {
-      console.error('Sync failed:', error);
+      logger.error('Sync failed', { error });
     } finally {
       this.isSyncing = false;
     }
@@ -139,7 +140,7 @@ class SyncService {
   async syncMessages(messages, token) {
     if (messages.length === 0) return;
 
-    console.log(`Syncing ${messages.length} messages...`);
+    logger.info(`Syncing ${messages.length} messages`);
 
     for (const message of messages) {
       try {
@@ -174,11 +175,11 @@ class SyncService {
           await db.messages.update(message.id, { serverId: data.id });
         }
       } catch (error) {
-        console.error(`Failed to sync message ${message.id}:`, error);
+        logger.error(`Failed to sync message ${message.id}`, { error });
       }
     }
 
-    console.log('Messages synced');
+    logger.info('Messages synced');
   }
 
   /**
@@ -187,7 +188,7 @@ class SyncService {
   async syncConversations(conversations, token) {
     if (conversations.length === 0) return;
 
-    console.log(`Syncing ${conversations.length} conversations...`);
+    logger.info(`Syncing ${conversations.length} conversations`);
 
     for (const conversation of conversations) {
       try {
@@ -219,11 +220,11 @@ class SyncService {
           await db.conversations.update(conversation.id, { serverId: data.id });
         }
       } catch (error) {
-        console.error(`Failed to sync conversation ${conversation.id}:`, error);
+        logger.error(`Failed to sync conversation ${conversation.id}`, { error });
       }
     }
 
-    console.log('Conversations synced');
+    logger.info('Conversations synced');
   }
 
   /**
@@ -232,7 +233,7 @@ class SyncService {
   async syncToolResults(toolResults, token) {
     if (toolResults.length === 0) return;
 
-    console.log(`Syncing ${toolResults.length} tool results...`);
+    logger.info(`Syncing ${toolResults.length} tool results`);
 
     for (const result of toolResults) {
       try {
@@ -259,11 +260,11 @@ class SyncService {
 
         await offlineService.markAsSynced('toolResults', result.id);
       } catch (error) {
-        console.error(`Failed to sync tool result ${result.id}:`, error);
+        logger.error(`Failed to sync tool result ${result.id}`, { error });
       }
     }
 
-    console.log('Tool results synced');
+    logger.info('Tool results synced');
   }
 
   /**
@@ -272,7 +273,7 @@ class SyncService {
   async syncNotifications(notifications, token) {
     if (notifications.length === 0) return;
 
-    console.log(`Syncing ${notifications.length} notifications...`);
+    logger.info(`Syncing ${notifications.length} notifications`);
 
     for (const notification of notifications) {
       try {
@@ -296,11 +297,11 @@ class SyncService {
 
         await offlineService.markAsSynced('notifications', notification.id);
       } catch (error) {
-        console.error(`Failed to sync notification ${notification.id}:`, error);
+        logger.error(`Failed to sync notification ${notification.id}`, { error });
       }
     }
 
-    console.log('Notifications synced');
+    logger.info('Notifications synced');
   }
 
   /**
@@ -309,7 +310,7 @@ class SyncService {
   async syncAuditLogs(auditLogs, token) {
     if (auditLogs.length === 0) return;
 
-    console.log(`Syncing ${auditLogs.length} audit logs...`);
+    logger.info(`Syncing ${auditLogs.length} audit logs`);
 
     // Audit logs are typically server-generated, but we may have local actions to sync
 
@@ -338,11 +339,11 @@ class SyncService {
 
         await offlineService.markAsSynced('auditLogs', log.id);
       } catch (error) {
-        console.error(`Failed to sync audit log ${log.id}:`, error);
+        logger.error(`Failed to sync audit log ${log.id}`, { error });
       }
     }
 
-    console.log('Audit logs synced');
+    logger.info('Audit logs synced');
   }
 
   /**
@@ -350,7 +351,7 @@ class SyncService {
    */
   async downloadLatestData(token) {
     try {
-      console.log('Downloading latest data from server...');
+      logger.info('Downloading latest data from server');
 
       // Get user profile
       const profileResponse = await apiFetch('/api/user/profile', {
@@ -388,9 +389,9 @@ class SyncService {
         }
       }
 
-      console.log('Latest data downloaded');
+      logger.info('Latest data downloaded');
     } catch (error) {
-      console.error('Failed to download latest data:', error);
+      logger.error('Failed to download latest data', { error });
     }
   }
 
@@ -417,7 +418,7 @@ class SyncService {
    */
   async resetAndResync() {
     try {
-      console.log('Resetting offline data...');
+      logger.info('Resetting offline data');
 
       // Clear all offline data
       await db.messages.clear();
@@ -433,9 +434,9 @@ class SyncService {
         await this.downloadLatestData(token);
       }
 
-      console.log('Reset and resync completed');
+      logger.info('Reset and resync completed');
     } catch (error) {
-      console.error('Failed to reset and resync:', error);
+      logger.error('Failed to reset and resync', { error });
       throw error;
     }
   }

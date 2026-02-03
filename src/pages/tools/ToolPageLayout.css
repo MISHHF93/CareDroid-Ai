@@ -1,0 +1,387 @@
+.tool-page {
+  padding: 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.tool-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+  font-size: 14px;
+}
+
+.breadcrumb-link {
+  background: none;
+  border: none;
+  color: var(--primary-color, #4F46E5);
+  cursor: pointer;
+  padding: 0;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.breadcrumb-link:hover {
+  opacity: 0.7;
+  text-decoration: underline;
+}
+
+.breadcrumb-separator {
+  color: var(--text-secondary);
+}
+
+.breadcrumb-current {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.tool-header {
+  background: var(--panel-background, white);
+  border-left: 4px solid var(--primary-color);
+  border-radius: 12px;
+  padding: 32px;
+  margin-bottom: 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.tool-header-left {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  flex: 1;
+}
+
+.tool-header-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  flex-shrink: 0;
+}
+
+.tool-header-info h1 {
+  font-size: 32px;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+.tool-header-info p {
+  color: var(--text-secondary);
+  font-size: 16px;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.tool-header-meta {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.tool-category-badge {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tool-shortcut-badge {
+  padding: 6px 12px;
+  background: var(--panel-hover, #f5f5f5);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-family: monospace;
+}
+
+.tool-header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-share-tool {
+  padding: 10px 16px;
+  border: 2px solid rgba(79, 70, 229, 0.4);
+  background: rgba(79, 70, 229, 0.1);
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--primary-color, #4F46E5);
+}
+
+.btn-share-tool:hover {
+  border-color: var(--primary-color, #4F46E5);
+  background: rgba(79, 70, 229, 0.2);
+}
+
+.btn-back-to-tools {
+  padding: 10px 20px;
+  border: 2px solid var(--panel-border, #e0e0e0);
+  background: transparent;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--text-primary);
+}
+
+.btn-back-to-tools:hover {
+  border-color: var(--primary-color, #4F46E5);
+  color: var(--primary-color, #4F46E5);
+  background: var(--panel-hover, #f5f5f5);
+}
+
+.tool-content {
+  background: var(--panel-background, white);
+  border-radius: 12px;
+  padding: 32px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.clinical-insights-panel {
+  background: var(--panel-background, white);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  border: 1px solid var(--panel-border, #e6e6e6);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.clinical-insights-panel.severity-critical {
+  border-color: rgba(255, 107, 107, 0.4);
+  box-shadow: 0 10px 22px rgba(255, 107, 107, 0.18);
+}
+
+.clinical-insights-panel.severity-warning {
+  border-color: rgba(255, 193, 7, 0.4);
+  box-shadow: 0 10px 22px rgba(255, 193, 7, 0.18);
+}
+
+.clinical-insights-panel.severity-normal {
+  border-color: rgba(0, 200, 140, 0.35);
+  box-shadow: 0 10px 22px rgba(0, 200, 140, 0.16);
+}
+
+.clinical-insights-panel.severity-info {
+  border-color: rgba(100, 149, 237, 0.35);
+  box-shadow: 0 10px 22px rgba(100, 149, 237, 0.16);
+}
+
+.clinical-insights-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.clinical-insights-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--text-primary);
+}
+
+.clinical-insights-badge {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(79, 70, 229, 0.08);
+  color: var(--text-secondary);
+}
+
+.clinical-insights-badge.critical {
+  background: rgba(255, 107, 107, 0.18);
+  color: #ff6b6b;
+}
+
+.clinical-insights-badge.warning {
+  background: rgba(255, 193, 7, 0.18);
+  color: #ffc107;
+}
+
+.clinical-insights-badge.normal {
+  background: rgba(0, 200, 140, 0.18);
+  color: #00c88c;
+}
+
+.clinical-insights-badge.info {
+  background: rgba(100, 149, 237, 0.18);
+  color: #6495ed;
+}
+
+.clinical-insights-summary {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.clinical-insights-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.clinical-insights-section {
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 16px;
+}
+
+.clinical-alerts-container {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.alerts-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.clinical-insights-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.clinical-insights-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+}
+
+.clinical-insights-list {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-primary);
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ai-integration-panel {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 12px;
+  padding: 32px;
+  box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+}
+
+.ai-panel-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.ai-panel-header h3 {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.ai-panel-header p {
+  opacity: 0.9;
+  font-size: 14px;
+}
+
+.ai-panel-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.btn-ai-action {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 16px 24px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.btn-ai-action:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.btn-icon {
+  font-size: 20px;
+}
+
+.ai-panel-tip {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px dashed rgba(255, 255, 255, 0.3);
+  padding: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.tip-icon {
+  font-size: 20px;
+}
+
+.ai-panel-tip code {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .tool-page {
+    padding: 16px;
+  }
+
+  .tool-header {
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .tool-header-left {
+    flex-direction: column;
+  }
+
+  .tool-header-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .ai-panel-actions {
+    grid-template-columns: 1fr;
+  }
+}

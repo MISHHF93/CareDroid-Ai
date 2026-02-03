@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef, forwardRef } from 'react';
 import { apiFetch } from '../../services/apiClient';
 import './OfflineSupport.css';
+import logger from '../../utils/logger';
 
 /**
  * OfflineIndicator Component
@@ -186,7 +187,7 @@ export const useOfflineStatus = () => {
         const db = await openIndexedDB();
         dbRef.current = db;
       } catch (error) {
-        console.error('Failed to initialize offline database:', error);
+        logger.error('Failed to initialize offline database', { error });
       }
     };
 
@@ -216,7 +217,7 @@ export const useOfflineStatus = () => {
       await store.put({ ...data, cachedAt: Date.now() });
       return true;
     } catch (error) {
-      console.error('Error caching data:', error);
+      logger.error('Error caching data', { error });
       return false;
     }
   }, []);
@@ -236,7 +237,7 @@ export const useOfflineStatus = () => {
         request.onerror = () => reject(request.error);
       });
     } catch (error) {
-      console.error('Error retrieving cached data:', error);
+      logger.error('Error retrieving cached data', { error });
       return null;
     }
   }, []);
@@ -274,7 +275,7 @@ export const useOfflineStatus = () => {
 
       localStorage.setItem('lastSyncTime', Date.now());
     } catch (error) {
-      console.error('Sync error:', error);
+      logger.error('Sync error', { error });
     } finally {
       setIsSyncing(false);
       setSyncProgress(0);
@@ -350,10 +351,10 @@ export const registerServiceWorker = async () => {
   if ('serviceWorker' in navigator) {
     try {
       const registration = await navigator.serviceWorker.register('/sw.js');
-      console.log('Service Worker registered:', registration);
+      logger.info('Service Worker registered', { registration });
       return registration;
     } catch (error) {
-      console.error('Service Worker registration failed:', error);
+      logger.error('Service Worker registration failed', { error });
     }
   }
 };

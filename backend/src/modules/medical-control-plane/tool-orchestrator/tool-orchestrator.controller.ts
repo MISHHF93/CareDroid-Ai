@@ -119,4 +119,27 @@ export class ToolOrchestratorController {
     dto.userId = req.user?.userId || dto.userId || 'anonymous';
     return this.toolOrchestratorService.executeTool(dto);
   }
+
+  /**
+   * POST /tools/results
+   * Persist tool results from offline sync
+   */
+  @Post('results')
+  @HttpCode(HttpStatus.OK)
+  async recordToolResult(
+    @Body() body: { toolType: string; input?: any; output?: any; timestamp?: string },
+    @Request() req: any,
+  ) {
+    const userId = req.user?.userId || req.user?.id || 'anonymous';
+
+    const result = await this.toolOrchestratorService.saveToolResult({
+      userId,
+      toolType: body.toolType,
+      input: body.input,
+      output: body.output,
+      timestamp: body.timestamp,
+    });
+
+    return { status: 'recorded', id: result.id };
+  }
 }

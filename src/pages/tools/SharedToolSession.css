@@ -1,0 +1,70 @@
+.shared-session {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: radial-gradient(circle at top, rgba(79, 70, 229, 0.15), transparent 60%), var(--navy-bg, #0b1120);
+}
+
+.shared-session-card {
+  background: var(--panel-background, #0f172a);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 18px;
+  padding: 32px;
+  max-width: 520px;
+  width: 100%;
+  color: #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.shared-session-card h1 {
+  font-size: 26px;
+  margin: 0;
+}
+
+.shared-session-card p {
+  color: rgba(226, 232, 240, 0.75);
+  margin: 0;
+}
+
+.shared-tag {
+  align-self: flex-start;
+  padding: 4px 10px;
+  background: rgba(79, 70, 229, 0.2);
+  border-radius: 999px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.shared-meta {
+  font-size: 12px;
+  color: rgba(226, 232, 240, 0.6);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.shared-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.shared-actions button {
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(226, 232, 240, 0.2);
+  background: rgba(148, 163, 184, 0.1);
+  color: #e2e8f0;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.shared-actions button:hover {
+  background: rgba(79, 70, 229, 0.25);
+  border-color: rgba(79, 70, 229, 0.5);
+}

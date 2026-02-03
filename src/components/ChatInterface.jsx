@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ToolPanel from './ToolPanel';
 import ToolCard from './ToolCard';
+import ToolVisualization from './ToolVisualization';
 import Citations, { CitationModal } from './Citations';
 import ConfidenceBadge from './ConfidenceBadge';
 import { getInventoryItem } from '../data/featureInventory';
 import { featureInventory } from '../data/featureInventory';
 import { apiFetch } from '../services/apiClient';
+import { useNotificationActions } from '../hooks/useNotificationActions';
 
 const ChatInterface = ({
   currentTool,
@@ -15,7 +17,6 @@ const ChatInterface = ({
   messages,
   onAppendMessage,
   onTrackEvent,
-  onAddToast,
   authToken,
   onToolSelect,
   onFeatureSelect
@@ -24,6 +25,7 @@ const ChatInterface = ({
   const [isLoading, setIsLoading] = useState(false);
   const [selectedCitation, setSelectedCitation] = useState(null);
   const messagesEndRef = useRef(null);
+  const { error } = useNotificationActions();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -105,7 +107,7 @@ const ChatInterface = ({
         content: 'I\'m having trouble connecting to the server. Please try again in a moment.',
         timestamp: new Date()
       });
-      onAddToast?.('Unable to reach the server. Please try again.', 'error');
+      error('Connection failed', 'Unable to reach the server. Please try again.');
       onTrackEvent?.('message_error', {
         conversationId,
         tool: currentTool,
@@ -200,6 +202,13 @@ const ChatInterface = ({
               {message.toolResult && (
                 <div style={{ marginTop: '12px' }}>
                   <ToolCard toolResult={message.toolResult} />
+                </div>
+              )}
+              {Array.isArray(message.visualizations) && message.visualizations.length > 0 && (
+                <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {message.visualizations.map((viz, idx) => (
+                    <ToolVisualization key={`${viz.type || 'viz'}-${idx}`} visualization={viz} />
+                  ))}
                 </div>
               )}
               {/* Citations */}

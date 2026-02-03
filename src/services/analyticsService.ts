@@ -4,6 +4,7 @@
  */
 
 import { apiFetch } from './apiClient';
+import logger from '../utils/logger';
 
 class AnalyticsService {
   private userId: string | null = null;
@@ -20,7 +21,7 @@ class AnalyticsService {
     const optOut = localStorage.getItem('analytics_opt_out');
     if (optOut === 'true') {
       this.enabled = false;
-      console.log('Analytics disabled by user');
+      logger.info('Analytics disabled by user');
       return;
     }
 
@@ -34,7 +35,7 @@ class AnalyticsService {
 
   initializeSegment(writeKey: string) {
     if ((window as any).analytics) {
-      console.log('Segment already initialized');
+      logger.info('Segment already initialized');
       return;
     }
 
@@ -43,15 +44,21 @@ class AnalyticsService {
     script.src = `https://cdn.segment.com/analytics.js/v1/${writeKey}/analytics.min.js`;
     document.head.appendChild(script);
 
-    console.log('✓ Segment analytics initialized');
+    logger.info('Segment analytics initialized');
   }
 
   trackEvent(event: any) {
     if (!this.enabled) return;
 
+    const eventName = event.eventName || event.event;
+    const parameters = event.parameters || event.properties || {};
+    const timestamp = event.timestamp || new Date().toISOString();
+
     const enrichedEvent = {
       ...event,
-      timestamp: event.timestamp || new Date().toISOString(),
+      eventName,
+      parameters,
+      timestamp,
       userId: event.userId || this.userId,
       sessionId: event.sessionId || this.sessionId,
     };
@@ -59,8 +66,8 @@ class AnalyticsService {
     this.queue.push(enrichedEvent);
 
     // Send to Segment if available
-    if ((window as any).analytics) {
-      (window as any).analytics.track(event.event, event.properties);
+    if ((window as any).analytics && eventName) {
+      (window as any).analytics.track(eventName, parameters);
     }
 
     if (this.queue.length >= 50) {
@@ -72,8 +79,8 @@ class AnalyticsService {
     if (!this.enabled) return;
 
     const event = {
-      event: 'page_view',
-      properties: {
+      eventName: 'page_view',
+      parameters: {
         page: pageName,
         screenResolution: `${window.screen.width}x${window.screen.height}`,
         ...properties,
@@ -85,7 +92,7 @@ class AnalyticsService {
     this.trackEvent(event);
 
     if ((window as any).analytics) {
-      (window as any).analytics.page(pageName, event.properties);
+      (window as any).analytics.page(pageName, event.parameters);
     }
   }
 

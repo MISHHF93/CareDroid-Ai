@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { apiFetch } from '../services/apiClient';
+import logger from '../utils/logger';
 
 const SESSION_KEY = 'caredroid_session_id';
 
@@ -48,7 +49,7 @@ class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error('ErrorBoundary caught:', error, errorInfo);
+    logger.error('ErrorBoundary caught', { error, errorInfo });
     reportCrash(error, errorInfo);
     
     this.setState({

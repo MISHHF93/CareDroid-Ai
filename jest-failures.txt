@@ -1,0 +1,105 @@
+/workspaces/CareDroid-Ai/backend/src/modules/encryption/encryption.service.spec.ts
+  [1m[31m  [1m● [22m[1mEncryptionService › Performance › should encrypt data quickly[39m[22m
+      [2mexpect([22m[31mreceived[39m[2m).[22mtoBeLessThan[2m([22m[32mexpected[39m[2m)[22m
+      Expected: < [32m1000[39m
+      Received:   [31m3341.003783[39m
+  [2m[22m
+  [2m    [0m [90m 374 |[39m[22m
+
+/workspaces/CareDroid-Ai/backend/test/tool-orchestrator.spec.ts
+  [1m[31m  [1m● [22m[1mToolOrchestratorService › Tool Registry › should register all three tools on initialization[39m[22m
+      Nest can't resolve dependencies of the ToolOrchestratorService (SofaCalculatorService, DrugCheckerService, LabInterpreterService, AuditService, ?, ToolResultRepository). Please make sure that the argument ToolMetricsService at index [4] is available in the RootTestModule context.
+      Potential solutions:
+      - Is RootTestModule a valid NestJS module?
+      - If ToolMetricsService is a provider, is it part of the current RootTestModule?
+      - If ToolMetricsService is exported from a separate @Module, is that module imported within RootTestModule?
+
+/workspaces/CareDroid-Ai/backend/test/tool-calling.spec.ts
+  [1m[31m  [1m● [22m[1mTool Calling Integration (Batch 15 Phase 1) › Tool Definitions (Step 1) › should expose tool definitions for Claude[39m[22m
+      Nest can't resolve dependencies of the AIService (ConfigService, ?, SubscriptionRepository, UserRepository, AuditService, MetricsService). Please make sure that the argument "AIQueryRepository" at index [1] is available in the RootTestModule context.
+      Potential solutions:
+      - Is RootTestModule a valid NestJS module?
+      - If "AIQueryRepository" is a provider, is it part of the current RootTestModule?
+      - If "AIQueryRepository" is exported from a separate @Module, is that module imported within RootTestModule?
+
+/workspaces/CareDroid-Ai/backend/test/sofa-calculator.spec.ts
+  [1m[31m  [1m● [22m[1mSofaCalculatorService › Respiration scoring › should score 0 for PaO2/FiO2 >= 400[39m[22m
+      [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+      Expected: [32m0[39m
+      Received: [31mundefined[39m
+  [2m[22m
+  [2m    [0m [90m 101 |[39m[22m
+
+/workspaces/CareDroid-Ai/backend/src/modules/medical-control-plane/intent-classifier/intent-classifier.service.spec.ts
+  [1m[31m  [1m● [22m[1mIntentClassifierService › should be defined[39m[22m
+      Nest can't resolve dependencies of the IntentClassifierService (AIService, ConfigService, ?). Please make sure that the argument NluMetricsService at index [2] is available in the RootTestModule context.
+      Potential solutions:
+      - Is RootTestModule a valid NestJS module?
+      - If NluMetricsService is a provider, is it part of the current RootTestModule?
+      - If NluMetricsService is exported from a separate @Module, is that module imported within RootTestModule?
+
+/workspaces/CareDroid-Ai/backend/test/drug-checker.spec.ts
+  [1m[31m  [1m● [22m[1mDrugCheckerService › getMetadata › should return drug checker metadata[39m[22m
+      [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+      Expected: [32m"drug-interaction[7m-checker[27m"[39m
+      Received: [31m"drug-interaction[7ms[27m"[39m
+  [2m[22m
+  [2m    [0m [90m 39 |[39m       [36mconst[39m metadata [33m=[39m service[33m.[39mgetMetadata()[33m;[39m[22m
+
+/workspaces/CareDroid-Ai/backend/src/modules/subscriptions/subscriptions.service.spec.ts
+  [1m[31m  [1m● [22m[1mSubscriptionsService › should be defined[39m[22m
+      Nest can't resolve dependencies of the SubscriptionsService (SubscriptionRepository, UserRepository, AuditService, ?). Please make sure that the argument ConfigService at index [3] is available in the RootTestModule context.
+      Potential solutions:
+      - Is RootTestModule a valid NestJS module?
+      - If ConfigService is a provider, is it part of the current RootTestModule?
+      - If ConfigService is exported from a separate @Module, is that module imported within RootTestModule?
+
+/workspaces/CareDroid-Ai/backend/test/lab-interpreter.spec.ts
+  [1m[31m  [1m● [22m[1mLabInterpreterService › validate › should validate patientSex options[39m[22m
+      [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+      Expected: [32mfalse[39m
+      Received: [31mtrue[39m
+  [2m[22m
+  [2m    [0m [90m 105 |[39m         patientSex[33m:[39m [32m'invalid'[39m[33m,[39m[22m
+
+/workspaces/CareDroid-Ai/backend/test/auth.service.spec.ts
+  [1m[31m  [1m● [22m[1mAuthService › should be defined[39m[22m
+      Nest can't resolve dependencies of the AuthService (UserRepository, ?, OAuthAccountRepository, SubscriptionRepository, JwtService, ConfigService, AuditService, TwoFactorService). Please make sure that the argument "UserProfileRepository" at index [1] is available in the RootTestModule context.
+      Potential solutions:
+      - Is RootTestModule a valid NestJS module?
+      - If "UserProfileRepository" is a provider, is it part of the current RootTestModule?
+      - If "UserProfileRepository" is exported from a separate @Module, is that module imported within RootTestModule?
+
+/workspaces/CareDroid-Ai/backend/src/modules/audit/audit.service.spec.ts
+  [1m[31m  [1m● [22m[1mAuditService › log › should create and save audit log entry[39m[22m
+      [2mexpect([22m[31mjest.fn()[39m[2m).[22mtoHaveBeenCalledWith[2m([22m[32m...expected[39m[2m)[22m
+      [32m- Expected[39m
+      [31m+ Received[39m
+      [2m  Object {[22m
+
+/workspaces/CareDroid-Ai/backend/src/modules/auth/auth.service.spec.ts
+  [1m[31m  [1m● [22m[1mAuthService › should be defined[39m[22m
+      Nest can't resolve dependencies of the AuthService (UserRepository, UserProfileRepository, OAuthAccountRepository, SubscriptionRepository, JwtService, ConfigService, AuditService, ?). Please make sure that the argument TwoFactorService at index [7] is available in the RootTestModule context.
+      Potential solutions:
+      - Is RootTestModule a valid NestJS module?
+      - If TwoFactorService is a provider, is it part of the current RootTestModule?
+      - If TwoFactorService is exported from a separate @Module, is that module imported within RootTestModule?
+
+/workspaces/CareDroid-Ai/backend/src/modules/compliance/compliance.service.spec.ts
+  [1m[31m  [1m● [22m[1mComplianceService › updateConsent › should update consent status and audit log[39m[22m
+      TypeError: Cannot set properties of undefined (setting 'consentMarketingCommunications')
+  [2m[22m
+  [2m    [0m [90m 212 |[39m     [36mswitch[39m (consentType) {[22m
+  [2m     [90m 213 |[39m       [36mcase[39m [32m'marketing'[39m[33m:[39m[22m
+  [2m    [31m[1m>[22m[2m[39m[90m 214 |[39m         profile[33m.[39mconsentMarketingCommunications [33m=[39m granted[33m;[39m[22m
+  [2m     [90m     |[39m                                               [31m[1m^[22m[2m[39m[22m
+
+/workspaces/CareDroid-Ai/backend/src/modules/ai/ai.service.spec.ts
+  [1m[31m  [1m● [22m[1mAIService › getUsage › should return usage stats for a user[39m[22m
+      TypeError: Cannot read properties of undefined (reading 'length')
+  [2m[22m
+  [2m    [0m [90m 414 |[39m     })[33m;[39m[22m
+  [2m     [90m 415 |[39m[22m
+  [2m    [31m[1m>[22m[2m[39m[90m 416 |[39m     [36mconst[39m usedThisMonth [33m=[39m queries[33m.[39mlength[33m;[39m[22m
+  [2m     [90m     |[39m                                   [31m[1m^[22m[2m[39m[22m
+

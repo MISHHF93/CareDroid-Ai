@@ -1,17 +1,18 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from '../src/modules/auth/auth.service';
-import { UsersService } from '../src/modules/users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from '../src/modules/users/entities/user.entity';
+import { UserProfile } from '../src/modules/users/entities/user-profile.entity';
+import { OAuthAccount } from '../src/modules/users/entities/oauth-account.entity';
+import { Subscription } from '../src/modules/subscriptions/entities/subscription.entity';
 import { AuditService } from '../src/modules/audit/audit.service';
+import { TwoFactorService } from '../src/modules/two-factor/two-factor.service';
 import * as bcrypt from 'bcrypt';
 
 describe('AuthService', () => {
   let service: AuthService;
-  let usersService: UsersService;
   let jwtService: JwtService;
 
   const mockUserRepository = {
@@ -20,30 +21,85 @@ describe('AuthService', () => {
     save: jest.fn(),
   };
 
+  const mockProfileRepository = {
+    create: jest.fn(),
+    save: jest.fn(),
+  };
+
+  const mockOauthRepository = {
+    create: jest.fn(),
+    save: jest.fn(),
+  };
+
+  const mockSubscriptionRepository = {
+    create: jest.fn(),
+    save: jest.fn(),
+  };
+
   const mockAuditService = {
     log: jest.fn(),
+  };
+
+  const mockJwtService = {
+    sign: jest.fn(),
+  };
+
+  const mockConfigService = {
+    get: jest.fn((key: string) => {
+      if (key === 'jwt') {
+        return { refreshTokenExpiry: '7d' };
+      }
+      return undefined;
+    }),
+  };
+
+  const mockTwoFactorService = {
+    getStatus: jest.fn(),
+    generate: jest.fn(),
+    validate: jest.fn(),
+    disable: jest.fn(),
   };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
-        UsersService,
-        JwtService,
-        ConfigService,
+        {
+          provide: JwtService,
+          useValue: mockJwtService,
+        },
+        {
+          provide: ConfigService,
+          useValue: mockConfigService,
+        },
         {
           provide: getRepositoryToken(User),
           useValue: mockUserRepository,
         },
         {
+          provide: getRepositoryToken(UserProfile),
+          useValue: mockProfileRepository,
+        },
+        {
+          provide: getRepositoryToken(OAuthAccount),
+          useValue: mockOauthRepository,
+        },
+        {
+          provide: getRepositoryToken(Subscription),
+          useValue: mockSubscriptionRepository,
+        },
+        {
           provide: AuditService,
           useValue: mockAuditService,
+        },
+        {
+          provide: TwoFactorService,
+          useValue: mockTwoFactorService,
         },
       ],
     }).compile();
 
     service = module.get<AuthService>(AuthService);
-    usersService = module.get<UsersService>(UsersService);
     jwtService = module.get<JwtService>(JwtService);
   });
 
@@ -60,8 +116,12 @@ describe('AuthService', () => {
       };
 
       mockUserRepository.findOne.mockResolvedValue(null);
-      mockUserRepository.create.mockReturnValue({ id: '1', ...registerDto });
+      mockUserRepository.create.mockReturnValue({ id: '1', email: registerDto.email });
       mockUserRepository.save.mockResolvedValue({ id: '1', email: registerDto.email });
+      mockProfileRepository.create.mockReturnValue({});
+      mockProfileRepository.save.mockResolvedValue({});
+      mockSubscriptionRepository.create.mockReturnValue({});
+      mockSubscriptionRepository.save.mockResolvedValue({});
 
       const result = await service.register(registerDto);
 
@@ -69,7 +129,7 @@ describe('AuthService', () => {
         where: { email: registerDto.email },
       });
       expect(mockUserRepository.create).toHaveBeenCalled();
-      expect(result).toHaveProperty('id');
+      expect(result).toHaveProperty('userId');
     });
 
     it('should throw error if email already exists', async () => {
@@ -90,10 +150,14 @@ describe('AuthService', () => {
       const user = {
         id: '1',
         email: 'test@example.com',
-        password: await bcrypt.hash('password123', 10),
+        passwordHash: await bcrypt.hash('password123', 10),
+        isActive: true,
+        role: 'student',
+        twoFactor: null,
       };
 
       mockUserRepository.findOne.mockResolvedValue(user);
+      mockJwtService.sign.mockReturnValue('token');
 
       const result = await service.login(
         { email: 'test@example.com', password: 'password123' },
@@ -101,20 +165,21 @@ describe('AuthService', () => {
         'test-agent'
       );
 
-      expect(result).toHaveProperty('id', '1');
-      expect(result).not.toHaveProperty('password');
+      expect(result).toHaveProperty('accessToken');
+      expect(result).toHaveProperty('refreshToken');
+      expect(result).toHaveProperty('user');
     });
 
     it('should return null if credentials are invalid', async () => {
       mockUserRepository.findOne.mockResolvedValue(null);
 
-      const result = await service.login(
-        { email: 'test@example.com', password: 'wrongpassword' },
-        '127.0.0.1',
-        'test-agent'
-      );
-
-      expect(result).toBeNull();
+      await expect(
+        service.login(
+          { email: 'test@example.com', password: 'wrongpassword' },
+          '127.0.0.1',
+          'test-agent'
+        )
+      ).rejects.toThrow('Invalid credentials');
     });
   });
 });

@@ -14,7 +14,7 @@ class OfflineService {
   async getDb() {
     if (!this.db) {
       try {
-        const module = await import('../db/offline.db');
+        const module = await import('../db/offline.db.js');
         this.db = module.db;
       } catch (error) {
         logger.error('Failed to load offline database', { error });
@@ -29,7 +29,8 @@ class OfflineService {
    */
   async initialize() {
     try {
-      await db.open();
+      const database = await this.getDb();
+      await database.open();
       this.isInitialized = true;
       logger.info('OfflineService initialized');
       return true;
@@ -51,7 +52,8 @@ class OfflineService {
    */
   async saveMessage(message) {
     try {
-      const id = await db.messages.add({
+      const database = await this.getDb();
+      const id = await database.messages.add({
         ...message,
         timestamp: message.timestamp || new Date().toISOString(),
         synced: false,
@@ -70,7 +72,8 @@ class OfflineService {
    */
   async getMessages(conversationId, limit = 50) {
     try {
-      const messages = await db.messages
+      const database = await this.getDb();
+      const messages = await database.messages
         .where('conversationId')
         .equals(conversationId)
         .reverse()
@@ -89,7 +92,8 @@ class OfflineService {
    */
   async saveConversation(conversation) {
     try {
-      const id = await db.conversations.add({
+      const database = await this.getDb();
+      const id = await database.conversations.add({
         ...conversation,
         lastMessageAt: conversation.lastMessageAt || new Date().toISOString(),
         synced: false,
@@ -108,7 +112,8 @@ class OfflineService {
    */
   async getConversations(userId) {
     try {
-      const conversations = await db.conversations
+      const database = await this.getDb();
+      const conversations = await database.conversations
         .where('userId')
         .equals(userId)
         .reverse()
@@ -126,7 +131,8 @@ class OfflineService {
    */
   async saveToolResult(toolResult) {
     try {
-      const id = await db.toolResults.add({
+      const database = await this.getDb();
+      const id = await database.toolResults.add({
         ...toolResult,
         timestamp: toolResult.timestamp || new Date().toISOString(),
         synced: false,
@@ -145,7 +151,8 @@ class OfflineService {
    */
   async getToolResults(userId, toolType = null) {
     try {
-      let query = db.toolResults.where('userId').equals(userId);
+      const database = await this.getDb();
+      let query = database.toolResults.where('userId').equals(userId);
 
       if (toolType) {
         const results = await query.toArray();
@@ -164,7 +171,8 @@ class OfflineService {
    */
   async saveUserProfile(userId, profile) {
     try {
-      await db.userProfile.put({
+      const database = await this.getDb();
+      await database.userProfile.put({
         userId,
         ...profile,
         lastSyncedAt: new Date().toISOString(),
@@ -182,7 +190,8 @@ class OfflineService {
    */
   async getUserProfile(userId) {
     try {
-      return await db.userProfile.get(userId);
+      const database = await this.getDb();
+      return await database.userProfile.get(userId);
     } catch (error) {
       logger.error('Failed to get user profile', { error });
       return null;
@@ -197,7 +206,8 @@ class OfflineService {
       const expiresAt = new Date();
       expiresAt.setMinutes(expiresAt.getMinutes() + ttlMinutes);
 
-      await db.knowledgeCache.add({
+      const database = await this.getDb();
+      await database.knowledgeCache.add({
         query: query.toLowerCase(),
         response,
         timestamp: new Date().toISOString(),
@@ -215,7 +225,8 @@ class OfflineService {
    */
   async getCachedKnowledge(query) {
     try {
-      const results = await db.knowledgeCache
+      const database = await this.getDb();
+      const results = await database.knowledgeCache
         .where('query')
         .equals(query.toLowerCase())
         .toArray();
@@ -242,15 +253,16 @@ class OfflineService {
    */
   async cleanupExpiredCache() {
     try {
+      const database = await this.getDb();
       const now = new Date().toISOString();
-      const expired = await db.knowledgeCache
+      const expired = await database.knowledgeCache
         .where('expiresAt')
         .below(now)
         .toArray();
 
       if (expired.length > 0) {
         const expiredIds = expired.map(item => item.id);
-        await db.knowledgeCache.bulkDelete(expiredIds);
+        await database.knowledgeCache.bulkDelete(expiredIds);
         logger.info(`Cleaned up ${expired.length} expired cache entries`);
       }
     } catch (error) {
@@ -263,7 +275,8 @@ class OfflineService {
    */
   async saveNotification(notification) {
     try {
-      const id = await db.notifications.add({
+      const database = await this.getDb();
+      const id = await database.notifications.add({
         ...notification,
         timestamp: notification.timestamp || new Date().toISOString(),
         read: notification.read || false,
@@ -283,7 +296,8 @@ class OfflineService {
    */
   async getNotifications(userId, limit = 50) {
     try {
-      return await db.notifications
+      const database = await this.getDb();
+      return await database.notifications
         .where('userId')
         .equals(userId)
         .reverse()
@@ -300,7 +314,8 @@ class OfflineService {
    */
   async saveSetting(key, value) {
     try {
-      await db.settings.put({
+      const database = await this.getDb();
+      await database.settings.put({
         key,
         value,
         lastUpdated: new Date().toISOString(),
@@ -318,7 +333,8 @@ class OfflineService {
    */
   async getSetting(key, defaultValue = null) {
     try {
-      const setting = await db.settings.get(key);
+      const database = await this.getDb();
+      const setting = await database.settings.get(key);
       return setting ? setting.value : defaultValue;
     } catch (error) {
       logger.error('Failed to get setting', { error });
@@ -331,11 +347,12 @@ class OfflineService {
    */
   async getUnsyncedItems() {
     try {
-      const messages = await db.messages.where('synced').equals(false).toArray();
-      const conversations = await db.conversations.where('synced').equals(false).toArray();
-      const toolResults = await db.toolResults.where('synced').equals(false).toArray();
-      const auditLogs = await db.auditLogs.where('synced').equals(false).toArray();
-      const notifications = await db.notifications.where('synced').equals(false).toArray();
+      const database = await this.getDb();
+      const messages = await database.messages.where('synced').equals(false).toArray();
+      const conversations = await database.conversations.where('synced').equals(false).toArray();
+      const toolResults = await database.toolResults.where('synced').equals(false).toArray();
+      const auditLogs = await database.auditLogs.where('synced').equals(false).toArray();
+      const notifications = await database.notifications.where('synced').equals(false).toArray();
 
       return {
         messages,
@@ -364,7 +381,8 @@ class OfflineService {
    */
   async markAsSynced(table, id) {
     try {
-      await db[table].update(id, { synced: true });
+      const database = await this.getDb();
+      await database[table].update(id, { synced: true });
       logger.info(`Marked ${table}/${id} as synced`);
     } catch (error) {
       logger.error(`Failed to mark ${table}/${id} as synced`, { error });
@@ -376,12 +394,13 @@ class OfflineService {
    */
   async getStorageStats() {
     try {
-      const messageCount = await db.messages.count();
-      const conversationCount = await db.conversations.count();
-      const toolResultCount = await db.toolResults.count();
-      const cacheCount = await db.knowledgeCache.count();
-      const notificationCount = await db.notifications.count();
-      const auditLogCount = await db.auditLogs.count();
+      const database = await this.getDb();
+      const messageCount = await database.messages.count();
+      const conversationCount = await database.conversations.count();
+      const toolResultCount = await database.toolResults.count();
+      const cacheCount = await database.knowledgeCache.count();
+      const notificationCount = await database.notifications.count();
+      const auditLogCount = await database.auditLogs.count();
 
       return {
         messages: messageCount,

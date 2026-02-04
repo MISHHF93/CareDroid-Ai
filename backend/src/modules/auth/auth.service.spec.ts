@@ -8,6 +8,7 @@ import { UserProfile } from '../users/entities/user-profile.entity';
 import { OAuthAccount } from '../users/entities/oauth-account.entity';
 import { Subscription } from '../subscriptions/entities/subscription.entity';
 import { AuditService } from '../audit/audit.service';
+import { TwoFactorService } from '../two-factor/two-factor.service';
 import * as bcrypt from 'bcrypt';
 
 jest.mock('bcrypt');
@@ -62,6 +63,13 @@ describe('AuthService', () => {
     log: jest.fn(),
   };
 
+  const mockTwoFactorService = {
+    getStatus: jest.fn(),
+    generate: jest.fn(),
+    validate: jest.fn(),
+    disable: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -94,6 +102,10 @@ describe('AuthService', () => {
           provide: AuditService,
           useValue: mockAuditService,
         },
+        {
+          provide: TwoFactorService,
+          useValue: mockTwoFactorService,
+        },
       ],
     }).compile();
 
@@ -105,6 +117,8 @@ describe('AuthService', () => {
     jest.clearAllMocks();
     mockConfigService.get.mockImplementation((key: string) => {
       switch (key) {
+        case 'jwt':
+          return { refreshTokenExpiry: '7d' };
         case 'JWT_ACCESS_SECRET':
           return 'test-access-secret';
         case 'JWT_REFRESH_SECRET':

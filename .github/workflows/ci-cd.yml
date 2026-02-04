@@ -134,6 +134,6 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /opt/caredroid
-            docker-compose pull
-            docker-compose up -d
+            docker-compose -f deployment/docker/docker-compose.yml pull
+            docker-compose -f deployment/docker/docker-compose.yml up -d
             docker system prune -af

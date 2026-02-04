@@ -33,6 +33,15 @@ interface CrashReportDto {
   environment: 'development' | 'staging' | 'production';
 }
 
+interface AnalyticsMetricsResponse {
+  totalEvents: number;
+  uniqueUsers: number;
+  topEvents: Array<{ event: string; count: number }>;
+  dailyActiveUsers: number;
+  weeklyActiveUsers: number;
+  monthlyActiveUsers: number;
+}
+
 @Controller()
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
@@ -69,7 +78,7 @@ export class AnalyticsController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
     @Query('userId') userId?: string,
-  ) {
+  ): Promise<AnalyticsMetricsResponse> {
     const end = endDate ? new Date(endDate) : new Date();
     const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 

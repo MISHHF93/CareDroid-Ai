@@ -23,4 +23,48 @@ dist-ssr
 *.sln
 *.sw?
 
+# Environment files
 .env
+.env.local
+.env.*.local
+
+# Build artifacts
+build/
+*.apk
+*.aab
+*.ipa
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Android
+android/.gradle
+android/build
+android/app/build
+android/local.properties
+*.jks
+keystore.properties
+
+# iOS
+ios/App/Pods/
+ios/App/App.xcworkspace
+*.xcuserstate
+
+# Capacitor
+.capacitor/
+
+# Debug tools (keep in repo but ignored if modified)
+# .debug-tools/
+
+# Archived documentation
+# docs/archive/

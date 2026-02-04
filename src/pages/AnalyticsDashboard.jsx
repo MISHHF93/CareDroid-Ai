@@ -3,6 +3,7 @@ import { useUser } from '../contexts/UserContext';
 import { apiFetch } from '../services/apiClient';
 import analyticsService from '../services/analyticsService';
 import offlineService from '../services/offlineService';
+import { getExportService } from '../services/export/ExportService';
 import toolRegistry, { toolRegistryById } from '../data/toolRegistry';
 import LiveCostDashboard from '../components/LiveCostDashboard';
 import './AnalyticsDashboard.css';
@@ -93,6 +94,48 @@ const AnalyticsDashboard = () => {
 
   const maxToolCount = Math.max(1, ...toolUsage.map((item) => item.count));
 
+  const handleExport = async (format) => {
+    try {
+      const exportService = getExportService();
+      const exportData = {
+        metrics,
+        toolUsage,
+        toolResults: toolResults.map(r => ({
+          toolType: r.toolType,
+          timestamp: r.timestamp,
+          result: r.result
+        })),
+        generatedAt: new Date().toISOString(),
+        user: user?.email || 'unknown'
+      };
+
+      if (format === 'csv') {
+        const csvData = [
+          ['Tool', 'Usage Count', 'Percentage'],
+          ...toolUsage.map(item => [
+            item.name,
+            item.count,
+            ((item.count / toolResults.length) * 100).toFixed(1) + '%'
+          ])
+        ];
+        await exportService.exportToCSV(csvData, 'analytics-report.csv');
+      } else if (format === 'pdf') {
+        await exportService.exportToPDF(exportData, 'analytics-report.pdf', {
+          title: 'Clinical Analytics Report',
+          includeCharts: true
+        });
+      }
+
+      analyticsService.trackEvent({
+        eventName: 'analytics_exported',
+        parameters: { format, user_id: user?.id }
+      });
+    } catch (error) {
+      console.error('Export failed:', error);
+      setErrorMessage('Failed to export analytics data');
+    }
+  };
+
   return (
     <div className="analytics-dashboard">
       <header className="analytics-header">
@@ -101,6 +144,24 @@ const AnalyticsDashboard = () => {
           <p>Usage insights for CareDroid tools and conversations.</p>
         </div>
         <div className="analytics-header-actions">
+          <button
+            onClick={() => handleExport('csv')}
+            className="btn-ghost"
+            style={{ padding: '8px 16px', fontSize: '14px', marginRight: '8px' }}
+            disabled={isLoading || !toolUsage.length}
+            title="Export as CSV"
+          >
+            📥 CSV
+          </button>
+          <button
+            onClick={() => handleExport('pdf')}
+            className="btn-ghost"
+            style={{ padding: '8px 16px', fontSize: '14px', marginRight: '12px' }}
+            disabled={isLoading || !toolUsage.length}
+            title="Export as PDF"
+          >
+            📄 PDF
+          </button>
           <span className="analytics-badge">Live</span>
           <span className="analytics-user">{user?.name || 'Clinician'}</span>
         </div>

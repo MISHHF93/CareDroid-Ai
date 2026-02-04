@@ -2,7 +2,7 @@
  * Sync Service - Handles synchronization between offline storage and backend
  * NOTE: Requires dexie library - install with: npm install dexie
  */
-import { db, initializeDatabase } from '../db/offline.db';
+import { db, initializeDatabase } from '../db/offline.db.js';
 import offlineService from './offlineService';
 import { apiFetch } from './apiClient';
 import logger from '../utils/logger';

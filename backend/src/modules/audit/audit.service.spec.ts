@@ -45,6 +45,7 @@ describe('AuditService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockAuditRepository.findOne.mockResolvedValue(null);
   });
 
   it('should be defined', () => {
@@ -72,10 +73,13 @@ describe('AuditService', () => {
 
       const result = await service.log(logData);
 
-      expect(mockAuditRepository.create).toHaveBeenCalledWith({
+      expect(mockAuditRepository.create).toHaveBeenCalledWith(expect.objectContaining({
         ...logData,
         timestamp: expect.any(Date),
-      });
+        hash: expect.any(String),
+        previousHash: expect.any(String),
+        integrityVerified: true,
+      }));
       expect(mockAuditRepository.save).toHaveBeenCalled();
       expect(result).toEqual(mockAuditLog);
     });
@@ -99,10 +103,13 @@ describe('AuditService', () => {
 
       const result = await service.log(logData);
 
-      expect(mockAuditRepository.create).toHaveBeenCalledWith({
+      expect(mockAuditRepository.create).toHaveBeenCalledWith(expect.objectContaining({
         ...logData,
         timestamp: expect.any(Date),
-      });
+        hash: expect.any(String),
+        previousHash: expect.any(String),
+        integrityVerified: true,
+      }));
       expect(result).toBeDefined();
     });
 
@@ -128,10 +135,13 @@ describe('AuditService', () => {
 
       const result = await service.log(logData);
 
-      expect(mockAuditRepository.create).toHaveBeenCalledWith({
+      expect(mockAuditRepository.create).toHaveBeenCalledWith(expect.objectContaining({
         ...logData,
         timestamp: expect.any(Date),
-      });
+        hash: expect.any(String),
+        previousHash: expect.any(String),
+        integrityVerified: true,
+      }));
       expect(result.phiAccessed).toBe(true);
     });
   });
@@ -250,18 +260,27 @@ describe('AuditService', () => {
         mockAuditRepository.create.mockReturnValue({
           ...logData,
           timestamp: expect.any(Date),
+          hash: expect.any(String),
+          previousHash: expect.any(String),
+          integrityVerified: true,
         });
         mockAuditRepository.save.mockResolvedValue({
           ...logData,
           timestamp: new Date(),
+          hash: 'hash',
+          previousHash: '0',
+          integrityVerified: true,
         });
 
         await service.log(logData);
 
-        expect(mockAuditRepository.create).toHaveBeenCalledWith({
+        expect(mockAuditRepository.create).toHaveBeenCalledWith(expect.objectContaining({
           ...logData,
           timestamp: expect.any(Date),
-        });
+          hash: expect.any(String),
+          previousHash: expect.any(String),
+          integrityVerified: true,
+        }));
       }
     });
   });
@@ -313,10 +332,8 @@ describe('hash chaining and integrity verification', () => {
       };
 
       mockAuditRepository.findOne.mockResolvedValue(previousLog);
-      mockAuditRepository.create.mockReturnValue((data) => ({
-        ...newLogData,
+      mockAuditRepository.create.mockImplementation((data) => ({
         ...data,
-        timestamp: data.timestamp,
       }));
       mockAuditRepository.save.mockImplementation((log) =>
         Promise.resolve({
@@ -335,6 +352,25 @@ describe('hash chaining and integrity verification', () => {
       const timestamp1 = new Date('2023-01-01T10:00:00Z');
       const timestamp2 = new Date('2023-01-01T10:01:00Z');
 
+      const firstHash = (service as any).calculateHash({
+        userId: '1',
+        action: AuditAction.LOGIN,
+        resource: 'auth',
+        ipAddress: '192.168.1.1',
+        timestamp: timestamp1,
+        previousHash: '0',
+        metadata: {},
+      });
+      const secondHash = (service as any).calculateHash({
+        userId: '1',
+        action: AuditAction.LOGOUT,
+        resource: 'auth',
+        ipAddress: '192.168.1.1',
+        timestamp: timestamp2,
+        previousHash: firstHash,
+        metadata: {},
+      });
+
       // Create mock logs with valid hashes
       const logs = [
         {
@@ -344,7 +380,7 @@ describe('hash chaining and integrity verification', () => {
           resource: 'auth',
           ipAddress: '192.168.1.1',
           timestamp: timestamp1,
-          hash: expect.any(String),
+          hash: firstHash,
           previousHash: '0',
           metadata: {},
         },
@@ -355,8 +391,8 @@ describe('hash chaining and integrity verification', () => {
           resource: 'auth',
           ipAddress: '192.168.1.1',
           timestamp: timestamp2,
-          hash: expect.any(String),
-          previousHash: expect.any(String),
+          hash: secondHash,
+          previousHash: firstHash,
           metadata: {},
         },
       ];

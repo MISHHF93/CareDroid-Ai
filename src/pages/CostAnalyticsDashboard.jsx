@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useCostTracking } from '../contexts/CostTrackingContext';
 import { useUser } from '../contexts/UserContext';
 import analyticsService from '../services/analyticsService';
+import { getExportService } from '../services/export/ExportService';
 import toolRegistry, { toolRegistryById } from '../data/toolRegistry';
 import './CostAnalyticsDashboard.css';
 
@@ -54,6 +55,55 @@ const CostAnalyticsDashboard = () => {
     }
   };
 
+  const handleExport = async (format) => {
+    try {
+      const exportService = getExportService();
+      
+      if (format === 'csv') {
+        const csvData = [
+          ['Tool', 'Cost', 'Executions', 'Avg Cost'],
+          ...topTools.map(tool => {
+            const toolInfo = toolRegistryById[tool.toolId];
+            const execCount = costData.toolCosts[tool.toolId + '_count'] || 0;
+            return [
+              toolInfo?.name || tool.toolId,
+              '$' + tool.cost.toFixed(2),
+              execCount,
+              execCount > 0 ? '$' + (tool.cost / execCount).toFixed(2) : 'N/A'
+            ];
+          })
+        ];
+        await exportService.exportToCSV(csvData, 'cost-analytics.csv');
+      } else if (format === 'pdf') {
+        const exportData = {
+          summary: {
+            totalCost: costData.totalCost,
+            monthlyCost: costData.monthlyCost,
+            costLimit,
+            roi: roiMetrics
+          },
+          topTools: topTools.map(tool => ({
+            ...tool,
+            name: toolRegistryById[tool.toolId]?.name || tool.toolId
+          })),
+          trends: costTrends,
+          generatedAt: new Date().toISOString()
+        };
+        await exportService.exportToPDF(exportData, 'cost-analytics.pdf', {
+          title: 'Cost Analytics Report',
+          includeCharts: true
+        });
+      }
+      
+      analyticsService.trackEvent({
+        eventName: 'cost_analytics_exported',
+        parameters: { format }
+      });
+    } catch (error) {
+      console.error('Failed to export cost analytics', error);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="cost-analytics-dashboard">
@@ -70,6 +120,22 @@ const CostAnalyticsDashboard = () => {
           <p>Track tool usage costs and ROI for CareDroid platform.</p>
         </div>
         <div className="cost-header-actions">
+          <button 
+            className="btn-ghost" 
+            onClick={() => handleExport('csv')}
+            style={{ marginRight: '8px' }}
+            title="Export as CSV"
+          >
+            📥 CSV
+          </button>
+          <button 
+            className="btn-ghost" 
+            onClick={() => handleExport('pdf')}
+            style={{ marginRight: '12px' }}
+            title="Export as PDF"
+          >
+            📄 PDF
+          </button>
           <button className="btn-secondary" onClick={() => setShowLimitModal(true)}>
             {costLimit ? 'Update Limit' : 'Set Budget'}
           </button>

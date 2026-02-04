@@ -12,12 +12,17 @@ import { DrugCheckerService } from '../src/modules/medical-control-plane/tool-or
 import { LabInterpreterService } from '../src/modules/medical-control-plane/tool-orchestrator/services/lab-interpreter.service';
 import { AuditService } from '../src/modules/audit/audit.service';
 import { AIService } from '../src/modules/ai/ai.service';
+import { ToolMetricsService } from '../src/modules/metrics/tool-metrics.service';
+import { ToolResult } from '../src/modules/medical-control-plane/tool-orchestrator/entities/tool-result.entity';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException } from '@nestjs/common';
 
 describe('ToolOrchestratorService', () => {
   let service: ToolOrchestratorService;
   let mockAuditService: any;
   let mockAiService: any;
+  let mockToolMetricsService: any;
+  let mockToolResultRepository: any;
   let sofaService: SofaCalculatorService;
   let drugService: DrugCheckerService;
   let labService: LabInterpreterService;
@@ -29,6 +34,19 @@ describe('ToolOrchestratorService', () => {
 
     mockAiService = {
       generateStructuredJSON: jest.fn().mockResolvedValue({}),
+    };
+
+    mockToolMetricsService = {
+      categorizeError: jest.fn().mockReturnValue('internal_error'),
+      recordToolError: jest.fn().mockResolvedValue(undefined),
+      recordToolExecutionTier: jest.fn().mockResolvedValue(undefined),
+      setToolParameterComplexity: jest.fn().mockResolvedValue(undefined),
+      calculateParameterComplexity: jest.fn().mockReturnValue({ score: 10, category: 'simple' }),
+    };
+
+    mockToolResultRepository = {
+      create: jest.fn(),
+      save: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -44,6 +62,14 @@ describe('ToolOrchestratorService', () => {
         {
           provide: AIService,
           useValue: mockAiService,
+        },
+        {
+          provide: ToolMetricsService,
+          useValue: mockToolMetricsService,
+        },
+        {
+          provide: getRepositoryToken(ToolResult),
+          useValue: mockToolResultRepository,
         },
       ],
     }).compile();
@@ -70,7 +96,7 @@ describe('ToolOrchestratorService', () => {
 
     it('should have drug checker in registry', () => {
       const tools = service.listAvailableTools();
-      const drug = tools.tools.find(t => t.id === 'drug-interaction-checker');
+      const drug = tools.tools.find(t => t.id === 'drug-interactions');
       expect(drug).toBeDefined();
       expect(drug?.name).toBe('Drug Interaction Checker');
     });
@@ -130,7 +156,7 @@ describe('ToolOrchestratorService', () => {
     });
 
     it('should return parameters for each tool', () => {
-      const tools = ['sofa-calculator', 'drug-interaction-checker', 'lab-interpreter'];
+      const tools = ['sofa-calculator', 'drug-interactions', 'lab-interpreter'];
 
       tools.forEach(toolId => {
         const metadata = service.getToolMetadata(toolId);
@@ -154,7 +180,7 @@ describe('ToolOrchestratorService', () => {
 
     it('should return validation errors for invalid parameters', async () => {
       const result = await service.validateToolExecution({
-        toolId: 'drug-interaction-checker',
+        toolId: 'drug-interactions',
         parameters: { medications: [] },
         userId: 'test-user',
         conversationId: 'test-conv',
@@ -193,14 +219,14 @@ describe('ToolOrchestratorService', () => {
 
     it('should execute drug checker successfully', async () => {
       const result = await service.executeTool({
-        toolId: 'drug-interaction-checker',
+        toolId: 'drug-interactions',
         parameters: { medications: ['warfarin', 'aspirin'] },
         userId: 'test-user',
         conversationId: 'test-conv',
       });
 
       expect(result.success).toBe(true);
-      expect(result.toolId).toBe('drug-interaction-checker');
+      expect(result.toolId).toBe('drug-interactions');
     });
 
     it('should execute lab interpreter successfully', async () => {
@@ -240,7 +266,7 @@ describe('ToolOrchestratorService', () => {
 
     it('should handle validation failures', async () => {
       const result = await service.executeTool({
-        toolId: 'drug-interaction-checker',
+        toolId: 'drug-interactions',
         parameters: { medications: [] },
         userId: 'test-user',
         conversationId: 'test-conv',
@@ -301,7 +327,7 @@ describe('ToolOrchestratorService', () => {
 
     it('should format drug results for chat', async () => {
       const result = await service.executeInChat(
-        'drug-interaction-checker',
+        'drug-interactions',
         { medications: ['warfarin', 'aspirin'] },
         'test-user',
         'test-conv'
@@ -337,7 +363,7 @@ describe('ToolOrchestratorService', () => {
 
     it('should format drug checker results with severity', async () => {
       const result = await service.executeInChat(
-        'drug-interaction-checker',
+        'drug-interactions',
         { medications: ['warfarin', 'aspirin'] },
         'test-user',
         'test-conv'
@@ -348,7 +374,7 @@ describe('ToolOrchestratorService', () => {
 
     it('should format error results appropriately', async () => {
       const result = await service.executeInChat(
-        'drug-interaction-checker',
+        'drug-interactions',
         { medications: [] },
         'test-user',
         'test-conv'
@@ -391,7 +417,7 @@ describe('ToolOrchestratorService', () => {
 
       const toolIds = stats.tools.map(t => t.id);
       expect(toolIds).toContain('sofa-calculator');
-      expect(toolIds).toContain('drug-interaction-checker');
+      expect(toolIds).toContain('drug-interactions');
       expect(toolIds).toContain('lab-interpreter');
     });
   });
@@ -451,7 +477,7 @@ describe('ToolOrchestratorService', () => {
 
     it('should log failed validation', async () => {
       await service.executeTool({
-        toolId: 'drug-interaction-checker',
+        toolId: 'drug-interactions',
         parameters: { medications: [] },
         userId: 'test-user',
         conversationId: 'test-conv',
@@ -519,8 +545,8 @@ describe('ToolOrchestratorService', () => {
       });
 
       const drugResult = await service.executeTool({
-        toolId: 'drug-interaction-checker',
-        parameters: { medications: ['aspirin'] },
+        toolId: 'drug-interactions',
+        parameters: { medications: ['aspirin', 'ibuprofen'] },
         userId: 'test-user',
         conversationId: 'test-conv',
       });

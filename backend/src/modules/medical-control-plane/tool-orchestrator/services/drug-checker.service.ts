@@ -78,6 +78,8 @@ export class DrugCheckerService implements ClinicalToolService {
       errors.push('medications must be an array');
     } else if (parameters.medications.length < 2) {
       errors.push('At least 2 medications are required to check interactions');
+    } else if (parameters.medications.some((m: any) => typeof m !== 'string' || m.trim().length === 0)) {
+      errors.push('medications must be an array of non-empty strings');
     } else if (parameters.medications.length > 20) {
       warnings.push('Checking more than 20 medications may take longer and could miss interactions');
     }

@@ -6,6 +6,94 @@
  */
 
 import React from 'react';
+import Card from './ui/card';
+
+const Title = ({ level = 3, style, children }) => {
+  const Tag = `h${level}`;
+  return <Tag style={style}>{children}</Tag>;
+};
+
+const Text = ({ style, children, strong = false, type }) => {
+  const colors = {
+    secondary: '#6b7280',
+    danger: '#dc2626',
+  };
+  const Tag = strong ? 'strong' : 'span';
+  return <Tag style={{ color: colors[type] || undefined, ...style }}>{children}</Tag>;
+};
+
+const Paragraph = ({ style, children }) => <p style={style}>{children}</p>;
+
+const Divider = ({ style }) => (
+  <hr
+    style={{
+      border: 'none',
+      borderTop: '1px solid rgba(0,0,0,0.08)',
+      margin: '8px 0',
+      ...style,
+    }}
+  />
+);
+
+const Badge = ({ count, style, status, text }) => {
+  if (text) {
+    const statusColors = {
+      error: '#dc2626',
+      warning: '#f59e0b',
+      processing: '#2563eb',
+      success: '#16a34a',
+    };
+    const color = statusColors[status] || '#6b7280';
+    return (
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', ...style }}>
+        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: color }} />
+        <span style={{ color }}>{text}</span>
+      </span>
+    );
+  }
+
+  return (
+    <span
+      style={{
+        display: 'inline-block',
+        minWidth: '20px',
+        padding: '2px 8px',
+        borderRadius: '10px',
+        color: '#fff',
+        fontSize: '12px',
+        textAlign: 'center',
+        ...style,
+      }}
+    >
+      {count}
+    </span>
+  );
+};
+
+const Alert = ({ message, description, type = 'info', style }) => {
+  const colors = {
+    info: { bg: '#e6f4ff', border: '#91caff' },
+    warning: { bg: '#fff7e6', border: '#ffd666' },
+    error: { bg: '#fff1f0', border: '#ffa39e' },
+    success: { bg: '#f6ffed', border: '#b7eb8f' },
+  };
+  const palette = colors[type] || colors.info;
+
+  return (
+    <div
+      style={{
+        background: palette.bg,
+        border: `1px solid ${palette.border}`,
+        borderRadius: '8px',
+        padding: '10px 12px',
+        ...style,
+      }}
+    >
+      {message && <div style={{ fontWeight: 600, marginBottom: description ? '6px' : 0 }}>{message}</div>}
+      {description && <div>{description}</div>}
+    </div>
+  );
+};
 
 const ToolCard = ({ toolResult }) => {
   if (!toolResult) return null;
@@ -30,13 +118,6 @@ const ToolCard = ({ toolResult }) => {
   return (
     <Card
       className="tool-result-card"
-      title={
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <ExperimentOutlined style={{ fontSize: '18px', color: '#1890ff' }} />
-          <span>{toolName}</span>
-        </div>
-      }
-      bordered
       style={{
         marginTop: '12px',
         marginBottom: '12px',
@@ -45,17 +126,26 @@ const ToolCard = ({ toolResult }) => {
         border: '1px solid rgba(255, 255, 255, 0.18)',
         borderRadius: '12px',
       }}
-      headStyle={{
-        background: 'rgba(255, 255, 255, 0.1)',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.18)',
-        color: '#fff',
-        fontWeight: 600,
-      }}
-      bodyStyle={{
-        background: 'rgba(255, 255, 255, 0.95)',
-        padding: '20px',
-      }}
     >
+      <div
+        style={{
+          background: 'rgba(255, 255, 255, 0.1)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.18)',
+          color: '#fff',
+          fontWeight: 600,
+          padding: '12px 16px',
+          borderTopLeftRadius: '12px',
+          borderTopRightRadius: '12px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '18px' }} aria-hidden>
+            🧪
+          </span>
+          <span>{toolName}</span>
+        </div>
+      </div>
+      <div style={{ background: 'rgba(255, 255, 255, 0.95)', padding: '20px' }}>
       {/* Interpretation */}
       {interpretation && (
         <Alert
@@ -81,7 +171,6 @@ const ToolCard = ({ toolResult }) => {
             </ul>
           }
           type="warning"
-          icon={<WarningOutlined />}
           style={{ marginTop: '16px' }}
         />
       )}
@@ -90,8 +179,8 @@ const ToolCard = ({ toolResult }) => {
       {citations && citations.length > 0 && (
         <div style={{ marginTop: '16px' }}>
           <Divider />
-          <Text type="secondary" style={{ fontSize: '12px' }}>
-            <InfoCircleOutlined /> <strong>References:</strong>
+          <Text style={{ fontSize: '12px' }}>
+            ℹ️ <strong>References:</strong>
           </Text>
           <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px', fontSize: '12px' }}>
             {citations.map((citation, idx) => (
@@ -114,7 +203,6 @@ const ToolCard = ({ toolResult }) => {
       {/* Disclaimer */}
       {disclaimer && (
         <Paragraph
-          type="secondary"
           style={{
             fontSize: '11px',
             marginTop: '16px',
@@ -128,10 +216,11 @@ const ToolCard = ({ toolResult }) => {
 
       {/* Timestamp */}
       {timestamp && (
-        <Text type="secondary" style={{ fontSize: '11px', display: 'block', marginTop: '8px' }}>
+        <Text style={{ fontSize: '11px', display: 'block', marginTop: '8px' }}>
           Executed at {new Date(timestamp).toLocaleString()}
         </Text>
       )}
+      </div>
     </Card>
   );
 };
@@ -156,36 +245,23 @@ const renderSofaCalculator = (data) => {
         <Title level={2} style={{ margin: 0, color: '#1890ff' }}>
           {data.totalScore}
         </Title>
-        <Text type="secondary">Total SOFA Score (0-24)</Text>
+        <Text style={{ color: '#6b7280' }}>Total SOFA Score (0-24)</Text>
       </div>
 
       {/* Component Scores */}
-      <Table
-        dataSource={componentScores}
-        columns={[
-          {
-            title: 'Organ System',
-            dataIndex: 'label',
-            key: 'label',
-          },
-          {
-            title: 'Score',
-            dataIndex: 'value',
-            key: 'value',
-            align: 'center',
-            render: (score) => (
-              <Badge
-                count={score}
-                style={{
-                  backgroundColor: score === 0 ? '#52c41a' : score <= 2 ? '#faad14' : '#f5222d',
-                }}
-              />
-            ),
-          },
-        ]}
-        pagination={false}
-        size="small"
-      />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {componentScores.map((item) => (
+          <div key={item.key} style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span>{item.label}</span>
+            <Badge
+              count={item.value}
+              style={{
+                backgroundColor: item.value === 0 ? '#52c41a' : item.value <= 2 ? '#faad14' : '#f5222d',
+              }}
+            />
+          </div>
+        ))}
+      </div>
 
       {/* Mortality Estimate */}
       {data.mortalityEstimate && (
@@ -193,7 +269,6 @@ const renderSofaCalculator = (data) => {
           message="Mortality Estimate"
           description={data.mortalityEstimate}
           type="info"
-          showIcon
           style={{ marginTop: '16px' }}
         />
       )}
@@ -211,7 +286,6 @@ const renderDrugChecker = (data) => {
         message="No Interactions Detected"
         description="No significant drug interactions were found."
         type="success"
-        icon={<CheckCircleOutlined />}
       />
     );
   }
@@ -226,7 +300,7 @@ const renderDrugChecker = (data) => {
 
   return (
     <div>
-      <Text strong>Found {data.interactions.length} interaction(s)</Text>
+      <Text strong>Found {data.interactions.length} Interaction(s)</Text>
       <Divider style={{ margin: '12px 0' }} />
 
       {/* Contraindicated */}
@@ -265,6 +339,14 @@ const renderDrugChecker = (data) => {
                   {interaction.drug1} + {interaction.drug2}
                 </Text>
                 : {interaction.description}
+                {interaction.recommendation && (
+                  <>
+                    <br />
+                    <Text type="danger" style={{ fontSize: '12px' }}>
+                      ⚠️ {interaction.recommendation}
+                    </Text>
+                  </>
+                )}
               </li>
             ))}
           </ul>
@@ -282,6 +364,14 @@ const renderDrugChecker = (data) => {
                   {interaction.drug1} + {interaction.drug2}
                 </Text>
                 : {interaction.description}
+                {interaction.recommendation && (
+                  <>
+                    <br />
+                    <Text type="danger" style={{ fontSize: '12px' }}>
+                      ⚠️ {interaction.recommendation}
+                    </Text>
+                  </>
+                )}
               </li>
             ))}
             {groupedInteractions.moderate.length > 3 && (
@@ -304,6 +394,7 @@ const renderDrugChecker = (data) => {
 const renderLabInterpreter = (data) => {
   const hasAbnormal = data.summary?.abnormal > 0;
   const hasCritical = data.summary?.critical > 0;
+  const formatValue = (value) => (typeof value === 'number' ? value.toFixed(1) : value);
 
   return (
     <div>
@@ -369,47 +460,18 @@ const renderLabInterpreter = (data) => {
         </div>
       )}
 
-      {/* All Lab Values Table */}
+      {/* All Lab Values */}
       {data.labValues && data.labValues.length > 0 && (
         <div style={{ marginTop: '16px' }}>
           <Divider />
           <Text strong>All Lab Values</Text>
-          <Table
-            dataSource={data.labValues}
-            columns={[
-              { title: 'Test', dataIndex: 'name', key: 'name' },
-              {
-                title: 'Value',
-                dataIndex: 'value',
-                key: 'value',
-                render: (value, record) => (
-                  <>
-                    {value} {record.unit}
-                  </>
-                ),
-              },
-              { title: 'Reference', dataIndex: 'referenceRange', key: 'referenceRange' },
-              {
-                title: 'Status',
-                dataIndex: 'status',
-                key: 'status',
-                render: (status) => {
-                  const statusConfig = {
-                    normal: { color: 'success', text: 'Normal' },
-                    high: { color: 'warning', text: 'High' },
-                    low: { color: 'warning', text: 'Low' },
-                    'critical-high': { color: 'error', text: 'Critical High' },
-                    'critical-low': { color: 'error', text: 'Critical Low' },
-                  };
-                  const config = statusConfig[status] || { color: 'default', text: status };
-                  return <Badge status={config.color} text={config.text} />;
-                },
-              },
-            ]}
-            pagination={false}
-            size="small"
-            style={{ marginTop: '8px' }}
-          />
+          <ul style={{ marginTop: '8px', paddingLeft: '20px' }}>
+            {data.labValues.map((lab, idx) => (
+              <li key={idx}>
+                <Text strong>{lab.name}</Text>: {formatValue(lab.value)} {lab.unit} ({lab.referenceRange})
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>

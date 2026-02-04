@@ -44,7 +44,11 @@ class AdvancedRecommendationService {
       );
 
       // Apply user feedback learning
-      const personalizedRecs = this.applyPersonalization(recommendations, context);
+      let personalizedRecs = this.applyPersonalization(recommendations, context);
+
+      if (!personalizedRecs || personalizedRecs.length === 0) {
+        return this.fallbackRecommendations(userMessage);
+      }
 
       // Cache results
       this.setCache(cacheKey, personalizedRecs);
@@ -73,7 +77,7 @@ class AdvancedRecommendationService {
         body: JSON.stringify({ message })
       });
 
-      if (!response.ok) {
+      if (!response || typeof response.ok === 'undefined' || !response.ok) {
         throw new Error('Intent classification failed');
       }
 
@@ -326,6 +330,7 @@ class AdvancedRecommendationService {
       .filter(rule => rule.keywords.some(kw => lowerMessage.includes(kw)))
       .map(rule => ({
         toolId: rule.tool,
+        tool: rule.tool,
         confidence: rule.confidence,
         reason: 'Keyword match (fallback)',
         source: 'fallback'

@@ -3,7 +3,7 @@
  * Fetches system-level configuration from backend
  */
 
-import apiClient from './apiClient';
+import { apiAxios } from './apiClient';
 import logger from '../utils/logger';
 
 class ConfigService {
@@ -12,7 +12,7 @@ class ConfigService {
    */
   async getSystemConfig() {
     try {
-      const response = await apiClient.get('/config/system');
+      const response = await apiAxios.get('/config/system');
       return response.data;
     } catch (error) {
       logger.error('Failed to fetch system config', { error });
@@ -36,7 +36,7 @@ class ConfigService {
    */
   async getAIRemainingQueries() {
     try {
-      const response = await apiClient.get('/ai/remaining-queries');
+      const response = await apiAxios.get('/ai/remaining-queries');
       return response.data;
     } catch (error) {
       logger.error('Failed to fetch AI remaining queries', { error });
@@ -55,7 +55,7 @@ class ConfigService {
    */
   async getAvailableTools() {
     try {
-      const response = await apiClient.get('/tools/available');
+      const response = await apiAxios.get('/tools/available');
       return response.data;
     } catch (error) {
       logger.error('Failed to fetch available tools', { error });
@@ -73,7 +73,7 @@ class ConfigService {
    */
   async getCurrentSubscription() {
     try {
-      const response = await apiClient.get('/subscriptions/current');
+      const response = await apiAxios.get('/subscriptions/current');
       return response.data;
     } catch (error) {
       logger.error('Failed to fetch subscription', { error });
@@ -86,7 +86,7 @@ class ConfigService {
    */
   async getSubscriptionPlans() {
     try {
-      const response = await apiClient.get('/subscriptions/plans');
+      const response = await apiAxios.get('/subscriptions/plans');
       return response.data;
     } catch (error) {
       logger.error('Failed to fetch subscription plans', { error });

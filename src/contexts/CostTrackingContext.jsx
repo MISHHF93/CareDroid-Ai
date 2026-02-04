@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useRef } from 'react';
 import { useUser } from './UserContext';
 import offlineService from '../services/offlineService';
+import { getRealTimeCostService } from '../services/realtime/RealTimeCostService';
 
 const CostTrackingContext = createContext(null);
 
@@ -45,6 +46,7 @@ export const CostTrackingProvider = ({ children }) => {
   });
   const [costLimit, setCostLimit] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const rtCostService = useRef(null);
 
   // Load cost data from offline storage
   useEffect(() => {
@@ -74,6 +76,38 @@ export const CostTrackingProvider = ({ children }) => {
 
     loadCostData();
   }, [user]);
+
+  // Initialize real-time cost service
+  useEffect(() => {
+    if (user?.id) {
+      const token = localStorage.getItem('caredroid_access_token');
+      if (token && !rtCostService.current) {
+        try {
+          rtCostService.current = getRealTimeCostService();
+          rtCostService.current.initialize(token).catch((err) => {
+            console.warn('Real-time cost service initialization failed:', err);
+            // Non-critical - cost tracking continues without real-time updates
+          });
+          
+          // Subscribe to real-time cost updates
+          rtCostService.current.onCostUpdate((update) => {
+            if (update.toolId) {
+              trackToolCost(update.toolId, update.cost || 0);
+            }
+          });
+        } catch (error) {
+          console.error('Failed to setup real-time cost tracking:', error);
+        }
+      }
+    }
+    
+    return () => {
+      if (rtCostService.current) {
+        rtCostService.current.disconnect?.();
+        rtCostService.current = null;
+      }
+    };
+  }, [user?.id]);
 
   // Persist cost data to localStorage
   useEffect(() => {

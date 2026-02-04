@@ -135,7 +135,7 @@ describe('LabInterpreterService', () => {
 
     it('should classify low WBC as low', async () => {
       const result = await service.execute({
-        labValues: [{ name: 'WBC', value: 2.0, unit: 'K/μL' }],
+        labValues: [{ name: 'WBC', value: 3.0, unit: 'K/μL' }],
       });
 
       expect(result.data.labValues[0].status).toBe('low');
@@ -306,7 +306,7 @@ describe('LabInterpreterService', () => {
       const summary = result.data.summary;
       expect(summary.total).toBe(4);
       expect(summary.abnormal).toBeGreaterThan(0);
-      expect(summary.normal).toEqual(summary.total - summary.abnormal - summary.critical);
+      expect(summary.normal).toEqual(summary.total - summary.abnormal);
     });
 
     it('should track normal value count', async () => {

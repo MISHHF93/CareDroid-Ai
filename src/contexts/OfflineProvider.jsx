@@ -18,7 +18,7 @@ import {
  *   <App />
  * </OfflineProvider>
  */
-export const OfflineProvider = ({ children }) => {
+const OfflineProvider = ({ children }) => {
   const { isOnline, isSyncing, syncProgress, syncStats } = useOfflineStatus();
   const [warningDismissed, setWarningDismissed] = useState(false);
 

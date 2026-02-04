@@ -117,47 +117,54 @@ export const UserProvider = ({ children }) => {
   // Initialize from localStorage on mount
   useEffect(() => {
     logger.info('UserContext initialization');
-    
-    const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
-    const storedProfile = localStorage.getItem(USER_PROFILE_KEY);
+    try {
+      const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
+      const storedProfile = localStorage.getItem(USER_PROFILE_KEY);
 
-    logger.debug('localStorage snapshot', {
-      hasToken: Boolean(storedToken),
-      hasProfile: Boolean(storedProfile),
-      tokenValue: storedToken,
-    });
-    if (storedProfile) {
-      try {
-        logger.debug('Stored profile data', { profile: JSON.parse(storedProfile) });
-      } catch (e) {
-        logger.warn('Stored profile parse error', { error: e });
+      logger.debug('localStorage snapshot', {
+        hasToken: Boolean(storedToken),
+        hasProfile: Boolean(storedProfile),
+        tokenValue: storedToken,
+      });
+      if (storedProfile) {
+        try {
+          logger.debug('Stored profile data', { profile: JSON.parse(storedProfile) });
+        } catch (e) {
+          logger.warn('Stored profile parse error', { error: e });
+        }
       }
-    }
 
-    // Load token
-    if (storedToken) {
-      logger.info('Loading token into state');
-      setAuthTokenState(storedToken);
-    } else {
-      logger.warn('No token in localStorage');
-    }
-
-    // Load profile
-    if (storedProfile) {
-      try {
-        const profile = JSON.parse(storedProfile);
-        logger.info('Loading profile into state', { profile });
-        setUserState(profile);
-      } catch (error) {
-        logger.error('Failed to parse stored user profile', { error });
-        localStorage.removeItem(USER_PROFILE_KEY);
+      // Load token
+      if (storedToken) {
+        logger.info('Loading token into state');
+        setAuthTokenState(storedToken);
+      } else {
+        logger.warn('No token in localStorage');
       }
-    } else {
-      logger.warn('No profile in localStorage');
-    }
 
-    setIsLoading(false);
-    logger.info('UserContext init complete');
+      // Load profile
+      if (storedProfile) {
+        try {
+          const profile = JSON.parse(storedProfile);
+          logger.info('Loading profile into state', { profile });
+          setUserState(profile);
+        } catch (error) {
+          logger.error('Failed to parse stored user profile', { error });
+          try {
+            localStorage.removeItem(USER_PROFILE_KEY);
+          } catch (removeError) {
+            logger.warn('Failed to remove invalid stored profile', { error: removeError });
+          }
+        }
+      } else {
+        logger.warn('No profile in localStorage');
+      }
+    } catch (error) {
+      logger.error('UserContext initialization failed', { error });
+    } finally {
+      setIsLoading(false);
+      logger.info('UserContext init complete');
+    }
   }, []);
 
   // Fetch user profile when token changes
@@ -213,27 +220,39 @@ export const UserProvider = ({ children }) => {
 
   const setUser = (newUser) => {
     setUserState(newUser);
-    if (newUser) {
-      localStorage.setItem(USER_PROFILE_KEY, JSON.stringify(newUser));
-    } else {
-      localStorage.removeItem(USER_PROFILE_KEY);
+    try {
+      if (newUser) {
+        localStorage.setItem(USER_PROFILE_KEY, JSON.stringify(newUser));
+      } else {
+        localStorage.removeItem(USER_PROFILE_KEY);
+      }
+    } catch (error) {
+      logger.warn('Failed to persist user profile', { error });
     }
   };
 
   const setAuthToken = (token) => {
     setAuthTokenState(token);
-    if (token) {
-      localStorage.setItem(AUTH_TOKEN_KEY, token);
-    } else {
-      localStorage.removeItem(AUTH_TOKEN_KEY);
+    try {
+      if (token) {
+        localStorage.setItem(AUTH_TOKEN_KEY, token);
+      } else {
+        localStorage.removeItem(AUTH_TOKEN_KEY);
+      }
+    } catch (error) {
+      logger.warn('Failed to persist auth token', { error });
     }
   };
 
   const signOut = () => {
     setUserState(null);
     setAuthTokenState('');
-    localStorage.removeItem(AUTH_TOKEN_KEY);
-    localStorage.removeItem(USER_PROFILE_KEY);
+    try {
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+      localStorage.removeItem(USER_PROFILE_KEY);
+    } catch (error) {
+      logger.warn('Failed to clear auth storage', { error });
+    }
   };
 
   /**

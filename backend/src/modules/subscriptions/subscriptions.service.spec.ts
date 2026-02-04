@@ -5,6 +5,7 @@ import { Subscription, SubscriptionTier, SubscriptionStatus } from './entities/s
 import { User } from '../users/entities/user.entity';
 import { AuditService } from '../audit/audit.service';
 import Stripe from 'stripe';
+import { ConfigService } from '@nestjs/config';
 
 jest.mock('stripe');
 
@@ -47,6 +48,10 @@ describe('SubscriptionsService', () => {
     log: jest.fn(),
   };
 
+  const mockConfigService = {
+    get: jest.fn(),
+  };
+
   const mockStripe = {
     checkout: {
       sessions: {
@@ -78,6 +83,10 @@ describe('SubscriptionsService', () => {
         {
           provide: AuditService,
           useValue: mockAuditService,
+        },
+        {
+          provide: ConfigService,
+          useValue: mockConfigService,
         },
       ],
     }).compile();

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './AuditLogs.css';
 import { apiFetch } from '../services/apiClient';
+import { getExportService } from '../services/export/ExportService';
 import logger from '../utils/logger';
 
 export default function AuditLogs() {
@@ -86,6 +87,50 @@ export default function AuditLogs() {
     } catch (err) {
       logger.error('Error verifying integrity', { err });
       setIntegrityStatus('ERROR');
+    }
+  };
+
+  const handleExport = async (format) => {
+    try {
+      const exportService = getExportService();
+      
+      if (format === 'csv') {
+        const csvData = [
+          ['Timestamp', 'User', 'Action', 'Resource', 'IP Address', 'Status'],
+          ...logs.map(log => [
+            new Date(log.timestamp).toLocaleString(),
+            log.userId || 'N/A',
+            actionLabels[log.action] || log.action,
+            log.resourceId || 'N/A',
+            log.ipAddress || 'N/A',
+            log.success ? 'Success' : 'Failed'
+          ])
+        ];
+        await exportService.exportToCSV(csvData, 'audit-logs.csv');
+      } else if (format === 'pdf') {
+        const exportData = {
+          logs: logs.map(log => ({
+            timestamp: new Date(log.timestamp).toLocaleString(),
+            user: log.userId,
+            action: actionLabels[log.action] || log.action,
+            resource: log.resourceId,
+            ip: log.ipAddress,
+            success: log.success
+          })),
+          integrity: integrityStatus,
+          stats,
+          generatedAt: new Date().toISOString()
+        };
+        await exportService.exportToPDF(exportData, 'audit-logs.pdf', {
+          title: 'Audit Logs Report',
+          subtitle: 'HIPAA Compliance Audit Trail'
+        });
+      }
+      
+      logger.info('Audit logs exported', { format, count: logs.length });
+    } catch (error) {
+      logger.error('Failed to export audit logs', { error });
+      setError('Failed to export audit logs');
     }
   };
 

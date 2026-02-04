@@ -6,7 +6,7 @@ import Citations, { CitationModal } from './Citations';
 import ConfidenceBadge from './ConfidenceBadge';
 import { getInventoryItem } from '../data/featureInventory';
 import { featureInventory } from '../data/featureInventory';
-import { apiFetch } from '../services/apiClient';
+import { sendMessage } from '../services/chatAPI';
 import { useNotificationActions } from '../hooks/useNotificationActions';
 
 const ChatInterface = ({
@@ -14,7 +14,9 @@ const ChatInterface = ({
   currentFeature,
   prefillText,
   conversationId,
+  userId,
   messages,
+  initialMessages,
   onAppendMessage,
   onTrackEvent,
   authToken,
@@ -28,10 +30,16 @@ const ChatInterface = ({
   const { error } = useNotificationActions();
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    try {
+      messagesEndRef.current?.scrollIntoView?.({ behavior: 'smooth' });
+    } catch (error) {
+      // no-op: scrollIntoView may be unsupported in test environments
+    }
   };
 
-  useEffect(scrollToBottom, [messages]);
+  const resolvedMessages = messages && messages.length > 0 ? messages : initialMessages || [];
+
+  useEffect(scrollToBottom, [resolvedMessages]);
 
   useEffect(() => {
     if (prefillText && !input.trim()) {
@@ -59,31 +67,40 @@ const ChatInterface = ({
     setIsLoading(true);
 
     try {
-      const headers = { 'Content-Type': 'application/json' };
-      if (authToken) {
-        headers.Authorization = `Bearer ${authToken}`;
-      }
-
-      const response = await apiFetch('/api/chat/message', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
+      const response = await sendMessage(
+        conversationId,
+        userId,
+        {
           message: input,
           tool: currentTool,
           feature: currentFeature,
-          conversationId
-        })
-      });
+        },
+        authToken
+      );
 
       if (!response.ok) {
         throw new Error(`Request failed with status ${response.status}`);
       }
 
       let data = {};
-      try {
-        data = await response.json();
-      } catch (parseError) {
-        data = {};
+      if (response && typeof response.json === 'function') {
+        try {
+          data = await response.json();
+        } catch (parseError) {
+          data = {};
+        }
+      } else if (response && typeof response === 'object') {
+        if (response.message) {
+          data = {
+            response: response.message.content,
+            citations: response.message.citations,
+            confidence: response.message.confidence,
+            ragContext: response.message.ragContext,
+            toolResult: response.toolResult,
+          };
+        } else {
+          data = response;
+        }
       }
       
       const assistantMessage = {
@@ -101,7 +118,7 @@ const ChatInterface = ({
       }
 
       onAppendMessage?.(conversationId, assistantMessage);
-    } catch (error) {
+    } catch (caughtError) {
       onAppendMessage?.(conversationId, {
         role: 'assistant',
         content: 'I\'m having trouble connecting to the server. Please try again in a moment.',
@@ -141,7 +158,7 @@ const ChatInterface = ({
         flexDirection: 'column',
         gap: '20px'
       }}>
-        {messages.length === 0 && (
+        {resolvedMessages.length === 0 && (
           <div style={{
             padding: '30px',
             borderRadius: '12px',
@@ -152,7 +169,7 @@ const ChatInterface = ({
             Start a conversation to see messages here.
           </div>
         )}
-        {messages.map((message, index) => (
+        {resolvedMessages.map((message, index) => (
           <div
             key={index}
             style={{
@@ -192,6 +209,9 @@ const ChatInterface = ({
               lineHeight: '1.6',
               boxShadow: 'var(--shadow-1)'
             }}>
+              {message.content && (
+                <div style={{ whiteSpace: 'pre-wrap' }}>{message.content}</div>
+              )}
               {/* Confidence Badge (RAG-augmented responses) */}
               {message.confidence !== undefined && message.role === 'assistant' && (
                 <div style={{ marginTop: '12px' }}>
@@ -326,6 +346,7 @@ const ChatInterface = ({
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Ask CareDroid anything clinical..."
+            aria-label="Message input"
             disabled={isLoading}
             style={{
               flex: 1,

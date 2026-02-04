@@ -17,6 +17,7 @@ import { PublicShell } from './layout/PublicShell';
 import Auth from './pages/Auth';
 import { useNotificationActions } from './hooks/useNotificationActions';
 import logger from './utils/logger';
+import { getWebSocketManager } from './services/websocket/WebSocketManager';
 
 // Page imports - Public
 import { PrivacyPolicy } from './pages/legal/PrivacyPolicy';
@@ -25,11 +26,11 @@ import GDPRNotice from './pages/GDPRNotice';
 import HIPAANotice from './pages/HIPAANotice';
 import HelpCenter from './pages/HelpCenter';
 
-// Page imports - Authenticated (Core pages loaded immediately)
-import Dashboard from './pages/Dashboard';
-import Profile from './pages/Profile';
-import ProfileSettings from './pages/ProfileSettings';
-import Settings from './pages/Settings';
+// Page imports - Authenticated (lazy loaded)
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Profile = lazy(() => import('./pages/Profile'));
+const ProfileSettings = lazy(() => import('./pages/ProfileSettings'));
+const Settings = lazy(() => import('./pages/Settings'));
 
 // Lazy-loaded pages for better performance (loaded on demand)
 const NotificationPreferences = lazy(() => import('./pages/NotificationPreferences'));
@@ -264,13 +265,19 @@ function AppShellPage({ children }) {
 function AppRoutes() {
   const { isAuthenticated, isLoading } = useUser();
   const [isChecking, setIsChecking] = useState(true);
+  const [forceReady, setForceReady] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsChecking(false), 500);
     return () => clearTimeout(timer);
   }, []);
 
-  if (isChecking || isLoading) {
+  useEffect(() => {
+    const timer = setTimeout(() => setForceReady(true), 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isChecking || (isLoading && !forceReady)) {
     return (
       <div style={{
         display: 'flex',
@@ -278,9 +285,14 @@ function AppRoutes() {
         justifyContent: 'center',
         height: '100vh',
         background: 'var(--navy-bg)',
-        color: 'var(--text-color)'
+        color: 'var(--text-color)',
+        flexDirection: 'column',
+        gap: '16px'
       }}>
         <h1>Initializing...</h1>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '14px' }}>
+          isChecking: {String(isChecking)} | isLoading: {String(isLoading)} | forceReady: {String(forceReady)}
+        </p>
       </div>
     );
   }

@@ -3,7 +3,10 @@
  * Manages delivery of clinical alerts through the notification system
  */
 
-import NotificationService from '../services/NotificationService';
+import { getNotificationService } from '../services/notifications/NotificationService';
+
+// Get singleton instance
+const notificationService = getNotificationService();
 
 export const sendClinicalAlert = async (alertData, options = {}) => {
   const {
@@ -39,7 +42,7 @@ export const sendClinicalAlert = async (alertData, options = {}) => {
 
     if (deliveryChannels.includes('in-app')) {
       sendPromises.push(
-        NotificationService.showNotification({
+        notificationService.showNotification({
           ...notification,
           channel: 'in-app'
         })
@@ -48,7 +51,7 @@ export const sendClinicalAlert = async (alertData, options = {}) => {
 
     if (deliveryChannels.includes('push') && 'Notification' in window) {
       sendPromises.push(
-        NotificationService.sendPushNotification({
+        notificationService.sendPushNotification({
           ...notification,
           channel: 'push'
         })
@@ -57,7 +60,7 @@ export const sendClinicalAlert = async (alertData, options = {}) => {
 
     if (deliveryChannels.includes('email')) {
       sendPromises.push(
-        NotificationService.sendEmailNotification({
+        notificationService.sendEmailNotification({
           ...notification,
           channel: 'email',
           recipient: userId

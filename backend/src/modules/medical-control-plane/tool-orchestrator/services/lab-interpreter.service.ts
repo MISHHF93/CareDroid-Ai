@@ -101,6 +101,13 @@ export class LabInterpreterService implements ClinicalToolService {
       }
     }
 
+    if (parameters.patientSex !== undefined) {
+      const validSexes = ['male', 'female', 'other'];
+      if (typeof parameters.patientSex !== 'string' || !validSexes.includes(parameters.patientSex)) {
+        errors.push('patientSex must be one of: male, female, other');
+      }
+    }
+
     return {
       valid: errors.length === 0,
       errors,

@@ -9,7 +9,7 @@ describe('ExportService', () => {
   let service;
 
   beforeEach(() => {
-    service = new ExportService('http://localhost:3000/api');
+    service = new ExportService('http://localhost:8000/api');
     service.token = 'test-token';
 
     // Mock fetch
@@ -143,7 +143,7 @@ describe('ExportService', () => {
       const result = await service.exportToPDF(data, 'test.pdf');
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/api/exports/pdf',
+        'http://localhost:8000/api/exports/pdf',
         expect.objectContaining({
           method: 'POST',
         })
@@ -184,7 +184,7 @@ describe('ExportService', () => {
       const result = await service.exportToExcel(data, 'test.xlsx');
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/api/exports/excel',
+        'http://localhost:8000/api/exports/excel',
         expect.objectContaining({
           method: 'POST',
         })
@@ -229,7 +229,7 @@ describe('ExportService', () => {
       await service.generateReport('cost_summary', dateRange, 'pdf');
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/api/reports/generate',
+        'http://localhost:8000/api/reports/generate',
         expect.objectContaining({
           method: 'POST',
         })

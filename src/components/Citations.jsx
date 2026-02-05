@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import MetadataField from './MetadataField';
 
 /**
  * CitationBadge Component
@@ -249,88 +250,32 @@ export const CitationModal = ({ citation, onClose }) => {
             marginBottom: '16px',
           }}>
             {citation.authors && citation.authors.length > 0 && (
-              <div>
-                <div style={{
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  color: 'rgba(255, 255, 255, 0.5)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                  marginBottom: '6px',
-                }}>
-                  Authors
-                </div>
-                <div style={{
-                  fontSize: '13px',
-                  color: 'rgba(255, 255, 255, 0.8)',
-                }}>
-                  {citation.authors.join(', ')}
-                </div>
-              </div>
+              <MetadataField
+                label="Authors"
+                value={citation.authors.join(', ')}
+              />
             )}
 
             {citation.date && (
-              <div>
-                <div style={{
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  color: 'rgba(255, 255, 255, 0.5)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                  marginBottom: '6px',
-                }}>
-                  Date
-                </div>
-                <div style={{
-                  fontSize: '13px',
-                  color: 'rgba(255, 255, 255, 0.8)',
-                }}>
-                  {citation.date}
-                </div>
-              </div>
+              <MetadataField
+                label="Date"
+                value={citation.date}
+              />
             )}
 
             {citation.specialty && (
-              <div>
-                <div style={{
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  color: 'rgba(255, 255, 255, 0.5)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                  marginBottom: '6px',
-                }}>
-                  Specialty
-                </div>
-                <div style={{
-                  fontSize: '13px',
-                  color: 'rgba(255, 255, 255, 0.8)',
-                }}>
-                  {citation.specialty}
-                </div>
-              </div>
+              <MetadataField
+                label="Specialty"
+                value={citation.specialty}
+              />
             )}
 
             {citation.doi && (
-              <div>
-                <div style={{
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  color: 'rgba(255, 255, 255, 0.5)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                  marginBottom: '6px',
-                }}>
-                  DOI
-                </div>
-                <div style={{
-                  fontSize: '13px',
-                  color: '#00B4FF',
-                  wordBreak: 'break-all',
-                }}>
-                  {citation.doi}
-                </div>
-              </div>
+              <MetadataField
+                label="DOI"
+                value={citation.doi}
+                isLink
+              />
             )}
           </div>
 

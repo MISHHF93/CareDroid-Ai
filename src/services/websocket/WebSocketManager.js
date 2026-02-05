@@ -9,7 +9,7 @@ const getDefaultWebSocketBaseUrl = () => {
     return `${protocol}//${window.location.host}`;
   }
 
-  return 'ws://localhost:3000';
+  return 'ws://localhost:8000';
 };
 
 class WebSocketManager {

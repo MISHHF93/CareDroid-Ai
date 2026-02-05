@@ -26,7 +26,7 @@ describe('IntentClassifierService', () => {
   };
 
   const mockConfigService = {
-    get: jest.fn().mockReturnValue('http://localhost:8001'),
+    get: jest.fn().mockReturnValue('http://localhost:8000'),
   };
 
   const mockNluMetricsService = {

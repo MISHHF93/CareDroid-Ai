@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './NotificationPreferences.css';
+import Toggle from './Toggle';
 
 /**
  * Notification Preferences Component
@@ -117,62 +118,26 @@ function NotificationPreferences() {
         <section className="preferences-section">
           <h3>Notification Channels</h3>
 
-          <div className="channel-toggle">
-            <div className="toggle-header">
-              <span>📧 Email</span>
-              <label className="switch">
-                <input
-                  type="checkbox"
-                  checked={preferences.emailEnabled}
-                  onChange={(e) =>
-                    handlePreferenceChange('emailEnabled', e.target.checked)
-                  }
-                />
-                <span className="slider"></span>
-              </label>
-            </div>
-            <p className="channel-desc">
-              Receive notifications via email at {email || 'your email'}
-            </p>
-          </div>
+          <Toggle
+            label="📧 Email"
+            checked={preferences.emailEnabled}
+            onChange={(value) => handlePreferenceChange('emailEnabled', value)}
+            description={`Receive notifications via email at ${email || 'your email'}`}
+          />
 
-          <div className="channel-toggle">
-            <div className="toggle-header">
-              <span>📱 SMS</span>
-              <label className="switch">
-                <input
-                  type="checkbox"
-                  checked={preferences.smsEnabled}
-                  onChange={(e) =>
-                    handlePreferenceChange('smsEnabled', e.target.checked)
-                  }
-                />
-                <span className="slider"></span>
-              </label>
-            </div>
-            <p className="channel-desc">
-              Receive critical alerts via SMS at {phone || 'your phone'}
-            </p>
-          </div>
+          <Toggle
+            label="📱 SMS"
+            checked={preferences.smsEnabled}
+            onChange={(value) => handlePreferenceChange('smsEnabled', value)}
+            description={`Receive critical alerts via SMS at ${phone || 'your phone'}`}
+          />
 
-          <div className="channel-toggle">
-            <div className="toggle-header">
-              <span>🔔 In-App</span>
-              <label className="switch">
-                <input
-                  type="checkbox"
-                  checked={preferences.inAppEnabled}
-                  onChange={(e) =>
-                    handlePreferenceChange('inAppEnabled', e.target.checked)
-                  }
-                />
-                <span className="slider"></span>
-              </label>
-            </div>
-            <p className="channel-desc">
-              Receive real-time notifications within the app
-            </p>
-          </div>
+          <Toggle
+            label="🔔 In-App"
+            checked={preferences.inAppEnabled}
+            onChange={(value) => handlePreferenceChange('inAppEnabled', value)}
+            description="Receive real-time notifications within the app"
+          />
         </section>
 
         {/* Alert Types */}

@@ -55,7 +55,13 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
-// Mock scrollIntoView for jsdom
-if (!HTMLElement.prototype.scrollIntoView) {
-  HTMLElement.prototype.scrollIntoView = vi.fn();
-}
+// Mock import.meta.env
+global.import = {
+  meta: {
+    env: {
+      VITE_API_URL: 'http://localhost:8000',
+      VITE_WS_URL: 'ws://localhost:8000',
+      // Add other env vars as needed
+    },
+  },
+};

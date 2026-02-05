@@ -59,7 +59,7 @@ export class IntentClassifierService {
     private readonly nluMetrics: NluMetricsService,
   ) {
     const nluConfig = this.configService.get<any>('nlu');
-    const baseUrl = nluConfig?.url || 'http://localhost:8001';
+    const baseUrl = nluConfig?.url || 'http://localhost:8000';
     this.nluServiceUrl = baseUrl.replace(/\/$/, '');
     this.nluEnabled = nluConfig?.enabled !== false;
   }

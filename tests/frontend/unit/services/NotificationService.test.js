@@ -9,7 +9,7 @@ describe('NotificationService', () => {
   let service;
 
   beforeEach(() => {
-    service = new NotificationService('http://localhost:3000/api');
+    service = new NotificationService('http://localhost:8000/api');
     service.userId = 'user-123';
     service.token = 'test-token';
     service.isProcessing = true;

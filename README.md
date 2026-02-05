@@ -33,12 +33,14 @@ CareDroid-Ai/
 npm install
 cd backend && npm install
 
-# Start both frontend and backend
-npm run start:all
+# Start application on unified port 8000
+npm start                # Builds frontend and runs backend on port 8000 (recommended)
+# OR
+npm run start:all        # Same as above
+npm run dev              # Same as above
 
-# Or start separately
-npm run dev              # Frontend on port 8000
-npm run backend:dev      # Backend on port 3000
+# Or start backend only (still serves frontend on port 8000)
+npm run backend:dev
 ```
 
 ### Testing

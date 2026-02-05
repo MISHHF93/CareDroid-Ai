@@ -37,12 +37,12 @@ export class AppController {
 
   @Get()
   getRoot(@Res() res: Response) {
-    return res.sendFile(join(__dirname, '..', '..', 'public', 'index.html'));
+    return res.sendFile('/workspaces/CareDroid-Ai/dist/index.html');
   }
 
   // Frontend SPA routes (single-port deployment)
   @Get('*')
   getSpaRoutes(@Res() res: Response) {
-    return res.sendFile(join(__dirname, '..', '..', 'public', 'index.html'));
+    return res.sendFile('/workspaces/CareDroid-Ai/dist/index.html');
   }
 }

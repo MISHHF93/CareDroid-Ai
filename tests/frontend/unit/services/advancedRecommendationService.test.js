@@ -149,7 +149,7 @@ describe('AdvancedRecommendationService', () => {
       );
 
       expect(global.fetch).toHaveBeenCalledWith(
-        '/api/chat/intent-classify',
+        'http://localhost:8000/api/chat/intent-classify',
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify({ message: 'differential diagnosis for chest pain' })

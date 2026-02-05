@@ -1,6 +1,4 @@
-import { useState } from 'react';
-import ToolPageLayout from './ToolPageLayout';
-import { apiFetch } from '../../services/apiClient';
+import SearchableToolPage from './SearchableToolPage';
 
 const Protocols = () => {
   const toolConfig = {
@@ -13,10 +11,6 @@ const Protocols = () => {
     shortcut: 'Ctrl+4',
     category: 'Reference'
   };
-
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState(null);
-  const [loading, setLoading] = useState(false);
 
   const commonProtocols = [
     'Sepsis Management',
@@ -31,73 +25,18 @@ const Protocols = () => {
     'Post-Op Care',
   ];
 
-  const handleSearch = async (protocolName = query) => {
-    if (!protocolName.trim()) return;
-
-    setLoading(true);
-    try {
-      const response = await apiFetch('/api/chat/message', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('caredroid_access_token')}`,
-        },
-        body: JSON.stringify({
-          message: `Provide the clinical protocol for: ${protocolName}`,
-          tool: 'protocols'
-        }),
-      });
-
-      const data = await response.json();
-      setResults(data.response);
-    } catch (err) {
-      setResults('Error loading protocol. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <ToolPageLayout tool={toolConfig} results={results}>
-      <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '24px' }}>
-        <div style={{ marginBottom: '24px' }}>
-          <input
-            type="text"
-            style={{
-              width: '100%',
-              padding: '14px 16px',
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.15)',
-              borderRadius: '10px',
-              color: 'var(--text-primary)',
-              fontSize: '16px',
-            }}
-            placeholder="Search for a protocol (e.g., Sepsis, STEMI, DKA)..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-          />
-        </div>
+    <SearchableToolPage
+      toolConfig={toolConfig}
+      commonItems={commonProtocols}
+      placeholder="Search for a protocol (e.g., Sepsis, STEMI, DKA)..."
+      searchPrompt="Provide the clinical protocol for"
+      errorMessage="Error loading protocol. Please try again."
+    />
+  );
+};
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '32px' }}>
-          {commonProtocols.map(protocol => (
-            <button
-              key={protocol}
-              style={{
-                padding: '12px 16px',
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '8px',
-                color: 'var(--text-primary)',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-              }}
-              onClick={() => { setQuery(protocol); handleSearch(protocol); }}
-            >
-              {protocol}
-            </button>
-          ))}
-        </div>
+export default Protocols;
 
         {loading ? (
           <div style={{ textAlign: 'center', padding: '60px 20px' }}>

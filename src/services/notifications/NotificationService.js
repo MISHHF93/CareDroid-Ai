@@ -12,7 +12,7 @@ const getDefaultApiBaseUrl = () => {
     return `${window.location.origin}/api`;
   }
 
-  return 'http://localhost:3000/api';
+  return 'http://localhost:8000/api';
 };
 
 class NotificationService {

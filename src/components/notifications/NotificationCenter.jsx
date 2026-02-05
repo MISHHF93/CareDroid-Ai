@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import './NotificationCenter.css';
+import NotificationTypeSection from './NotificationTypeSection';
 
 /**
  * NotificationCenter Component
@@ -260,83 +261,24 @@ export const NotificationPreferences = ({
       </div>
 
       <div className="preferences-sections">
-        {/* Email Notifications */}
-        <section className="preference-section">
-          <h3>📧 Email Notifications</h3>
-          <div className="preference-options">
-            <PreferenceCheckbox
-              label="Critical Alerts"
-              description="Emergency detection, severe warnings"
-              checked={preferences.email.critical}
-              onChange={(value) => handleChange('email', 'critical', value)}
-              required
-            />
-            <PreferenceCheckbox
-              label="Updates"
-              description="System updates, new features"
-              checked={preferences.email.updates}
-              onChange={(value) => handleChange('email', 'updates', value)}
-            />
-            <PreferenceCheckbox
-              label="Announcements"
-              description="News, product announcements"
-              checked={preferences.email.announcements}
-              onChange={(value) => handleChange('email', 'announcements', value)}
-            />
-          </div>
-        </section>
-
-        {/* In-App Notifications */}
-        <section className="preference-section">
-          <h3>🔔 In-App Notifications</h3>
-          <div className="preference-options">
-            <PreferenceCheckbox
-              label="Critical Alerts"
-              description="Emergency detection, severe warnings"
-              checked={preferences.inApp.critical}
-              onChange={(value) => handleChange('inApp', 'critical', value)}
-              required
-            />
-            <PreferenceCheckbox
-              label="Updates"
-              description="System updates, new features"
-              checked={preferences.inApp.updates}
-              onChange={(value) => handleChange('inApp', 'updates', value)}
-            />
-            <PreferenceCheckbox
-              label="Announcements"
-              description="News, product announcements"
-              checked={preferences.inApp.announcements}
-              onChange={(value) => handleChange('inApp', 'announcements', value)}
-            />
-          </div>
-        </section>
-
-        {/* Push Notifications */}
-        <section className="preference-section">
-          <h3>📱 Push Notifications</h3>
-          <div className="preference-options">
-            <PreferenceCheckbox
-              label="Critical Alerts"
-              description="Emergency detection, severe warnings"
-              checked={preferences.push.critical}
-              onChange={(value) => handleChange('push', 'critical', value)}
-              required
-            />
-            <PreferenceCheckbox
-              label="Updates"
-              description="System updates, new features"
-              checked={preferences.push.updates}
-              onChange={(value) => handleChange('push', 'updates', value)}
-            />
-            <PreferenceCheckbox
-              label="Announcements"
-              description="News, product announcements"
-              checked={preferences.push.announcements}
-              onChange={(value) => handleChange('push', 'announcements', value)}
-            />
-          </div>
-        </section>
+        <NotificationTypeSection
+          type="email"
+          title="📧 Email Notifications"
+          preferences={preferences}
+          handleChange={handleChange}
+        />
+        <NotificationTypeSection
+          type="inApp"
+          title="🔔 In-App Notifications"
+          preferences={preferences}
+          handleChange={handleChange}
+        />
+        <NotificationTypeSection
+          type="push"
+          title="📱 Push Notifications"
+          preferences={preferences}
+          handleChange={handleChange}
+        />
 
         {/* Quiet Hours */}
         <section className="preference-section">

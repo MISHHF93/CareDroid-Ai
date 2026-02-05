@@ -93,6 +93,22 @@ export interface IntentClassification {
     confidence: number;
   }>;
   
+  // Phase 2: Neural Heads Results (optional - populated if heads are enabled)
+  neuralHeads?: {
+    emergencyRiskScore?: number;  // Fine-grained risk severity from Emergency Risk Head
+    toolSuggestions?: Array<{     // Tool recommendations from Tool Invocation Head
+      toolId: string;
+      toolName: string;
+      confidence: number;
+    }>;
+    citationRequirement?: string; // 'not_required' | 'optional' | 'required' | 'mandatory'
+    recommendedActions?: Array<{  // Aggregated actions from all heads
+      action: string;
+      priority: string;
+      reason: string;
+    }>;
+  };
+  
   // Timestamp
   classifiedAt: Date;
 }

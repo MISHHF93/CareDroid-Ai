@@ -1,15 +1,21 @@
 /**
  * Intent Classifier Service
  * 
- * Three-Phase Classification Pipeline (Phase 1 Enhanced):
+ * Three-Phase Classification Pipeline (Phase 1 Enhanced + Phase 2 Heads):
  * 1. Keyword Matching (fast, rule-based) with criticality-aware thresholds
  * 2. NLU Model (fine-tuned BERT) with calibrated confidence
  * 3. LLM Fallback (GPT-4) with abstain mechanism
+ * 4. Phase 2 Neural Heads (parallel task-specific classifiers)
  * 
  * Phase 1 Features:
  * - Expanded intent taxonomy (emergency_risk, tool_selection, medication_safety, etc.)
  * - Criticality-aware confidence thresholds (higher bar for critical intents)
  * - Abstain class for low-confidence cases (defers to LLM + human-safe prompts)
+ * 
+ * Phase 2 Features:
+ * - Emergency Risk Head (fine-grained severity triage)
+ * - Tool Invocation Head (smart tool routing)
+ * - Citation Need Head (RAG grounding determination)
  * 
  * Emergency Detection: 100% recall (no false negatives)
  */
@@ -18,6 +24,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AIService } from '../../ai/ai.service';
 import { NluMetricsService } from '../../metrics/nlu-metrics.service';
+import { NeuralHeadsOrchestratorService } from './neural-heads/neural-heads.orchestrator';
 import {
   IntentClassification,
   IntentClassificationContext,
@@ -65,6 +72,7 @@ export class IntentClassifierService {
     private readonly aiService: AIService,
     private readonly configService: ConfigService,
     private readonly nluMetrics: NluMetricsService,
+    private readonly neuralHeadsOrchestrator: NeuralHeadsOrchestratorService,
   ) {
     const nluConfig = this.configService.get<any>('nlu');
     const baseUrl = nluConfig?.url || 'http://localhost:8000';
@@ -122,7 +130,7 @@ export class IntentClassifierService {
       // Record successful classification
       this.nluMetrics.recordIntentClassification(keywordResult.primaryIntent, 'keyword');
 
-      return {
+      const result = {
         ...keywordResult,
         criticality: keywordCriticality,
         confidenceThreshold: keywordThreshold,
@@ -130,9 +138,19 @@ export class IntentClassifierService {
         isEmergency,
         emergencyKeywords: this.mapEmergencyKeywords(emergencyPatterns),
         emergencySeverity,
-        method: 'keyword',
+        method: 'keyword' as 'keyword' | 'nlu' | 'llm' | 'abstain',
         classifiedAt: new Date(),
       };
+
+      // Phase 2: Run neural heads in parallel (non-blocking)
+      this.enrichWithNeuralHeads(result, message, emergencyPatterns)
+        .catch(error => {
+          this.logger.warn(
+            `Neural heads enrichment failed (non-blocking): ${error instanceof Error ? error.message : String(error)}`,
+          );
+        });
+
+      return result;
     }
 
     this.logger.log(
@@ -163,7 +181,7 @@ export class IntentClassifierService {
         // Record successful classification
         this.nluMetrics.recordIntentClassification(nluResult.primaryIntent, 'model');
 
-        return {
+        const result = {
           ...nluResult,
           criticality: nluCriticality,
           confidenceThreshold: nluThreshold,
@@ -171,9 +189,19 @@ export class IntentClassifierService {
           isEmergency,
           emergencyKeywords: this.mapEmergencyKeywords(emergencyPatterns),
           emergencySeverity,
-          method: 'nlu',
+          method: 'nlu' as 'keyword' | 'nlu' | 'llm' | 'abstain',
           classifiedAt: new Date(),
         };
+
+        // Phase 2: Run neural heads in parallel (non-blocking)
+        this.enrichWithNeuralHeads(result, message, emergencyPatterns)
+          .catch(error => {
+            this.logger.warn(
+              `Neural heads enrichment failed (non-blocking): ${error instanceof Error ? error.message : String(error)}`,
+            );
+          });
+
+        return result;
       } else {
         this.logger.log(
           `⚠️ Phase 2 (NLU): Low confidence (${nluResult.confidence.toFixed(2)}) < threshold (${nluThreshold.toFixed(2)}) - considering abstain or Phase 3`,
@@ -213,7 +241,7 @@ export class IntentClassifierService {
         `${shouldAbstain ? '⚠️ Phase 3 (Abstain)' : '✅ Phase 3 (LLM)'}: confidence (${llmResult.confidence.toFixed(2)}) ${shouldAbstain ? '<' : '>='}  threshold (${llmThreshold.toFixed(2)})`,
       );
 
-      return {
+      const result = {
         ...llmResult,
         criticality: llmCriticality,
         confidenceThreshold: llmThreshold,
@@ -221,9 +249,19 @@ export class IntentClassifierService {
         isEmergency,
         emergencyKeywords: this.mapEmergencyKeywords(emergencyPatterns),
         emergencySeverity,
-        method: shouldAbstain ? 'abstain' : 'llm',
+        method: (shouldAbstain ? 'abstain' : 'llm') as 'keyword' | 'nlu' | 'llm' | 'abstain',
         classifiedAt: new Date(),
       };
+
+      // Phase 2: Run neural heads in parallel (non-blocking)
+      this.enrichWithNeuralHeads(result, message, emergencyPatterns)
+        .catch(error => {
+          this.logger.warn(
+            `Neural heads enrichment failed (non-blocking): ${error instanceof Error ? error.message : String(error)}`,
+          );
+        });
+
+      return result;
     } catch (error) {
       const llmDurationSec = (Date.now() - llmStartMs) / 1000;
       this.nluMetrics.recordLlmPhaseDuration(llmDurationSec, 'failure');
@@ -236,7 +274,7 @@ export class IntentClassifierService {
       
       this.nluMetrics.recordIntentClassification(keywordResult.primaryIntent, 'keyword');
 
-      return {
+      const result = {
         ...keywordResult,
         criticality: fallbackCriticality,
         confidenceThreshold: fallbackThreshold,
@@ -244,11 +282,90 @@ export class IntentClassifierService {
         isEmergency,
         emergencyKeywords: this.mapEmergencyKeywords(emergencyPatterns),
         emergencySeverity,
-        method: 'keyword',
+        method: 'keyword' as const,
         classifiedAt: new Date(),
       };
+
+      // Phase 2: Run neural heads in parallel (non-blocking)
+      this.enrichWithNeuralHeads(result, message, emergencyPatterns)
+        .catch(error => {
+          this.logger.warn(
+            `Neural heads enrichment failed (non-blocking): ${error instanceof Error ? error.message : String(error)}`,
+          );
+        });
+
+      return result;
     }
   }
+
+  /**
+   * Enrich classification result with Phase 2 Neural Heads predictions
+   * Runs in parallel and modifies the result object
+   */
+  private async enrichWithNeuralHeads(
+    result: IntentClassification,
+    message: string,
+    emergencyPatterns: EmergencyPattern[],
+  ): Promise<void> {
+    try {
+      const headersStartMs = Date.now();
+      const neuralHeadsResult = await this.neuralHeadsOrchestrator.predictWithAllHeads(
+        message,
+        emergencyPatterns.map(p => ({
+          category: p.category,
+          severity: p.severity,
+        })),
+        result.primaryIntent,
+        undefined, // userRole not available here, can be added from context if needed
+      );
+      const headsDurationSec = (Date.now() - headersStartMs) / 1000;
+
+      this.logger.debug(
+        `🧠 Phase 2 (Neural Heads) completed in ${headsDurationSec.toFixed(3)}s: ` +
+          `risk=${neuralHeadsResult.emergencyRisk?.severity || 'N/A'}, ` +
+          `tool=${neuralHeadsResult.toolInvocation?.toolId || 'N/A'}, ` +
+          `citation=${neuralHeadsResult.citationNeeds?.requirement || 'N/A'}`,
+      );
+
+      // Attach neural heads results to classification
+      result.neuralHeads = {
+        emergencyRiskScore: neuralHeadsResult.emergencyRisk
+          ? this.mapRiskSeverityToScore(neuralHeadsResult.emergencyRisk.severity)
+          : undefined,
+        toolSuggestions: neuralHeadsResult.toolInvocation
+          ? [
+              {
+                toolId: neuralHeadsResult.toolInvocation.toolId,
+                toolName: neuralHeadsResult.toolInvocation.toolName,
+                confidence: neuralHeadsResult.toolInvocation.confidence,
+              },
+              ...(neuralHeadsResult.toolInvocation.alternatives || []),
+            ]
+          : undefined,
+        citationRequirement: neuralHeadsResult.citationNeeds?.requirement,
+        recommendedActions: neuralHeadsResult.recommendedActions,
+      };
+    } catch (error) {
+      this.logger.warn(
+        `Failed to enrich with neural heads: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      // Continue without neural heads results
+    }
+  }
+
+  /**
+   * Map risk severity to numeric score for easier comparison
+   */
+  private mapRiskSeverityToScore(severity: string): number {
+    const severityMap = {
+      critical: 1.0,
+      urgent: 0.75,
+      moderate: 0.5,
+      low: 0.25,
+    };
+    return severityMap[severity] || 0.5;
+  }
+
 
   /**
    * Phase 1: Fast keyword-based pattern matching

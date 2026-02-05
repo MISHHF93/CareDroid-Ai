@@ -70,20 +70,21 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
-  // Global validation pipe
+  // Global validation pipe for DTOs
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
+      whitelist: true, // Strip properties that do not have decorators
+      forbidNonWhitelisted: true, // Throw error if non-whitelisted properties are provided
+      transform: true, // Transform payloads to DTO instances
+      disableErrorMessages: false, // Enable detailed error messages in development
       transformOptions: {
-        enableImplicitConversion: true,
+        enableImplicitConversion: true, // Allow implicit type conversion
       },
     }),
   );
 
   // API prefix (health and root endpoints will be at /)
-  app.setGlobalPrefix('api', { exclude: ['health', ''] });
+  app.setGlobalPrefix('api', { exclude: ['health', '', 'test'] });
 
   // Swagger documentation
   const config = new DocumentBuilder()

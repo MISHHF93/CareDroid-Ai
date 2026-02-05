@@ -14,7 +14,7 @@ export const AppDataSource = new DataSource(
         database: process.env.SQLITE_PATH || 'caredroid.dev.sqlite',
         entities: [join(__dirname, '**', '*.entity.{ts,js}')],
         migrations: [join(__dirname, 'database', 'migrations', '*{.ts,.js}')],
-        synchronize: false,
+        synchronize: true, // Temporarily enabled for development
         logging: false,
       }
     : {

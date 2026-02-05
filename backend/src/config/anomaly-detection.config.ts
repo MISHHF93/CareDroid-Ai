@@ -7,7 +7,7 @@ import { registerAs } from '@nestjs/config';
 
 export default registerAs('anomalyDetection', () => ({
   enabled: process.env.ANOMALY_DETECTION_ENABLED !== 'false',
-  url: process.env.ANOMALY_DETECTION_URL || 'http://anomaly-detection:5000',
+  url: process.env.ANOMALY_DETECTION_URL || 'http://anomaly-detection:8000',
   timeout: parseInt(process.env.ANOMALY_DETECTION_TIMEOUT || '30000', 10), // 30 seconds
   retries: parseInt(process.env.ANOMALY_DETECTION_RETRIES || '3', 10),
 }));

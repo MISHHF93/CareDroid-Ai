@@ -46,7 +46,7 @@ INFERENCE_CONFIG = {
 # Service Configuration
 SERVICE_CONFIG = {
     "host": os.getenv("NLU_HOST", "0.0.0.0"),
-    "port": int(os.getenv("NLU_PORT", "8001")),
+    "port": int(os.getenv("NLU_PORT", "8000")),
     "workers": int(os.getenv("NLU_WORKERS", "4")),
     "reload": os.getenv("NLU_RELOAD", "false").lower() == "true",
     "log_level": os.getenv("NLU_LOG_LEVEL", "info"),

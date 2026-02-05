@@ -12,37 +12,37 @@ export class ProxyController {
   // Grafana - /grafana/*
   @All('grafana/*')
   async proxyGrafana(@Req() req: Request, @Res() res: Response) {
-    await this.proxyRequest('http://grafana:3000', req, res);
+    await this.proxyRequest('http://grafana:8000', req, res);
   }
 
   // Kibana - /kibana/*
   @All('kibana/*')
   async proxyKibana(@Req() req: Request, @Res() res: Response) {
-    await this.proxyRequest('http://kibana:5601', req, res);
+    await this.proxyRequest('http://kibana:8000', req, res);
   }
 
   // Prometheus - /prometheus/*
   @All('prometheus/*')
   async proxyPrometheus(@Req() req: Request, @Res() res: Response) {
-    await this.proxyRequest('http://prometheus:9090', req, res);
+    await this.proxyRequest('http://prometheus:8000', req, res);
   }
 
   // Alertmanager - /alertmanager/*
   @All('alertmanager/*')
   async proxyAlertmanager(@Req() req: Request, @Res() res: Response) {
-    await this.proxyRequest('http://alertmanager:9093', req, res);
+    await this.proxyRequest('http://alertmanager:8000', req, res);
   }
 
   // Elasticsearch - /elasticsearch/*
   @All('elasticsearch/*')
   async proxyElasticsearch(@Req() req: Request, @Res() res: Response) {
-    await this.proxyRequest('http://elasticsearch:9200', req, res);
+    await this.proxyRequest('http://elasticsearch:8000', req, res);
   }
 
   // Sentry - /sentry/*
   @All('sentry/*')
   async proxySentry(@Req() req: Request, @Res() res: Response) {
-    await this.proxyRequest('http://sentry:9000', req, res);
+    await this.proxyRequest('http://sentry:8000', req, res);
   }
 
   // NLU Service - /nlu/*
@@ -54,13 +54,13 @@ export class ProxyController {
   // Anomaly Detection - /anomaly/*
   @All('anomaly/*')
   async proxyAnomalyDetection(@Req() req: Request, @Res() res: Response) {
-    await this.proxyRequest('http://anomaly-detection:5000', req, res);
+    await this.proxyRequest('http://anomaly-detection:8000', req, res);
   }
 
   // Logstash - /logstash/*
   @All('logstash/*')
   async proxyLogstash(@Req() req: Request, @Res() res: Response) {
-    await this.proxyRequest('http://logstash:5000', req, res);
+    await this.proxyRequest('http://logstash:8000', req, res);
   }
 
   private async proxyRequest(targetBaseUrl: string, req: Request, res: Response) {

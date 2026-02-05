@@ -53,7 +53,7 @@ import { MetricsModule } from './modules/metrics/metrics.module';
     // Serve static frontend files from root dist folder
     ServeStaticModule.forRoot({
       rootPath: '/workspaces/CareDroid-Ai/dist',
-      exclude: ['/api*', '/health', '/metrics', '/grafana*', '/kibana*', '/prometheus*', '/alertmanager*', '/elasticsearch*', '/sentry*', '/nlu*', '/anomaly*', '/logstash*'],
+      exclude: ['/api*', '/health*', '/metrics*', '/grafana*', '/kibana*', '/prometheus*', '/alertmanager*', '/elasticsearch*', '/sentry*', '/nlu*', '/anomaly*', '/logstash*', '/test*'],
       serveStaticOptions: {
         cacheControl: false, // Disable caching during development
       },

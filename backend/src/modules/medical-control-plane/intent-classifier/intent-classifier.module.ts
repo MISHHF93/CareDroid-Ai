@@ -8,9 +8,10 @@ import { IntentClassifierService } from './intent-classifier.service';
 import { AiModule } from '../../ai/ai.module';
 import { MetricsModule } from '../../metrics/metrics.module';
 import { NeuralHeadsModule } from './neural-heads/neural-heads.module';
+import { LocalGenerationModule } from '../local-generation/local-generation.module';
 
 @Module({
-  imports: [AiModule, ConfigModule, MetricsModule, NeuralHeadsModule],
+  imports: [AiModule, ConfigModule, MetricsModule, NeuralHeadsModule, LocalGenerationModule],
   providers: [IntentClassifierService],
   exports: [IntentClassifierService],
 })

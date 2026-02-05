@@ -103,7 +103,17 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  const port = process.env.PORT || 8000;
+  // Port lockdown: Hardcode to 8000 only
+  const port = 8000;
+
+  // Security validation: Prevent any attempts to use other ports
+  if (process.env.PORT && process.env.PORT !== '8000') {
+    console.error('🚫 SECURITY VIOLATION: PORT environment variable must be 8000 or unset.');
+    console.error(`   Current PORT value: ${process.env.PORT}`);
+    console.error('   Application will not start on any port other than 8000.');
+    process.exit(1);
+  }
+
   await app.listen(port);
 
   console.log(`\n🚀 CareDroid Backend running on: http://localhost:${port}`);

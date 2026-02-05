@@ -1,10 +1,15 @@
 /**
  * Intent Classifier Service
  * 
- * Three-Phase Classification Pipeline:
- * 1. Keyword Matching (fast, rule-based)
- * 2. NLU Model (fine-tuned BERT - not yet implemented, falls through to Phase 3)
- * 3. LLM Fallback (GPT-4 for complex cases)
+ * Three-Phase Classification Pipeline (Phase 1 Enhanced):
+ * 1. Keyword Matching (fast, rule-based) with criticality-aware thresholds
+ * 2. NLU Model (fine-tuned BERT) with calibrated confidence
+ * 3. LLM Fallback (GPT-4) with abstain mechanism
+ * 
+ * Phase 1 Features:
+ * - Expanded intent taxonomy (emergency_risk, tool_selection, medication_safety, etc.)
+ * - Criticality-aware confidence thresholds (higher bar for critical intents)
+ * - Abstain class for low-confidence cases (defers to LLM + human-safe prompts)
  * 
  * Emergency Detection: 100% recall (no false negatives)
  */
@@ -19,6 +24,9 @@ import {
   PrimaryIntent,
   EmergencySeverity,
   EmergencyKeyword,
+  IntentCriticality,
+  getIntentCriticality,
+  getConfidenceThreshold,
 } from './dto/intent-classification.dto';
 import {
   detectEmergencyKeywords,
@@ -67,12 +75,16 @@ export class IntentClassifierService {
   /**
    * Main classification entry point
    * Executes 3-phase pipeline: keyword → NLU → LLM
+   * With Phase 1 enhancements: criticality-aware thresholds, abstain mechanism
    */
   async classify(
     message: string,
     context?: IntentClassificationContext,
   ): Promise<IntentClassification> {
     this.logger.log(`🧠 Classifying intent for message: "${message.substring(0, 100)}..."`);
+
+    // Extract user role for role-aware thresholds
+    const userRole = context?.userRole;
 
     // ========================================
     // PHASE 0: EMERGENCY DETECTION (Always runs first)
@@ -98,9 +110,13 @@ export class IntentClassifierService {
     this.nluMetrics.recordKeywordPhaseDuration(keywordDurationSec, keywordResult.confidence >= 0.5 ? 'match' : 'no_match');
     this.nluMetrics.recordConfidenceScore(keywordResult.confidence, keywordResult.primaryIntent, 'keyword');
 
-    if (keywordResult.confidence >= 0.7) {
+    // Phase 1: Calculate criticality and threshold
+    const keywordCriticality = getIntentCriticality(keywordResult.primaryIntent);
+    const keywordThreshold = getConfidenceThreshold(keywordCriticality, userRole);
+    
+    if (keywordResult.confidence >= keywordThreshold) {
       this.logger.log(
-        `✅ Phase 1 (Keyword): High confidence (${keywordResult.confidence.toFixed(2)}) - ${keywordResult.primaryIntent}`,
+        `✅ Phase 1 (Keyword): High confidence (${keywordResult.confidence.toFixed(2)}) >= threshold (${keywordThreshold.toFixed(2)}) - ${keywordResult.primaryIntent}`,
       );
       
       // Record successful classification
@@ -108,6 +124,9 @@ export class IntentClassifierService {
 
       return {
         ...keywordResult,
+        criticality: keywordCriticality,
+        confidenceThreshold: keywordThreshold,
+        shouldAbstain: false,
         isEmergency,
         emergencyKeywords: this.mapEmergencyKeywords(emergencyPatterns),
         emergencySeverity,
@@ -117,7 +136,7 @@ export class IntentClassifierService {
     }
 
     this.logger.log(
-      `⚠️ Phase 1 (Keyword): Low confidence (${keywordResult.confidence.toFixed(2)}) - proceeding to Phase 2`,
+      `⚠️ Phase 1 (Keyword): Low confidence (${keywordResult.confidence.toFixed(2)}) < threshold (${keywordThreshold.toFixed(2)}) - proceeding to Phase 2`,
     );
 
     // ========================================
@@ -132,9 +151,13 @@ export class IntentClassifierService {
       this.nluMetrics.recordModelPhaseDuration(nluDurationSec, 'success');
       this.nluMetrics.recordConfidenceScore(nluResult.confidence, nluResult.primaryIntent, 'model');
 
-      if (nluResult.confidence >= 0.7) {
+      // Phase 1: Calculate criticality and threshold for NLU result
+      const nluCriticality = getIntentCriticality(nluResult.primaryIntent);
+      const nluThreshold = getConfidenceThreshold(nluCriticality, userRole);
+
+      if (nluResult.confidence >= nluThreshold) {
         this.logger.log(
-          `✅ Phase 2 (NLU): High confidence (${nluResult.confidence.toFixed(2)}) - ${nluResult.primaryIntent}`,
+          `✅ Phase 2 (NLU): High confidence (${nluResult.confidence.toFixed(2)}) >= threshold (${nluThreshold.toFixed(2)}) - ${nluResult.primaryIntent}`,
         );
         
         // Record successful classification
@@ -142,12 +165,19 @@ export class IntentClassifierService {
 
         return {
           ...nluResult,
+          criticality: nluCriticality,
+          confidenceThreshold: nluThreshold,
+          shouldAbstain: false,
           isEmergency,
           emergencyKeywords: this.mapEmergencyKeywords(emergencyPatterns),
           emergencySeverity,
           method: 'nlu',
           classifiedAt: new Date(),
         };
+      } else {
+        this.logger.log(
+          `⚠️ Phase 2 (NLU): Low confidence (${nluResult.confidence.toFixed(2)}) < threshold (${nluThreshold.toFixed(2)}) - considering abstain or Phase 3`,
+        );
       }
     } else {
       // NLU failed or circuit breaker open
@@ -155,7 +185,7 @@ export class IntentClassifierService {
     }
 
     // ========================================
-    // PHASE 3: LLM FALLBACK (GPT-4)
+    // PHASE 3: LLM FALLBACK (GPT-4) or ABSTAIN
     // ========================================
     this.logger.log(`🤖 Phase 3 (LLM): Invoking GPT-4 for complex intent classification`);
 
@@ -164,30 +194,53 @@ export class IntentClassifierService {
       const llmResult = await this.llmMatcher(message, context);
       const llmDurationSec = (Date.now() - llmStartMs) / 1000;
 
+      // Phase 1: Calculate criticality and threshold for LLM result
+      const llmCriticality = getIntentCriticality(llmResult.primaryIntent);
+      const llmThreshold = getConfidenceThreshold(llmCriticality, userRole);
+
       // Record Phase 3 metrics
       this.nluMetrics.recordLlmPhaseDuration(llmDurationSec, 'success');
       this.nluMetrics.recordConfidenceScore(llmResult.confidence, llmResult.primaryIntent, 'llm');
-      this.nluMetrics.recordIntentClassification(llmResult.primaryIntent, 'llm');
+
+      // Phase 1: Check if LLM result meets threshold or should abstain
+      const shouldAbstain = llmResult.confidence < llmThreshold;
+      
+      if (!shouldAbstain) {
+        this.nluMetrics.recordIntentClassification(llmResult.primaryIntent, 'llm');
+      }
+
+      this.logger.log(
+        `${shouldAbstain ? '⚠️ Phase 3 (Abstain)' : '✅ Phase 3 (LLM)'}: confidence (${llmResult.confidence.toFixed(2)}) ${shouldAbstain ? '<' : '>='}  threshold (${llmThreshold.toFixed(2)})`,
+      );
 
       return {
         ...llmResult,
+        criticality: llmCriticality,
+        confidenceThreshold: llmThreshold,
+        shouldAbstain,
         isEmergency,
         emergencyKeywords: this.mapEmergencyKeywords(emergencyPatterns),
         emergencySeverity,
-        method: 'llm',
+        method: shouldAbstain ? 'abstain' : 'llm',
         classifiedAt: new Date(),
       };
     } catch (error) {
       const llmDurationSec = (Date.now() - llmStartMs) / 1000;
       this.nluMetrics.recordLlmPhaseDuration(llmDurationSec, 'failure');
       
-      this.logger.error(`❌ Phase 3 (LLM) failed: ${error instanceof Error ? error.message : String(error)}. Returning keyword result.`);
+      this.logger.error(`❌ Phase 3 (LLM) failed: ${error instanceof Error ? error.message : String(error)}. Returning keyword result with abstain flag.`);
       
-      // Fallback to keyword result
+      // Fallback to keyword result with abstain flag
+      const fallbackCriticality = getIntentCriticality(keywordResult.primaryIntent);
+      const fallbackThreshold = getConfidenceThreshold(fallbackCriticality, userRole);
+      
       this.nluMetrics.recordIntentClassification(keywordResult.primaryIntent, 'keyword');
 
       return {
         ...keywordResult,
+        criticality: fallbackCriticality,
+        confidenceThreshold: fallbackThreshold,
+        shouldAbstain: true, // Mark as abstain since we had to fallback
         isEmergency,
         emergencyKeywords: this.mapEmergencyKeywords(emergencyPatterns),
         emergencySeverity,
@@ -203,7 +256,7 @@ export class IntentClassifierService {
   private keywordMatcher(
     message: string,
     emergencyPatterns: EmergencyPattern[],
-  ): Omit<IntentClassification, 'isEmergency' | 'emergencyKeywords' | 'emergencySeverity' | 'method' | 'classifiedAt'> {
+  ): Omit<IntentClassification, 'isEmergency' | 'emergencyKeywords' | 'emergencySeverity' | 'method' | 'classifiedAt' | 'criticality' | 'confidenceThreshold' | 'shouldAbstain'> {
     const matchedPatterns: string[] = [];
 
     // Priority 1: Emergency always takes precedence
@@ -274,7 +327,7 @@ export class IntentClassifierService {
   private async nluMatcher(
     message: string,
     context?: IntentClassificationContext,
-  ): Promise<Omit<IntentClassification, 'isEmergency' | 'emergencyKeywords' | 'emergencySeverity' | 'method' | 'classifiedAt'> | null> {
+  ): Promise<Omit<IntentClassification, 'isEmergency' | 'emergencyKeywords' | 'emergencySeverity' | 'method' | 'classifiedAt' | 'criticality' | 'confidenceThreshold' | 'shouldAbstain'> | null> {
     if (!this.nluEnabled) {
       this.logger.warn('NLU service disabled by configuration. Skipping NLU phase.');
       return null;
@@ -338,19 +391,61 @@ export class IntentClassifierService {
    * Map NLU intent labels to PrimaryIntent enum
    */
   private mapNluIntent(intent: string | undefined): PrimaryIntent | null {
+    // Phase 1: Expanded intent taxonomy mapping
     switch (intent) {
+      // Emergency & Risk intents
       case 'emergency':
         return PrimaryIntent.EMERGENCY;
+      case 'emergency_risk':
+      case 'risk_triage':
+      case 'severity_assessment':
+        return PrimaryIntent.EMERGENCY_RISK;
+      
+      // Medication & Safety intents
+      case 'medication_safety':
+      case 'drug_interaction':
+      case 'contraindication':
+      case 'drug_checker':
+        return PrimaryIntent.MEDICATION_SAFETY;
+      
+      // Tool & Clinical intents
       case 'clinical_tool':
-        return PrimaryIntent.CLINICAL_TOOL;
-      case 'admin_function':
-        return PrimaryIntent.ADMINISTRATIVE;
-      case 'lab_query':
+      case 'tool_selection':
+      case 'sofa_calculator':
+      case 'apache_calculator':
+      case 'lab_interpreter':
+        return PrimaryIntent.TOOL_SELECTION;
+      
+      // Protocol & Lookup intents
+      case 'protocol_lookup':
       case 'protocol_search':
+      case 'protocol_query':
+      case 'guideline_lookup':
+        return PrimaryIntent.PROTOCOL_LOOKUP;
+      
+      // Documentation intents
+      case 'documentation':
       case 'patient_data':
+      case 'record_query':
+      case 'documentation_query':
+        return PrimaryIntent.DOCUMENTATION;
+      
+      // Medical reference (legacy, maps to medium criticality)
+      case 'lab_query':
+      case 'medical_reference':
         return PrimaryIntent.MEDICAL_REFERENCE;
+      
+      // General intents
       case 'general_query':
-        return PrimaryIntent.GENERAL_QUERY;
+      case 'general_chat':
+      case 'educational':
+        return PrimaryIntent.GENERAL_CHAT;
+      
+      // Administrative (legacy)
+      case 'admin_function':
+      case 'administrative':
+        return PrimaryIntent.ADMINISTRATIVE;
+      
       default:
         return null;
     }
@@ -362,7 +457,7 @@ export class IntentClassifierService {
   private async llmMatcher(
     message: string,
     context?: IntentClassificationContext,
-  ): Promise<Omit<IntentClassification, 'isEmergency' | 'emergencyKeywords' | 'emergencySeverity' | 'method' | 'classifiedAt'>> {
+  ): Promise<Omit<IntentClassification, 'isEmergency' | 'emergencyKeywords' | 'emergencySeverity' | 'method' | 'classifiedAt' | 'criticality' | 'confidenceThreshold' | 'shouldAbstain'>> {
     const userId = context?.userId || 'system';
 
     if (this.isCircuitOpen(this.llmCircuitBreaker)) {

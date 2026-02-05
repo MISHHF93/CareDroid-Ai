@@ -79,7 +79,7 @@ services:
       PINECONE_INDEX_NAME: ${PINECONE_INDEX_NAME:-caredroid-medical-knowledge}
       RAG_MODEL: ${RAG_MODEL:-text-embedding-ada-002}
       # ML Services
-      ANOMALY_DETECTION_URL: ${ANOMALY_DETECTION_URL:-http://anomaly-detection:5000}
+      ANOMALY_DETECTION_URL: ${ANOMALY_DETECTION_URL:-http://anomaly-detection:8000}
       ANOMALY_DETECTION_ENABLED: ${ANOMALY_DETECTION_ENABLED:-true}
       NLU_SERVICE_ENABLED: ${NLU_SERVICE_ENABLED:-true}
       # Monitoring
@@ -174,7 +174,7 @@ services:
     networks:
       - caredroid
     healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5000/health')"]
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -216,13 +216,14 @@ services:
       - xpack.monitoring.enabled=true
       - xpack.monitoring.collection.enabled=true
       - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - http.port=8000
     # Port removed - internal access only via docker network
     # ports:
     #   - "9200:9200"
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
     healthcheck:
-      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q '\"status\":' || exit 1"]
+      test: ["CMD-SHELL", "curl -s http://localhost:8000/_cluster/health | grep -q '\"status\":' || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -235,6 +236,7 @@ services:
     container_name: caredroid-logstash
     environment:
       - "LS_JAVA_OPTS=-Xmx256m -Xms256m"
+      - "http.port=8000"
     volumes:
       - ./config/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
       - logs:/logs:ro
@@ -247,7 +249,7 @@ services:
     networks:
       - caredroid
     healthcheck:
-      test: ["CMD", "curl", "-s", "http://localhost:9600/_node/stats"]
+      test: ["CMD", "curl", "-s", "http://localhost:8000/_node/stats"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -260,6 +262,7 @@ services:
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
       ELASTICSEARCH_USERNAME: elastic
       ELASTICSEARCH_PASSWORD: ""
+      SERVER_PORT: 8000
     # Port removed - internal access only via docker network
     # ports:
     #   - "5601:5601"
@@ -267,7 +270,7 @@ services:
       elasticsearch:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -s http://localhost:5601/api/status | grep -q 'state.\":\"green\"' || exit 1"]
+      test: ["CMD-SHELL", "curl -s http://localhost:8000/api/status | grep -q 'state.\":\"green\"' || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -288,11 +291,12 @@ services:
       - '--storage.tsdb.retention.time=30d'
       - '--web.console.libraries=/etc/prometheus/console_libraries'
       - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.listen-address=:8000'
     # Port removed - internal access only via docker network
     # ports:
     #   - "9090:9090"
     healthcheck:
-      test: ["CMD", "curl", "-s", "http://localhost:9090/-/healthy"]
+      test: ["CMD", "curl", "-s", "http://localhost:8000/-/healthy"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -312,6 +316,7 @@ services:
     command:
       - '--config.file=/etc/alertmanager/config.yml'
       - '--storage.path=/alertmanager'
+      - '--web.listen-address=:8000'
     # Port removed - internal access only via docker network
     # ports:
     #   - "9093:9093"
@@ -326,7 +331,7 @@ services:
       ALERTMANAGER_PAGERDUTY_KEY: ${ALERTMANAGER_PAGERDUTY_KEY:-}
       ALERTMANAGER_RESOLVE_TIMEOUT: ${ALERTMANAGER_RESOLVE_TIMEOUT:-5m}
     healthcheck:
-      test: ["CMD", "curl", "-s", "http://localhost:9093/-/healthy"]
+      test: ["CMD", "curl", "-s", "http://localhost:8000/-/healthy"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -342,6 +347,7 @@ services:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
       GF_INSTALL_PLUGINS: grafana-piechart-panel
       GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_HTTP_PORT: 8000
     volumes:
       - grafana_data:/var/lib/grafana
       - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
@@ -352,7 +358,7 @@ services:
       prometheus:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-s", "http://localhost:3000/api/health"]
+      test: ["CMD", "curl", "-s", "http://localhost:8000/api/health"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -376,6 +382,7 @@ services:
       MAIL_HOST: ${MAIL_HOST:-localhost}
       MAIL_PORT: ${MAIL_PORT:-1025}
       MAIL_FROM: sentry@example.com
+      SENTRY_WEB_PORT: 8000
     # Port removed - internal access only via docker network
     # ports:
     #   - "9000:9000"
@@ -387,7 +394,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-s", "http://localhost:9000/_health/"]
+      test: ["CMD", "curl", "-s", "http://localhost:8000/_health/"]
       interval: 30s
       timeout: 10s
       retries: 3

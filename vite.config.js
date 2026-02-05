@@ -4,13 +4,17 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   server: {
-    // Vite dev server disabled - using unified backend on port 8000
-    // If you need hot reload during development, run backend on 8001 temporarily
-    port: 8001,
+    // Vite dev server on 5173, proxies API calls to backend on port 8000
+    // In production, backend serves static frontend files on port 8000
+    port: 5173,
     host: '0.0.0.0',
-    strictPort: false,
+    strictPort: false, // Allow fallback to other ports if 5173 is busy
     proxy: {
       '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/health': {
         target: 'http://localhost:8000',
         changeOrigin: true,
       },

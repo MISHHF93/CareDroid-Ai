@@ -47,18 +47,62 @@ Design a practical path for CareDroid to own more of its neural stack while pres
 
 ## 3) Recommended Neural Architecture for “CareDroid-Owned” Path
 
-## Phase 1 (Immediate, low risk): Strengthen Owned NLU
-1. Keep current 3-phase routing.
-2. Treat transformer NLU as the primary non-LLM classifier.
-3. Expand intent taxonomy to support:
-   - emergency_risk,
-   - tool_selection,
-   - documentation,
-   - medication_safety,
-   - protocol_lookup,
-   - general_chat.
-4. Add calibrated confidence + abstain class:
-   - if confidence below threshold, defer to LLM + human-safe prompts.
+## Phase 1 (Immediate, low risk): Strengthen Owned NLU [✅ IMPLEMENTED]
+
+### Phase 1 Implementation Complete
+**Date Completed**: February 5, 2026  
+**Status**: All core features implemented and integrated into IntentClassifierService
+
+#### Phase 1 Achievements:
+1. ✅ **Expanded Intent Taxonomy** (7 primary + 4 legacy fallback intents):
+   - `EMERGENCY` - Life-threatening situations
+   - `EMERGENCY_RISK` - Potential emergency requiring triage
+   - `MEDICATION_SAFETY` - Drug interactions, contraindications, drug checking
+   - `TOOL_SELECTION` - Clinical tool invocation (SOFA, APACHE-II, etc.)
+   - `PROTOCOL_LOOKUP` - Clinical protocol and guideline queries
+   - `DOCUMENTATION` - Medical record and documentation queries
+   - `GENERAL_CHAT` - General conversation and educational queries
+   - Legacy fallbacks: `CLINICAL_TOOL`, `ADMINISTRATIVE`, `MEDICAL_REFERENCE`, `GENERAL_QUERY`
+
+2. ✅ **Criticality-Aware Confidence Thresholds** (IntentCriticality enum):
+   - **CRITICAL** (0.85+ threshold): EMERGENCY, EMERGENCY_RISK, MEDICATION_SAFETY
+   - **HIGH** (0.75+ threshold): TOOL_SELECTION, PROTOCOL_LOOKUP
+   - **MEDIUM** (0.70+ threshold): DOCUMENTATION, MEDICAL_REFERENCE
+   - **LOW** (0.60+ threshold): GENERAL_CHAT, other intents
+   - Role-aware adjustments: clinicians/admins may use 0.95× multiplier on thresholds
+
+3. ✅ **Abstain Mechanism** (low-confidence handling):
+   - Added `shouldAbstain` flag to IntentClassification
+   - Added `confidenceThreshold` field to track applied threshold
+   - Added `criticality` field (IntentCriticality enum)
+   - Updated `method` enum to include `'abstain'` state
+   - When confidence < threshold: set `shouldAbstain=true`, `method='abstain'`
+   - Defers to human-safe prompts or escalation workflow
+
+4. ✅ **Enhanced NLU Mapping**:
+   - Updated `mapNluIntent()` to handle expanded taxonomy
+   - Maps NLU model outputs to Phase 1 intents (e.g., "drug_interaction" → MEDICATION_SAFETY)
+   - Backward compatible with legacy intent names
+
+5. ✅ **Three-Phase Pipeline with Phase 1 Thresholds**:
+   - Phase 1 (Keyword): Compare confidence vs. intent-specific threshold
+   - Phase 2 (NLU): Compare NLU confidence vs. NLU intent's threshold
+   - Phase 3 (LLM): Compare LLM confidence vs. LLM intent's threshold
+   - Each phase respects user role and intent criticality
+
+#### Configuration & Usage:
+```typescript
+// Helper functions available in intent-classification.dto.ts:
+getIntentCriticality(intent: PrimaryIntent): IntentCriticality
+getConfidenceThreshold(criticality: IntentCriticality, userRole?: string): number
+```
+
+#### Metrics & Monitoring:
+- Existing NluMetrics service already tracks method, confidence, phase duration
+- Added logging of threshold comparisons for debugging/audit
+- Intent criticality now logged in classification decisions
+
+---
 
 ## Phase 2 (Near term): Add Task-Specific Neural Heads
 Add independent lightweight models instead of one giant model:
@@ -93,27 +137,41 @@ This achieves neural ownership safely without forcing immediate end-to-end LLM r
 
 ## 5) Implementation Backlog (Concrete)
 
-### P0 (must do first)
-- Define target intent ontology and risk labels.
-- Add model version identifiers to NLU responses and backend audit logs.
-- Add threshold policy by intent criticality (higher bar for emergency-related classes).
+### Phase 1 Backlog [✅ P0 COMPLETE, P1 IN PROGRESS]
 
-### P1
-- Build distillation dataset pipeline (teacher output + clinician correction + final label).
-- Add calibration evaluation (ECE/Brier + confusion matrix) to CI for NLU service.
-- Add drift dashboard: confidence shift, class frequency shift, escalation rate shift.
+#### P0 (must do first) [✅ DONE]
+- ✅ Define target intent ontology and risk labels (7 primary + 4 fallback intents)
+- ✅ Add model version identifiers to NLU responses and backend audit logs
+- ✅ Add threshold policy by intent criticality (higher bar for emergency-related classes)
+- ✅ Add abstain flag and criticality tracking to IntentClassification
+- ✅ Implement role-aware thresholds (user role support)
 
-### P2
-- Introduce specialized heads and A/B route them behind feature flags.
-- Add shadow mode for local generator (generate but do not serve).
-- Validate against clinical safety benchmark suite before exposure.
+#### P1 (Next Priority) [IN PROGRESS]
+- ⏳ Build distillation dataset pipeline (teacher output + clinician correction + final label)
+  - Requires: labeled dataset with GPT/Claude outputs and clinician validation
+  - Status: Ready for implementation once labeled data is available
+- ⏳ Add calibration evaluation (ECE/Brier + confusion matrix) to CI for NLU service
+  - Requires: evaluation scripts and CI integration
+  - Impact: Will measure confidence calibration quality
+- ⏳ Add drift dashboard: confidence shift, class frequency shift, escalation rate shift
+  - Requires: metrics aggregation and visualization backend
+  - Impact: Ops visibility into model behavior changes
 
-## 6) Decision Summary
+#### P2 (Next Phase - after P1)
+- Introduce specialized heads (emergency risk classifier, tool router, citation detector)
+- Add shadow mode for local generator
+- Validate against clinical safety benchmark suite
 
-CareDroid is **not starting from zero**: an internal transformer-based NLU service already exists and is wired into the chat control plane. The safest and fastest path to “its own neural network” is:
+## 6) Decision Summary [UPDATED: Phase 1 Complete]
 
-1. productionize and harden the existing NLU transformer,
-2. distill GPT/Claude knowledge into targeted classifier heads,
-3. only then consider partial generation ownership under strict safety gates.
+CareDroid is **not starting from zero**: an internal transformer-based NLU service already exists and is wired into the chat control plane. The safest and fastest path to "its own neural network" is:
 
-This path minimizes risk while increasing model ownership and reducing long-term external dependency.
+1. ✅ **[COMPLETE]** productionize and harden the existing NLU transformer with expanded intent taxonomy
+2. ✅ **[COMPLETE]** add criticality-aware confidence thresholds and abstain mechanism
+3. ⏳ **[NEXT]** distill GPT/Claude knowledge into targeted classifier heads
+4. 🎯 **[FUTURE]** only then consider partial generation ownership under strict safety gates
+
+### Phase 1 Status
+**Completed**: Expanded intent taxonomy, criticality levels, role-aware thresholds, abstain mechanism now integrated into IntentClassifierService. All Phase 1 P0 tasks complete. Ready to begin P1 work (distillation dataset, calibration metrics, drift dashboard).
+
+This phase-1-complete path minimizes risk while increasing model ownership and reducing long-term external dependency.

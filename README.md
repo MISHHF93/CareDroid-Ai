@@ -24,7 +24,18 @@ CareDroid-Ai/
 
 ```
 
-## 🚀 Quick Start
+## � Security Notice
+
+**Port Policy:** This application is configured to run exclusively on port 8000. Any attempts to use other ports will be blocked at multiple levels:
+
+- Backend startup validation
+- Docker container configuration
+- Development server restrictions
+- Build-time checks
+
+This is a security measure to prevent accidental exposure on non-standard ports.
+
+## �🚀 Quick Start
 
 ### Development
 

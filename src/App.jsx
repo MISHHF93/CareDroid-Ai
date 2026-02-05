@@ -5,19 +5,58 @@ import { NotificationProvider } from './contexts/NotificationContext';
 import { ConversationProvider } from './contexts/ConversationContext';
 import { WorkspaceProvider } from './contexts/WorkspaceContext';
 import { CostTrackingProvider } from './contexts/CostTrackingContext';
+import { ToolPreferencesProvider } from './contexts/ToolPreferencesContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import logger from './utils/logger';
 
 // ==================== PAGES ====================
+// Auth & Public
 import Auth from './pages/Auth';
+import AuthCallback from './pages/AuthCallback';
+import Onboarding from './pages/Onboarding';
+
+// Main App
 import Dashboard from './pages/Dashboard';
 
-// Legal pages
+// User Pages
+import Profile from './pages/Profile';
+import ProfileSettings from './pages/ProfileSettings';
+import Settings from './pages/Settings';
+import NotificationPreferences from './pages/NotificationPreferences';
+import TwoFactorSetup from './pages/TwoFactorSetup';
+import BiometricSetup from './pages/BiometricSetup';
+
+// Analytics & Monitoring
+import AnalyticsDashboard from './pages/AnalyticsDashboard';
+import CostAnalyticsDashboard from './pages/CostAnalyticsDashboard';
+import AuditLogs from './pages/AuditLogs';
+import ClinicalAlertsPage from './pages/ClinicalAlertsPage';
+
+// Tools
+import ToolsOverview from './pages/tools/ToolsOverview';
+import DrugChecker from './pages/tools/DrugChecker';
+import LabInterpreter from './pages/tools/LabInterpreter';
+// import Protocols from './pages/tools/Protocols';
+import Calculators from './pages/tools/Calculators';
+import DiagnosisAssistant from './pages/tools/DiagnosisAssistant';
+// import ProcedureGuide from './pages/tools/ProcedureGuide';
+import SharedToolSession from './pages/tools/SharedToolSession';
+
+// Team Management
+import { TeamManagement } from './pages/team/TeamManagement';
+
+// Legal & Compliance
 import { PrivacyPolicy } from './pages/legal/PrivacyPolicy';
 import { TermsOfService } from './pages/legal/TermsOfService';
+import { ConsentFlow } from './pages/legal/ConsentFlow';
+import { ConsentHistory } from './pages/legal/ConsentHistory';
+import HIPAANotice from './pages/HIPAANotice';
+import GDPRNotice from './pages/GDPRNotice';
+
+// Help & Support
+import HelpCenter from './pages/HelpCenter';
 
 // Shells
-import AppShell from './layout/AppShell';
 import { PublicShell } from './layout/PublicShell';
 
 // Loading component
@@ -94,27 +133,68 @@ function App() {
           <NotificationProvider>
             <ConversationProvider>
               <WorkspaceProvider>
-                <CostTrackingProvider>
-                  <Suspense fallback={<PageLoader />}>
-                    <Routes>
-                      {/* Public routes */}
+                <ToolPreferencesProvider>
+                  <CostTrackingProvider>
+                    <Suspense fallback={<PageLoader />}>
+                      <Routes>
+                      {/* ==================== PUBLIC ROUTES ==================== */}
                       <Route path="/" element={<PublicShell><WelcomePage /></PublicShell>} />
                       <Route path="/auth" element={<PublicShell><Auth /></PublicShell>} />
+                      <Route path="/auth/callback" element={<AuthCallback />} />
+                      <Route path="/onboarding" element={<Onboarding />} />
+                      
+                      {/* Legal & Compliance */}
                       <Route path="/privacy" element={<PublicShell><PrivacyPolicy /></PublicShell>} />
                       <Route path="/terms" element={<PublicShell><TermsOfService /></PublicShell>} />
+                      <Route path="/help" element={<PublicShell><HelpCenter /></PublicShell>} />
+                      <Route path="/hipaa" element={<PublicShell><HIPAANotice /></PublicShell>} />
+                      <Route path="/gdpr" element={<PublicShell><GDPRNotice /></PublicShell>} />
 
-                      {/* Protected routes */}
-                      <Route path="/dashboard" element={<AppShell><Dashboard /></AppShell>} />
+                      {/* ==================== PROTECTED ROUTES ==================== */}
+                      {/* Main Dashboard - includes AppShell internally */}
+                      <Route path="/dashboard" element={<Dashboard />} />
+                      
+                      {/* User & Settings */}
+                      <Route path="/profile" element={<Profile />} />
+                      <Route path="/profile/settings" element={<ProfileSettings />} />
+                      <Route path="/settings" element={<Settings />} />
+                      <Route path="/settings/notifications" element={<NotificationPreferences />} />
+                      <Route path="/settings/2fa" element={<TwoFactorSetup />} />
+                      <Route path="/settings/biometric" element={<BiometricSetup />} />
+                      
+                      {/* Analytics & Monitoring */}
+                      <Route path="/analytics" element={<AnalyticsDashboard />} />
+                      <Route path="/analytics/costs" element={<CostAnalyticsDashboard />} />
+                      <Route path="/audit-logs" element={<AuditLogs />} />
+                      <Route path="/alerts" element={<ClinicalAlertsPage />} />
+                      
+                      {/* Clinical Tools */}
+                      <Route path="/tools" element={<ToolsOverview />} />
+                      <Route path="/tools/drug-checker" element={<DrugChecker />} />
+                      <Route path="/tools/lab-interpreter" element={<LabInterpreter />} />
+                      {/* <Route path="/tools/protocols" element={<Protocols />} /> */}
+                      <Route path="/tools/calculators" element={<Calculators />} />
+                      <Route path="/tools/diagnosis" element={<DiagnosisAssistant />} />
+                      {/* <Route path="/tools/procedures" element={<ProcedureGuide />} /> */}
+                      <Route path="/tools/session/:sessionId" element={<SharedToolSession />} />
+                      
+                      {/* Team Management */}
+                      <Route path="/team" element={<TeamManagement />} />
+                      
+                      {/* Consent Management */}
+                      <Route path="/consent" element={<ConsentFlow />} />
+                      <Route path="/consent/history" element={<ConsentHistory />} />
 
-                      {/* Fallback */}
+                      {/* ==================== FALLBACK ==================== */}
                       <Route path="*" element={<Navigate to="/" replace />} />
                     </Routes>
                   </Suspense>
                 </CostTrackingProvider>
-              </WorkspaceProvider>
-            </ConversationProvider>
-          </NotificationProvider>
-        </UserProvider>
+              </ToolPreferencesProvider>
+            </WorkspaceProvider>
+          </ConversationProvider>
+        </NotificationProvider>
+      </UserProvider>
       </BrowserRouter>
     </ErrorBoundary>
   );

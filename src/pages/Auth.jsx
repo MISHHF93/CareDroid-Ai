@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Button from '../components/ui/button';
 import Card from '../components/ui/card';
 import Input from '../components/ui/input';
 import appConfig from '../config/appConfig';
 import { apiFetch } from '../services/apiClient';
 import { useNotificationActions } from '../hooks/useNotificationActions';
+import { useUser } from '../contexts/UserContext';
 import logger from '../utils/logger';
 
 const Auth = ({ onAuthSuccess }) => {
+  const navigate = useNavigate();
+  const { setUser } = useUser();
   const [mode, setMode] = useState('login');
   const [form, setForm] = useState({ email: '', password: '', name: '' });
   const [magicEmail, setMagicEmail] = useState('');
@@ -47,7 +50,21 @@ const Auth = ({ onAuthSuccess }) => {
       }
 
       if (data?.accessToken) {
+        // Store token
+        localStorage.setItem('authToken', data.accessToken);
+        localStorage.setItem('caredroid_access_token', data.accessToken);
+        
+        // Update user context if available
+        if (data.user) {
+          setUser(data.user);
+        }
+        
+        // Call callback if provided
         onAuthSuccess?.(data.accessToken);
+        
+        // Navigate to dashboard
+        navigate('/dashboard', { replace: true });
+        success('Signed in', 'Welcome to CareDroid!');
       } else {
         success('Registration complete', 'Please verify your email.');
       }
@@ -78,10 +95,23 @@ const Auth = ({ onAuthSuccess }) => {
       const data = await response.json();
 
       if (data?.accessToken) {
+        // Store token
+        localStorage.setItem('authToken', data.accessToken);
+        localStorage.setItem('caredroid_access_token', data.accessToken);
+        
+        // Update user context if available
+        if (data.user) {
+          setUser(data.user);
+        }
+        
+        // Call callback if provided
         onAuthSuccess?.(data.accessToken);
+        
+        // Navigate to dashboard
+        navigate('/dashboard', { replace: true });
         success('Signed in', 'Successfully authenticated.');
       }
-    } catch (error) {
+    } catch (err) {
       error('Invalid 2FA code', 'Please try again.');
     }
   };
@@ -310,6 +340,10 @@ const Auth = ({ onAuthSuccess }) => {
                 // Save to localStorage FIRST
                 localStorage.setItem('caredroid_user_profile', JSON.stringify(mockUser));
                 localStorage.setItem('caredroid_access_token', bypassToken);
+                localStorage.setItem('authToken', bypassToken);
+                
+                // Update user context
+                setUser(mockUser);
                 
                 logger.info('Saved auth data to localStorage');
                 logger.debug('Stored token present', { hasToken: Boolean(localStorage.getItem('caredroid_access_token')) });
@@ -322,6 +356,10 @@ const Auth = ({ onAuthSuccess }) => {
                 } else {
                   logger.error('onAuthSuccess is not defined');
                 }
+                
+                // Navigate to dashboard
+                navigate('/dashboard', { replace: true });
+                success('Signed in', 'Welcome to CareDroid!');
               } catch (error) {
                 logger.error('Error in direct sign-in', { error });
               }

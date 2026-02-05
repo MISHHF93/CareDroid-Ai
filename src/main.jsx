@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App.minimal'; // Using minimal version for testing
+import App from './App'; // Full app with routing and contexts
 import './index.css';
 import appConfig from './config/appConfig';
 import logger from './utils/logger';

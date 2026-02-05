@@ -103,7 +103,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  const port = process.env.PORT || 3000;
+  const port = process.env.PORT || 8000;
   await app.listen(port);
 
   console.log(`\n🚀 CareDroid Backend running on: http://localhost:${port}`);
@@ -111,11 +111,9 @@ async function bootstrap() {
   console.log(`📊 Prometheus metrics at: http://localhost:${port}/metrics`);
   console.log(`🔐 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔒 TLS 1.3: ENFORCED (only TLS 1.3+ allowed)`);
-  console.log(`\n📈 Monitoring Stack (when docker-compose running):`);
-  console.log(`   - Grafana dashboards: http://localhost:3001`);
-  console.log(`   - Prometheus: http://localhost:9090`);
-  console.log(`   - Kibana logs: http://localhost:5601`);
-  console.log(`   - Sentry errors: http://localhost:9000`)
+  console.log(`\n📈 Monitoring Stack (internal docker network only):`);
+  console.log(`   - All monitoring services accessible within docker-compose network`);
+  console.log(`   - External access: Main application only on http://localhost:${port}`);
 }
 
 bootstrap();

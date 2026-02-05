@@ -12,8 +12,9 @@ services:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-secure123}
       POSTGRES_INITDB_ARGS: "--encoding=UTF8"
-    ports:
-      - "5432:5432"
+    # Port removed - internal access only via docker network
+    # ports:
+    #   - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -31,8 +32,9 @@ services:
     image: redis:7-alpine
     container_name: caredroid-redis
     command: redis-server --requirepass ${REDIS_PASSWORD:-redis123}
-    ports:
-      - "6379:6379"
+    # Port removed - internal access only via docker network
+    # ports:
+    #   - "6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -61,7 +63,7 @@ services:
       ENCRYPTION_MASTER_KEY: ${ENCRYPTION_MASTER_KEY:- }
       OPENAI_API_KEY: ${OPENAI_API_KEY:- }
       PINECONE_API_KEY: ${PINECONE_API_KEY:- }
-      NLU_SERVICE_URL: http://nlu:8001
+      NLU_SERVICE_URL: http://nlu:8000
       # Email Configuration
       SMTP_HOST: ${SMTP_HOST:-smtp.sendgrid.net}
       SMTP_PORT: ${SMTP_PORT:-587}
@@ -87,7 +89,7 @@ services:
       SENTRY_DSN: ${SENTRY_DSN:- }
       DATADOG_API_KEY: ${DATADOG_API_KEY:- }
     ports:
-      - "8000:3000"
+      - "8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -100,7 +102,7 @@ services:
     networks:
       - caredroid
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -116,7 +118,7 @@ services:
     container_name: caredroid-nlu
     environment:
       NLU_HOST: 0.0.0.0
-      NLU_PORT: 8001
+      NLU_PORT: 8000
       NLU_USE_GPU: "false"
       NLU_WORKERS: 2
       NLU_MODEL_NAME: ${NLU_MODEL_NAME:-microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract-fulltext}
@@ -124,8 +126,10 @@ services:
       NLU_INFERENCE_BATCH_SIZE: 32
       NLU_LOG_LEVEL: info
       PYTHONUNBUFFERED: 1
-    ports:
-      - "8001:8001"
+    # Port removed - internal access only via docker network (nlu:8000)
+    # External port 8000 reserved for backend only
+    # ports:
+    #   - "8000:8000"
     volumes:
       - ./backend/ml-services/nlu:/app
       - nlu_models:/app/models
@@ -133,7 +137,7 @@ services:
     networks:
       - caredroid
     healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8001/health')"]
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -160,8 +164,9 @@ services:
       ANOMALY_THRESHOLD: 0.7
       CHECK_INTERVAL: 300
       PYTHONUNBUFFERED: 1
-    ports:
-      - "5000:5000"
+    # Port removed - internal access only via docker network
+    # ports:
+    #   - "5000:5000"
     depends_on:
       - prometheus
     volumes:
@@ -185,8 +190,9 @@ services:
     container_name: caredroid-frontend
     environment:
       VITE_API_URL: http://localhost:8000/api
-    ports:
-      - "5173:5173"
+    # Port removed - frontend served by backend on port 8000 in production
+    # ports:
+    #   - "5173:5173"
     depends_on:
       - backend
     volumes:
@@ -210,8 +216,9 @@ services:
       - xpack.monitoring.enabled=true
       - xpack.monitoring.collection.enabled=true
       - ES_JAVA_OPTS=-Xms512m -Xmx512m
-    ports:
-      - "9200:9200"
+    # Port removed - internal access only via docker network
+    # ports:
+    #   - "9200:9200"
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
     healthcheck:
@@ -231,8 +238,9 @@ services:
     volumes:
       - ./config/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
       - logs:/logs:ro
-    ports:
-      - "5000:5000"
+    # Port removed - internal access only via docker network
+    # ports:
+    #   - "5000:5000"
     depends_on:
       elasticsearch:
         condition: service_healthy
@@ -252,8 +260,9 @@ services:
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
       ELASTICSEARCH_USERNAME: elastic
       ELASTICSEARCH_PASSWORD: ""
-    ports:
-      - "5601:5601"
+    # Port removed - internal access only via docker network
+    # ports:
+    #   - "5601:5601"
     depends_on:
       elasticsearch:
         condition: service_healthy
@@ -279,8 +288,9 @@ services:
       - '--storage.tsdb.retention.time=30d'
       - '--web.console.libraries=/etc/prometheus/console_libraries'
       - '--web.console.templates=/etc/prometheus/consoles'
-    ports:
-      - "9090:9090"
+    # Port removed - internal access only via docker network
+    # ports:
+    #   - "9090:9090"
     healthcheck:
       test: ["CMD", "curl", "-s", "http://localhost:9090/-/healthy"]
       interval: 10s
@@ -302,8 +312,9 @@ services:
     command:
       - '--config.file=/etc/alertmanager/config.yml'
       - '--storage.path=/alertmanager'
-    ports:
-      - "9093:9093"
+    # Port removed - internal access only via docker network
+    # ports:
+    #   - "9093:9093"
     environment:
       ALERTMANAGER_SLACK_WEBHOOK: ${ALERTMANAGER_SLACK_WEBHOOK:-}
       ALERTMANAGER_EMAIL_FROM: ${ALERTMANAGER_EMAIL_FROM:-alerts@caredroid.local}
@@ -334,8 +345,9 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana
       - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
-    ports:
-      - "3001:3000"
+    # Port removed - internal access only via docker network
+    # ports:
+    #   - "3001:3000"
     depends_on:
       prometheus:
         condition: service_healthy
@@ -364,8 +376,9 @@ services:
       MAIL_HOST: ${MAIL_HOST:-localhost}
       MAIL_PORT: ${MAIL_PORT:-1025}
       MAIL_FROM: sentry@example.com
-    ports:
-      - "9000:9000"
+    # Port removed - internal access only via docker network
+    # ports:
+    #   - "9000:9000"
     volumes:
       - sentry_data:/var/lib/sentry/files
     depends_on:

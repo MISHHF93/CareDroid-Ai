@@ -1,13 +1,15 @@
 import { Module } from '@nestjs/common';
 import { ServeStaticModule } from '@nestjs/serve-static';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
+import { HttpModule } from '@nestjs/axios';
 
 // Controllers & Services
 import { AppController } from './app.controller';
+import { ProxyController } from './proxy.controller';
 
 // Configuration
 import { databaseConfig } from './config/database.config';
@@ -48,6 +50,15 @@ import { MetricsModule } from './modules/metrics/metrics.module';
 
 @Module({
   imports: [
+    // Serve static frontend files from root dist folder
+    ServeStaticModule.forRoot({
+      rootPath: '/workspaces/CareDroid-Ai/dist',
+      exclude: ['/api*', '/health', '/metrics', '/grafana*', '/kibana*', '/prometheus*', '/alertmanager*', '/elasticsearch*', '/sentry*', '/nlu*', '/anomaly*', '/logstash*'],
+      serveStaticOptions: {
+        cacheControl: false, // Disable caching during development
+      },
+    }),
+
     // Configuration
     ConfigModule.forRoot({
       isGlobal: true,
@@ -83,6 +94,9 @@ import { MetricsModule } from './modules/metrics/metrics.module';
 
     // Scheduled tasks
     ScheduleModule.forRoot(),
+
+    // HTTP client for proxying
+    HttpModule,
 
     // Monitoring & Observability
     LoggerModule,
@@ -120,7 +134,7 @@ import { MetricsModule } from './modules/metrics/metrics.module';
     // RAG Engine (Batch 6)
     RAGModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, ProxyController],
   providers: [],
 })
 export class AppModule {}

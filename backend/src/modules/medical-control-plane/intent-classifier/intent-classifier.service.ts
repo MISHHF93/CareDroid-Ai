@@ -57,6 +57,8 @@ export class IntentClassifierService {
   private readonly llmFailureThreshold = 3;
   private readonly llmResetMs = 30_000;
   private readonly nluEnabled: boolean;
+  private readonly defaultConfidenceThreshold: number;
+  private readonly intentThresholds: Record<string, number>;
 
   private readonly nluCircuitBreaker = {
     failureCount: 0,
@@ -78,6 +80,8 @@ export class IntentClassifierService {
     const baseUrl = nluConfig?.url || 'http://localhost:8000';
     this.nluServiceUrl = baseUrl.replace(/\/$/, '');
     this.nluEnabled = nluConfig?.enabled !== false;
+    this.defaultConfidenceThreshold = nluConfig?.confidenceThreshold ?? 0.7;
+    this.intentThresholds = nluConfig?.intentThresholds || {};
   }
 
   /**
@@ -138,7 +142,12 @@ export class IntentClassifierService {
         isEmergency,
         emergencyKeywords: this.mapEmergencyKeywords(emergencyPatterns),
         emergencySeverity,
+<<<<<<< HEAD
         method: 'keyword' as 'keyword' | 'nlu' | 'llm' | 'abstain',
+=======
+        method: 'keyword',
+        modelVersion: 'keyword-rules-v1',
+>>>>>>> bacc212 (docs: add system upgrades roadmap for neural and platform evolution)
         classifiedAt: new Date(),
       };
 
@@ -169,11 +178,15 @@ export class IntentClassifierService {
       this.nluMetrics.recordModelPhaseDuration(nluDurationSec, 'success');
       this.nluMetrics.recordConfidenceScore(nluResult.confidence, nluResult.primaryIntent, 'model');
 
+<<<<<<< HEAD
       // Phase 1: Calculate criticality and threshold for NLU result
       const nluCriticality = getIntentCriticality(nluResult.primaryIntent);
       const nluThreshold = getConfidenceThreshold(nluCriticality, userRole);
 
       if (nluResult.confidence >= nluThreshold) {
+=======
+      if (nluResult.confidence >= this.getThresholdForIntent(nluResult.primaryIntent)) {
+>>>>>>> bacc212 (docs: add system upgrades roadmap for neural and platform evolution)
         this.logger.log(
           `✅ Phase 2 (NLU): High confidence (${nluResult.confidence.toFixed(2)}) >= threshold (${nluThreshold.toFixed(2)}) - ${nluResult.primaryIntent}`,
         );
@@ -189,7 +202,12 @@ export class IntentClassifierService {
           isEmergency,
           emergencyKeywords: this.mapEmergencyKeywords(emergencyPatterns),
           emergencySeverity,
+<<<<<<< HEAD
           method: 'nlu' as 'keyword' | 'nlu' | 'llm' | 'abstain',
+=======
+          method: 'nlu',
+          modelVersion: nluResult.modelVersion || 'nlu-unknown',
+>>>>>>> bacc212 (docs: add system upgrades roadmap for neural and platform evolution)
           classifiedAt: new Date(),
         };
 
@@ -249,7 +267,12 @@ export class IntentClassifierService {
         isEmergency,
         emergencyKeywords: this.mapEmergencyKeywords(emergencyPatterns),
         emergencySeverity,
+<<<<<<< HEAD
         method: (shouldAbstain ? 'abstain' : 'llm') as 'keyword' | 'nlu' | 'llm' | 'abstain',
+=======
+        method: 'llm',
+        modelVersion: llmResult.modelVersion || 'llm-unknown',
+>>>>>>> bacc212 (docs: add system upgrades roadmap for neural and platform evolution)
         classifiedAt: new Date(),
       };
 
@@ -282,7 +305,12 @@ export class IntentClassifierService {
         isEmergency,
         emergencyKeywords: this.mapEmergencyKeywords(emergencyPatterns),
         emergencySeverity,
+<<<<<<< HEAD
         method: 'keyword' as const,
+=======
+        method: 'keyword',
+        modelVersion: 'keyword-rules-v1',
+>>>>>>> bacc212 (docs: add system upgrades roadmap for neural and platform evolution)
         classifiedAt: new Date(),
       };
 
@@ -444,7 +472,11 @@ export class IntentClassifierService {
   private async nluMatcher(
     message: string,
     context?: IntentClassificationContext,
+<<<<<<< HEAD
   ): Promise<Omit<IntentClassification, 'isEmergency' | 'emergencyKeywords' | 'emergencySeverity' | 'method' | 'classifiedAt' | 'criticality' | 'confidenceThreshold' | 'shouldAbstain'> | null> {
+=======
+  ): Promise<(Omit<IntentClassification, 'isEmergency' | 'emergencyKeywords' | 'emergencySeverity' | 'method' | 'classifiedAt'> & { modelVersion?: string }) | null> {
+>>>>>>> bacc212 (docs: add system upgrades roadmap for neural and platform evolution)
     if (!this.nluEnabled) {
       this.logger.warn('NLU service disabled by configuration. Skipping NLU phase.');
       return null;
@@ -494,6 +526,7 @@ export class IntentClassifierService {
         confidence: result.confidence ?? 0.0,
         extractedParameters: result.parameters || {},
         matchedPatterns: ['nlu-model'],
+        modelVersion: result.model_version || result.modelVersion || 'nlu-unknown',
       };
     } catch (error) {
       this.logger.warn(`NLU service unavailable: ${error instanceof Error ? error.message : String(error)}`);
@@ -641,11 +674,17 @@ Respond in JSON format:
         confidence: response.confidence || 0.8,
         extractedParameters: response.extractedParameters || {},
         matchedPatterns: ['llm-classified'],
+        modelVersion: 'openai-structured-json',
       };
     } catch (error) {
       this.recordFailure(this.llmCircuitBreaker, this.llmFailureThreshold, this.llmResetMs);
       throw new Error(`LLM classification failed: ${error instanceof Error ? error.message : String(error)}`);
     }
+  }
+
+
+  private getThresholdForIntent(intent: PrimaryIntent): number {
+    return this.intentThresholds[intent] ?? this.defaultConfidenceThreshold;
   }
 
   private isCircuitOpen(breaker: { failureCount: number; openUntil: number }): boolean {

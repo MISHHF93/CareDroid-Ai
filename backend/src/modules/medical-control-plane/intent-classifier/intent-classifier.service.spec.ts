@@ -3,7 +3,7 @@
  * 
  * Tests the 3-phase intent classification pipeline:
  * - Phase 1: Keyword matching
- * - Phase 2: NLU model (mocked, not yet implemented)
+ * - Phase 2: NLU model (mocked service responses)
  * - Phase 3: LLM fallback
  * 
  * Critical requirement: 100% recall for emergency detection
@@ -26,7 +26,17 @@ describe('IntentClassifierService', () => {
   };
 
   const mockConfigService = {
-    get: jest.fn().mockReturnValue('http://localhost:8000'),
+    get: jest.fn().mockImplementation((key: string) => {
+      if (key === 'nlu') {
+        return {
+          enabled: true,
+          url: 'http://localhost:8000',
+          confidenceThreshold: 0.7,
+          intentThresholds: { emergency: 0.95, clinical_tool: 0.8 },
+        };
+      }
+      return undefined;
+    }),
   };
 
   const mockNluMetricsService = {
@@ -38,6 +48,7 @@ describe('IntentClassifierService', () => {
     recordLlmPhaseDuration: jest.fn(),
     recordModelPhaseDuration: jest.fn(),
     recordIntentClassification: jest.fn(),
+    setCircuitBreakerState: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -84,6 +95,7 @@ describe('IntentClassifierService', () => {
       expect(result.primaryIntent).toBe(PrimaryIntent.EMERGENCY);
       expect(result.emergencySeverity).toBe(EmergencySeverity.CRITICAL);
       expect(result.confidence).toBe(1.0);
+      expect(result.modelVersion).toBe('keyword-rules-v1');
       expect(result.emergencyKeywords.length).toBeGreaterThan(0);
     });
 
@@ -304,6 +316,49 @@ describe('IntentClassifierService', () => {
   // NLU INTEGRATION TESTS (PHASE 2)
   // ========================================
   describe('NLU Integration (Phase 2)', () => {
+
+    it('should respect per-intent threshold when evaluating NLU confidence', async () => {
+      (global as unknown as { fetch?: jest.Mock }).fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          intent: 'clinical_tool',
+          confidence: 0.75,
+          toolId: 'sofa-calculator',
+          model_version: 'pubmedbert-v1',
+        }),
+      });
+
+      mockAIService.generateStructuredJSON.mockResolvedValue({
+        primaryIntent: 'general_query',
+        confidence: 0.84,
+        extractedParameters: {},
+        reasoning: 'NLU did not meet threshold for clinical_tool intent',
+      });
+
+      const result = await service.classify('Need help selecting a clinical calculator');
+
+      expect(result.method).toBe('llm');
+      expect(mockAIService.generateStructuredJSON).toHaveBeenCalled();
+    });
+
+    it('should include NLU model version when NLU result is accepted', async () => {
+      (global as unknown as { fetch?: jest.Mock }).fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          intent: 'clinical_tool',
+          confidence: 0.92,
+          toolId: 'sofa-calculator',
+          parameters: {},
+          model_version: 'pubmedbert-v2',
+        }),
+      });
+
+      const result = await service.classify('Help me with this case');
+
+      expect(result.method).toBe('nlu');
+      expect(result.modelVersion).toBe('pubmedbert-v2');
+    });
+
     it('should use NLU result when confidence is high', async () => {
       (global as unknown as { fetch?: jest.Mock }).fetch = jest.fn().mockResolvedValue({
         ok: true,

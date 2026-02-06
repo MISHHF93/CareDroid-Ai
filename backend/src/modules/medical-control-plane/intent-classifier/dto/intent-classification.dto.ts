@@ -71,6 +71,9 @@ export interface IntentClassification {
   // Classification method used
   method: 'keyword' | 'nlu' | 'llm' | 'abstain';
   
+  // Model version identifier for traceability (NLU/LLM)
+  modelVersion?: string;
+  
   // Phase 1: Intent criticality level (for risk-aware thresholds)
   criticality: IntentCriticality;
   

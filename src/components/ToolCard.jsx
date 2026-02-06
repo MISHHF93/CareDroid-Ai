@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import Card from './ui/card';
+import { Card } from './ui/molecules/Card';
 
 const Title = ({ level = 3, style, children }) => {
   const Tag = `h${level}`;

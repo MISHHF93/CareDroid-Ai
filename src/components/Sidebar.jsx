@@ -21,7 +21,9 @@ const Sidebar = ({
   onSignOut,
   healthStatus = 'online',
   currentTool = null,
-  onToolSelect
+  onToolSelect,
+  isCollapsed = false,
+  onToggleCollapse = () => {}
 }) => {
   const navigate = useNavigate();
   const { user } = useUser();
@@ -41,7 +43,6 @@ const Sidebar = ({
     setActiveWorkspaceId,
     addWorkspace
   } = useWorkspace();
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [showToolsSection, setShowToolsSection] = useState(true);
   const [showWorkspaceModal, setShowWorkspaceModal] = useState(false);
   
@@ -211,19 +212,19 @@ const Sidebar = ({
       <div className="sidebar-header">
         <div className="sidebar-logo">
           <div className="logo-icon">🏥</div>
-          {!isCollapsed && (
-            <div className="logo-text">
-              <h1>CareDroid</h1>
-              <span className="logo-subtitle">Clinical AI</span>
-            </div>
-          )}
+          <div className="logo-text">
+            <h1>CareDroid</h1>
+            <span className="logo-subtitle">Clinical AI</span>
+          </div>
         </div>
         <button 
-          className="sidebar-toggle"
-          onClick={() => setIsCollapsed(!isCollapsed)}
+          className={`sidebar-toggle ${isCollapsed ? 'collapsed' : ''}`}
+          onClick={onToggleCollapse}
           aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          {isCollapsed ? '→' : '←'}
+          <span className="sidebar-toggle-icon" aria-hidden="true">
+            {isCollapsed ? '»' : '«'}
+          </span>
         </button>
       </div>
 
@@ -248,7 +249,10 @@ const Sidebar = ({
         {/* New Conversation Button */}
         <button 
           className="btn-new-conversation"
-          onClick={onNewConversation}
+          onClick={() => {
+            navigate('/chat');
+            onNewConversation();
+          }}
         >
           <span className="btn-icon">✨</span>
           {!isCollapsed && <span>New Conversation</span>}
@@ -284,35 +288,24 @@ const Sidebar = ({
         {!isCollapsed && (
           <div className="sidebar-section">
             <div 
-              className="section-header"
+              className="section-header tools-section-toggle"
               onClick={() => setShowToolsSection(!showToolsSection)}
-              style={{ cursor: 'pointer', userSelect: 'none' }}
             >
               <span className="section-icon">🔧</span>
               <span className="section-title">Clinical Tools</span>
-              <span style={{ 
-                marginLeft: 'auto', 
-                transform: showToolsSection ? 'rotate(0deg)' : 'rotate(-90deg)',
-                transition: 'transform 0.2s',
-                fontSize: '10px'
-              }}>
+              <span
+                className={`section-toggle-icon ${showToolsSection ? 'open' : ''}`}
+                aria-hidden="true"
+              >
                 ▼
               </span>
             </div>
 
-            <div style={{ padding: '8px 4px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div className="tools-controls">
               <select
                 value={activeWorkspaceId}
                 onChange={(e) => setActiveWorkspaceId(e.target.value)}
-                style={{
-                  width: '100%',
-                  background: 'var(--panel-background)',
-                  border: '1px solid var(--panel-border)',
-                  color: 'var(--text-color)',
-                  borderRadius: '8px',
-                  padding: '6px 8px',
-                  fontSize: '12px'
-                }}
+                className="tools-workspace-select"
               >
                 {workspaces.map((workspace) => (
                   <option key={workspace.id} value={workspace.id}>
@@ -322,24 +315,7 @@ const Sidebar = ({
               </select>
               <button
                 onClick={() => setShowWorkspaceModal(true)}
-                style={{
-                  width: '100%',
-                  background: 'linear-gradient(135deg, #00ff88, #00ffff)',
-                  border: 'none',
-                  color: 'var(--navy-ink)',
-                  borderRadius: '8px',
-                  padding: '6px 8px',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'transform 0.2s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
-                onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                className="tools-workspace-button"
               >
                 <span>+</span>
                 <span>New Workspace</span>

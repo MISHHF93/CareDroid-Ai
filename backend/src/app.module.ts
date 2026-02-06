@@ -41,8 +41,10 @@ import { MedicalControlPlaneModule } from './modules/medical-control-plane/medic
 import { EncryptionModule } from './modules/encryption/encryption.module';
 import { RAGModule } from './modules/rag/rag.module';
 import { NotificationModule } from './modules/notifications/notification.module';
+import { PatientModule } from './modules/patients/patient.module';
 import { EmailModule } from './modules/email/email.module';
 import { CacheModule } from './modules/cache/cache.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 
 // Monitoring & Observability
 import { LoggerModule } from './modules/common/logger.module';
@@ -124,6 +126,9 @@ import { MetricsModule } from './modules/metrics/metrics.module';
     ChatModule,
     AnalyticsModule,
     NotificationModule,
+    DashboardModule,
+    PatientModule,
+    DashboardModule,
     
     // Medical Control Plane (Intent Classification, Tool Orchestration)
     MedicalControlPlaneModule,

@@ -37,25 +37,3 @@ const ProcedureGuide = () => {
 };
 
 export default ProcedureGuide;
-
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-            <div style={{ display: 'inline-block', width: '40px', height: '40px', border: '4px solid rgba(0,255,136,0.2)', borderTopColor: '#00ff88', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-            <p style={{ marginTop: '16px' }}>Loading procedure guide...</p>
-          </div>
-        ) : results ? (
-          <div style={{ background: 'var(--panel-bg)', borderRadius: '16px', padding: '24px', border: '1px solid var(--border-color)', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
-            {results}
-          </div>
-        ) : (
-          <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-secondary)' }}>
-            <div style={{ fontSize: '64px', marginBottom: '16px', opacity: 0.3 }}>⚕️</div>
-            <p>Search for a procedure or click a common procedure above</p>
-          </div>
-        )}
-      </div>
-    </ToolPageLayout>
-  );
-};
-
-export default ProcedureGuide;

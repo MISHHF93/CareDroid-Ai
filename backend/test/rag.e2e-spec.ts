@@ -3,6 +3,8 @@ import { ConfigModule } from '@nestjs/config';
 import { RAGService } from '../src/modules/rag/rag.service';
 import { OpenAIEmbeddingsService } from '../src/modules/rag/embeddings/openai-embeddings.service';
 import { PineconeService } from '../src/modules/rag/vector-db/pinecone.service';
+import { CohereRankerService } from '../src/modules/rag/reranking/cohere-ranker.service';
+import { ToolMetricsService } from '../src/modules/metrics/tool-metrics.service';
 import { DocumentChunker } from '../src/modules/rag/utils/document-chunker';
 import { MedicalSource, IngestDocumentDto } from '../src/modules/rag/dto/medical-source.dto';
 import { RAGRetrievalOptions } from '../src/modules/rag/dto/rag-context.dto';
@@ -21,7 +23,11 @@ import { RAGRetrievalOptions } from '../src/modules/rag/dto/rag-context.dto';
  * Set OPENAI_API_KEY and PINECONE_API_KEY in .env.test
  */
 
-describe('RAG System (e2e)', () => {
+const hasRagKeys = !!process.env.OPENAI_API_KEY && !!process.env.PINECONE_API_KEY;
+
+const ragDescribe = hasRagKeys ? describe : describe.skip;
+
+ragDescribe('RAG System (e2e)', () => {
   let module: TestingModule;
   let ragService: RAGService;
   let embeddingsService: OpenAIEmbeddingsService;
@@ -87,6 +93,15 @@ Stimulates alpha-1, beta-1, and beta-2 receptors:
         RAGService,
         OpenAIEmbeddingsService,
         PineconeService,
+        CohereRankerService,
+        {
+          provide: ToolMetricsService,
+          useValue: {
+            recordRagRetrieval: jest.fn(),
+            recordRagEmptyResults: jest.fn(),
+            recordRagRelevanceScore: jest.fn(),
+          },
+        },
       ],
     }).compile();
 

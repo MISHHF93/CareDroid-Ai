@@ -1,0 +1,253 @@
+/* ===== ENHANCED CARD COMPONENT ===== */
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-primary);
+  border-radius: var(--radius-xl);
+  transition: all var(--transition-normal);
+  overflow: hidden;
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--clinical-primary);
+  outline-offset: 2px;
+}
+
+/* ===== CARD VARIANTS ===== */
+
+.card-default {
+  background: var(--surface-primary);
+  border: var(--border-width-1) solid var(--border-color-subtle);
+}
+
+.card-elevated {
+  background: var(--surface-primary);
+  border: var(--border-width-1) solid var(--border-color-subtle);
+  box-shadow: var(--shadow-lg);
+}
+
+.card-outlined {
+  background: transparent;
+  border: var(--border-width-2) solid var(--border-color-default);
+}
+
+.card-filled {
+  background: var(--surface-secondary);
+  border: var(--border-width-1) solid var(--border-color-subtle);
+}
+
+.card-glass {
+  background: var(--surface-glass);
+  backdrop-filter: blur(12px);
+  border: var(--border-width-1) solid rgba(255, 255, 255, 0.2);
+}
+
+/* ===== CARD SIZES ===== */
+
+.card-sm {
+  min-height: var(--space-16);
+}
+
+.card-md {
+  min-height: var(--space-20);
+}
+
+.card-lg {
+  min-height: var(--space-24);
+}
+
+.card-xl {
+  min-height: var(--space-32);
+}
+
+/* ===== CARD PADDING ===== */
+
+.card-padding-none {
+  padding: 0;
+}
+
+.card-padding-sm {
+  padding: var(--space-3);
+}
+
+.card-padding-md {
+  padding: var(--space-4);
+}
+
+.card-padding-lg {
+  padding: var(--space-6);
+}
+
+.card-padding-xl {
+  padding: var(--space-8);
+}
+
+/* ===== CARD SHADOWS ===== */
+
+.card-shadow-none {
+  box-shadow: var(--shadow-none);
+}
+
+.card-shadow-sm {
+  box-shadow: var(--shadow-sm);
+}
+
+.card-shadow-md {
+  box-shadow: var(--shadow-md);
+}
+
+.card-shadow-lg {
+  box-shadow: var(--shadow-lg);
+}
+
+.card-shadow-xl {
+  box-shadow: var(--shadow-xl);
+}
+
+/* ===== CARD STATES ===== */
+
+.card-no-border {
+  border: none;
+}
+
+.card-no-rounded {
+  border-radius: var(--radius-none);
+}
+
+.card-interactive {
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.card-interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.card-clickable {
+  cursor: pointer;
+}
+
+.card-clickable:hover {
+  transform: translateY(-1px);
+}
+
+.card-clickable:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-md);
+}
+
+.card-loading {
+  pointer-events: none;
+}
+
+.card-loading .card-content {
+  opacity: 0.6;
+  filter: blur(1px);
+}
+
+/* ===== CARD CONTENT ===== */
+
+.card-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* ===== LOADING OVERLAY ===== */
+
+.card-loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(4px);
+  z-index: var(--z-index-10);
+}
+
+.card-loading-spinner {
+  width: var(--space-6);
+  height: var(--space-6);
+  border: 2px solid var(--clinical-primary-light);
+  border-top-color: var(--clinical-primary);
+  border-radius: var(--radius-full);
+  animation: spin 1s linear infinite;
+}
+
+/* ===== RESPONSIVE ADJUSTMENTS ===== */
+
+@media (max-width: 768px) {
+  .card {
+    border-radius: var(--radius-lg);
+  }
+
+  .card-padding-md {
+    padding: var(--space-3);
+  }
+
+  .card-padding-lg {
+    padding: var(--space-4);
+  }
+
+  .card-padding-xl {
+    padding: var(--space-6);
+  }
+}
+
+/* ===== DARK MODE ADJUSTMENTS ===== */
+
+@media (prefers-color-scheme: dark) {
+  .card-default,
+  .card-elevated,
+  .card-filled {
+    background: var(--surface-glass-dark);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .card-outlined {
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .card-glass {
+    background: var(--surface-glass-dark);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .card-loading-overlay {
+    background: rgba(15, 23, 42, 0.8);
+  }
+}
+
+/* ===== ACCESSIBILITY ===== */
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .card-interactive,
+  .card-clickable {
+    transition: none;
+  }
+
+  .card-interactive:hover,
+  .card-clickable:hover,
+  .card-clickable:active {
+    transform: none;
+  }
+
+  .card-loading-spinner {
+    animation: none;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

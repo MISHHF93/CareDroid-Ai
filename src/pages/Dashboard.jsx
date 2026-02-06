@@ -1,477 +1,539 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
-import { useConversation } from '../contexts/ConversationContext';
+import { useNotifications } from '../contexts/NotificationContext';
 import { useToolPreferences } from '../contexts/ToolPreferencesContext';
-import { useNotificationActions } from '../hooks/useNotificationActions';
+import { useDashboard } from '../hooks/useDashboard';
 import AppShell from '../layout/AppShell';
 import toolRegistry from '../data/toolRegistry';
-import ToolVisualization from '../components/ToolVisualization';
-import analyticsService from '../services/analyticsService';
-import { getToolRecommendationsNLU, recordRecommendationFeedback } from '../utils/toolRecommendations';
+import { DashboardHeader } from '../components/dashboard/DashboardHeader';
+import { StatCard } from '../components/dashboard/StatCard';
+import { ToolCard } from '../components/dashboard/ToolCard';
+import { ActivityFeed } from '../components/dashboard/ActivityFeed';
+import { AlertsPanel } from '../components/dashboard/AlertsPanel';
+import { PatientCard } from '../components/clinical/PatientCard';
 
 /**
- * Dashboard Page - Main Clinical AI Interface
- * Central hub for chat, clinical tools, and conversation management
+ * Dashboard Page - Clinical Command Center
+ * Central hub for clinical overview, quick tool access, and patient monitoring
  */
 function Dashboard() {
-  const { signOut } = useUser();
+  const { user, signOut } = useUser();
   const navigate = useNavigate();
-  const { error } = useNotificationActions();
-  const { recordToolAccess } = useToolPreferences();
   const {
-    conversations,
-    activeConversationId,
-    messages,
-    selectedTool,
-    isLoading,
-    addConversation,
-    selectConversation,
-    addMessage,
-    selectTool,
-    setIsLoading
-  } = useConversation();
-  const [input, setInput] = useState('');
-  const [recommendedTools, setRecommendedTools] = useState([]);
+    notifications,
+    markAsRead,
+    markAllAsRead,
+    clearAll,
+  } = useNotifications();
+  const { favorites, recentTools, recordToolAccess } = useToolPreferences();
+  
+  // Dashboard data and methods from custom hook
+  const {
+    stats,
+    activities,
+    alerts,
+    criticalPatients,
+    loading,
+    refreshing,
+    error,
+    acknowledgeAlert,
+    trackToolAccess,
+    refresh,
+    setPatientFilters
+  } = useDashboard();
 
-  const clinicalTools = toolRegistry;
-
-  const handleSendMessage = async () => {
-    if (!input.trim()) return;
-
-    // Add user message
-    addMessage(input, 'user');
-    setInput('');
-    setIsLoading(true);
-
-    try {
-      // Simulate API call - with your real backend, use: await apiFetch('/api/chat/message', ...)
-      setTimeout(() => {
-        const selectedToolName = clinicalTools.find((tool) => tool.id === selectedTool)?.name;
-        const aiResponse = `I'm analyzing your request about "${input}". In a real implementation, this would call the medical AI API to provide evidence-based clinical guidance.${selectedToolName ? ` Using ${selectedToolName}...` : ''}`;
-        addMessage(aiResponse, 'assistant');
-        setIsLoading(false);
-      }, 800);
-    } catch (err) {
-      error('Message failed', 'Failed to send message.');
-      setIsLoading(false);
-    }
-  };
-
-  const handleNewConversation = () => {
-    addConversation();
-  };
-
-  const handleSelectConversation = (conversationId) => {
-    selectConversation(conversationId);
-  };
-
-  const handleSelectTool = (toolId) => {
-    recordToolAccess(toolId);
-    selectTool(toolId);
-  };
-
-  const recommendationSource = useMemo(() => {
-    if (input.trim()) {
-      return input.trim();
-    }
-
-    const lastUserMessage = [...messages].reverse().find((msg) => msg.role === 'user');
-    return lastUserMessage?.content || '';
-  }, [input, messages]);
-
-  // Get NLU-based recommendations (async)
-  useEffect(() => {
-    let cancelled = false;
-
-    const fetchRecommendations = async () => {
-      if (!recommendationSource) {
-        setRecommendedTools([]);
-        return;
-      }
-
-      try {
-        const context = {
-          userId: activeConversationId,
-          userPreferences: recordToolAccess ? { favoritedTools: [] } : undefined,
-          recentTools: [] // Could track recently used tools
-        };
-
-        const tools = await getToolRecommendationsNLU(recommendationSource, context, 3);
-        
-        if (!cancelled) {
-          setRecommendedTools(tools);
-        }
-      } catch (error) {
-        console.error('Failed to get recommendations:', error);
-        if (!cancelled) {
-          setRecommendedTools([]);
-        }
-      }
-    };
-
-    fetchRecommendations();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [recommendationSource, activeConversationId]);
+  const [patientSearch, setPatientSearch] = useState('');
+  const [patientStatusFilter, setPatientStatusFilter] = useState('critical');
+  const [expandedPatients, setExpandedPatients] = useState(new Set());
 
   useEffect(() => {
-    if (recommendedTools.length > 0) {
-      analyticsService.trackEvent({
-        eventName: 'tool_recommendations_shown',
-        parameters: {
-          count: recommendedTools.length,
-          source: recommendationSource.slice(0, 120),
-        },
+    const handle = setTimeout(() => {
+      setPatientFilters({
+        status: patientStatusFilter,
+        search: patientSearch.trim(),
+        limit: 20,
       });
-    }
-  }, [recommendedTools, recommendationSource]);
+    }, 250);
 
-  const handleSignOut = () => {
-    signOut();
-    navigate('/', { replace: true });
-  };
+    return () => clearTimeout(handle);
+  }, [patientSearch, patientStatusFilter, setPatientFilters]);
+
+  const statusOptions = useMemo(
+    () => [
+      { id: 'all', label: 'All' },
+      { id: 'critical', label: 'Critical' },
+      { id: 'urgent', label: 'Urgent' },
+      { id: 'stable', label: 'Stable' },
+    ],
+    []
+  );
+
+  const sectionTitle = useMemo(() => {
+    const current = statusOptions.find((option) => option.id === patientStatusFilter);
+    if (!current || current.id === 'all') return 'Patients';
+    return `${current.label} Patients`;
+  }, [patientStatusFilter, statusOptions]);
+
+  const allExpanded = useMemo(() => {
+    if (!criticalPatients.length) return false;
+    return criticalPatients.every((patient) => expandedPatients.has(patient.id));
+  }, [criticalPatients, expandedPatients]);
+
+
+  const handleToolClick = useCallback((tool) => {
+    recordToolAccess(tool.id);
+    trackToolAccess(tool.id);
+    navigate(tool.path);
+  }, [navigate, recordToolAccess, trackToolAccess]);
+
+  const handleAcknowledgeAlert = useCallback((alertId) => {
+    acknowledgeAlert(alertId);
+  }, [acknowledgeAlert]);
+
+  const handleActivityClick = useCallback((activity) => {
+    console.log('Activity clicked:', activity);
+    // TODO: Navigate to relevant page
+  }, []);
+
+  const handleAlertClick = useCallback((alert) => {
+    console.log('Alert clicked:', alert);
+    // TODO: Navigate to patient details
+  }, []);
+
+  const handleViewPatientDetails = useCallback((patientId) => {
+    console.log('View patient:', patientId);
+    // TODO: Navigate to patient details page
+  }, []);
+
+  const handleUpdateVitals = useCallback((patientId) => {
+    console.log('Update vitals:', patientId);
+    // TODO: Open vitals update modal
+  }, []);
+
+  const handleAddNote = useCallback((patientId) => {
+    console.log('Add note:', patientId);
+    // TODO: Open note entry modal
+  }, []);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <AppShell
+        isAuthed={true}
+        conversations={[]}
+        activeConversation={null}
+        onSelectConversation={() => {}}
+        onNewConversation={() => {}}
+        onSignOut={signOut}
+        healthStatus="online"
+      >
+        <div style={{
+          padding: 'var(--space-6)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '400px'
+        }}>
+          <div style={{
+            textAlign: 'center',
+            color: 'var(--text-secondary)'
+          }}>
+            <div style={{
+              fontSize: '48px',
+              marginBottom: 'var(--space-3)',
+              animation: 'pulse 2s ease-in-out infinite'
+            }}>
+              ⏳
+            </div>
+            <div style={{ fontSize: 'var(--font-size-lg)' }}>
+              Loading dashboard...
+            </div>
+          </div>
+        </div>
+      </AppShell>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <AppShell
+        isAuthed={true}
+        conversations={[]}
+        activeConversation={null}
+        onSelectConversation={() => {}}
+        onNewConversation={() => {}}
+        onSignOut={signOut}
+        healthStatus="online"
+      >
+        <div style={{
+          padding: 'var(--space-6)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '400px'
+        }}>
+          <div style={{
+            textAlign: 'center',
+            maxWidth: '500px'
+          }}>
+            <div style={{
+              fontSize: '64px',
+              marginBottom: 'var(--space-3)'
+            }}>
+              ⚠️
+            </div>
+            <h2 style={{
+              margin: 0,
+              marginBottom: 'var(--space-2)',
+              color: 'var(--text-primary)',
+              fontSize: 'var(--font-size-xl)'
+            }}>
+              Failed to Load Dashboard
+            </h2>
+            <p style={{
+              margin: 0,
+              marginBottom: 'var(--space-4)',
+              color: 'var(--text-secondary)',
+              fontSize: 'var(--font-size-base)'
+            }}>
+              {error}
+            </p>
+            <button
+              onClick={refresh}
+              style={{
+                padding: '10px 20px',
+                fontSize: 'var(--font-size-base)',
+                fontWeight: 'var(--font-weight-medium)',
+                color: '#fff',
+                background: 'var(--clinical-primary)',
+                border: 'none',
+                borderRadius: 'var(--border-radius)',
+                cursor: 'pointer'
+              }}
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </AppShell>
+    );
+  }
+
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
     <AppShell
       isAuthed={true}
-      conversations={conversations}
-      activeConversation={activeConversationId}
-      onSelectConversation={handleSelectConversation}
-      onNewConversation={handleNewConversation}
-      onSignOut={handleSignOut}
+      conversations={[]}
+      activeConversation={null}
+      onSelectConversation={() => {}}
+      onNewConversation={() => {}}
+      onSignOut={signOut}
       healthStatus="online"
-      currentTool={selectedTool}
-      onToolSelect={handleSelectTool}
     >
       <div style={{
-        flex: 1,
+        padding: 'var(--space-6)',
+        maxWidth: '1400px',
+        margin: '0 auto',
         display: 'flex',
-        minWidth: 0,
-        height: '100%'
+        flexDirection: 'column',
+        gap: 'var(--space-6)',
+        animation: 'fadeIn 0.4s var(--ease-smooth)'
       }}>
-        {/* Main Chat Area */}
-        <div style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          minWidth: 0
-        }}>
-          {/* Messages */}
-          <div style={{
-            flex: 1,
-            overflowY: 'auto',
-            padding: '24px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '16px'
-          }}>
-            {messages.length === 0 ? (
-              <div style={{
-                flex: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexDirection: 'column',
-                gap: '24px',
-                color: 'var(--muted-text)'
-              }}>
-                <div style={{ fontSize: '48px' }}>🏥</div>
-                <div style={{ textAlign: 'center', maxWidth: '400px' }}>
-                  <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', color: 'var(--text-color)' }}>
-                    Welcome to CareDroid
-                  </div>
-                  <div style={{ fontSize: '14px' }}>
-                    Ask me anything about medicine, drugs, lab values, clinical protocols, and more.
-                  </div>
-                  <div style={{ fontSize: '13px', marginTop: '12px', color: 'var(--accent-green)' }}>
-                    💡 Select a clinical tool from the sidebar to get started
-                  </div>
-                </div>
-              </div>
-            ) : (
-              messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  style={{
-                    display: 'flex',
-                    justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                    gap: '12px'
-                  }}
-                >
-                  {msg.role === 'assistant' && <div style={{ fontSize: '20px' }}>🤖</div>}
-                  <div
-                    style={{
-                      maxWidth: '60%',
-                      padding: '12px 16px',
-                      borderRadius: '12px',
-                      background: msg.role === 'user' ? 'linear-gradient(135deg, #00ff88, #00ffff)' : 'var(--surface-1)',
-                      color: msg.role === 'user' ? 'var(--navy-ink)' : 'var(--text-color)',
-                      border: msg.role === 'user' ? 'none' : '1px solid var(--panel-border)',
-                      lineHeight: 1.5
-                    }}
-                  >
-                    {msg.content}
-                    {Array.isArray(msg.visualizations) && msg.visualizations.length > 0 && (
-                      <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        {msg.visualizations.map((viz, idx) => (
-                          <ToolVisualization key={`${viz.type || 'viz'}-${idx}`} visualization={viz} />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  {msg.role === 'user' && <div style={{ fontSize: '20px' }}>👤</div>}
-                </div>
-              ))
-            )}
-            {isLoading && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--muted-text)' }}>
-                <div style={{ fontSize: '20px' }}>🤖</div>
-                <div style={{ animation: 'pulse 1.5s ease-in-out infinite', opacity: 0.7 }}>
-                  Thinking...
-                </div>
-              </div>
-            )}
-          </div>
+        {/* Dashboard Header */}
+        <DashboardHeader
+          userName={user?.name || 'Clinician'}
+          notificationCount={unreadCount}
+          notifications={notifications}
+          onNewPatient={() => console.log('New patient')}
+          onEmergency={() => console.log('Emergency')}
+          searchValue={patientSearch}
+          onSearchChange={setPatientSearch}
+          onSearch={(query) => setPatientSearch(query)}
+          onSearchSubmit={(query) => setPatientSearch(query)}
+          onNotificationClick={() => console.log('Notifications')}
+          onMarkNotificationRead={markAsRead}
+          onMarkAllNotificationsRead={markAllAsRead}
+          onClearNotifications={clearAll}
+          systemStatus="online"
+          onRefresh={refresh}
+          refreshing={refreshing}
+        />
 
-          {/* Input */}
-          <div style={{
-            padding: '16px 24px',
-            borderTop: '1px solid var(--panel-border)',
-            display: 'flex',
-            gap: '12px',
-            position: 'relative'
-          }}>
-            {recommendedTools.length > 0 && (
-              <div style={{
-                position: 'absolute',
-                bottom: '84px',
-                left: '0',
-                right: '0',
-                background: 'var(--surface-2)',
-                border: '1px solid var(--panel-border)',
-                borderRadius: '12px',
-                padding: '12px 16px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '10px',
-                boxShadow: 'var(--shadow-1)'
-              }}>
-                <div style={{
-                  fontSize: '12px',
-                  color: 'var(--muted-text)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
-                }}>
-                  Suggested tools
-                </div>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  {recommendedTools.map((tool) => (
-                    <button
-                      key={tool.id}
-                      onClick={() => {
-                        analyticsService.trackEvent({
-                          eventName: 'tool_recommendation_clicked',
-                          parameters: { 
-                            toolId: tool.id,
-                            confidence: tool.confidence,
-                            reason: tool.recommendationReason
-                          },
-                        });
-                        recordRecommendationFeedback(tool.id, true);
-                        handleSelectTool(tool.id);
-                        navigate(tool.path);
-                      }}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '8px 12px',
-                        borderRadius: '999px',
-                        border: `1px solid ${tool.color}55`,
-                        background: `${tool.color}20`,
-                        color: 'var(--text-color)',
-                        fontSize: '13px',
-                        fontWeight: 600,
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <span>{tool.icon}</span>
-                      <span>{tool.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-              placeholder="Ask me anything... (e.g., drug interactions, lab values, diagnosis)"
-              style={{
-                flex: 1,
-                padding: '12px 16px',
-                background: 'var(--surface-1)',
-                border: '1px solid var(--panel-border)',
-                borderRadius: '8px',
-                color: 'var(--text-color)',
-                fontSize: '14px',
-                outline: 'none'
-              }}
-              disabled={isLoading}
-            />
-            <button
-              onClick={handleSendMessage}
-              disabled={isLoading || !input.trim()}
-              style={{
-                padding: '12px 24px',
-                background: 'linear-gradient(135deg, #00ff88, #00ffff)',
-                color: 'var(--navy-ink)',
-                border: 'none',
-                borderRadius: '8px',
-                fontWeight: 600,
-                cursor: isLoading || !input.trim() ? 'not-allowed' : 'pointer',
-                opacity: isLoading || !input.trim() ? 0.5 : 1
-              }}
-            >
-              Send
-            </button>
-          </div>
+        {/* Stats Cards Row */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+          gap: 'var(--space-4)',
+          animation: 'slideUp 0.4s var(--ease-smooth)',
+          animationDelay: '0.05s',
+          animationFillMode: 'both'
+        }}>
+          <StatCard
+            label="Critical Patients"
+            value={stats?.criticalPatients || 0}
+            trend={stats?.trends?.criticalPatients?.value ? `${stats.trends.criticalPatients.value > 0 ? '+' : ''}${stats.trends.criticalPatients.value}` : undefined}
+            trendDirection={stats?.trends?.criticalPatients?.direction}
+            color="critical"
+            icon="🚨"
+          />
+          <StatCard
+            label="Active Patients"
+            value={stats?.activePatients || 0}
+            trend={stats?.trends?.activePatients?.value ? `${stats.trends.activePatients.value > 0 ? '+' : ''}${stats.trends.activePatients.value}` : undefined}
+            trendDirection={stats?.trends?.activePatients?.direction}
+            color="info"
+            icon="👥"
+          />
+          <StatCard
+            label="Pending Labs"
+            value={stats?.pendingLabs || 0}
+            color="warning"
+            icon="🧪"
+          />
+          <StatCard
+            label="Stable Patients"
+            value={stats?.stablePatients || 0}
+            color="success"
+            icon="✅"
+          />
         </div>
 
-        {/* Clinical Tools Sidebar */}
+        {/* Quick Access Tools Grid */}
         <div style={{
-          width: '320px',
-          borderLeft: '1px solid var(--panel-border)',
-          background: 'var(--surface-0)',
-          display: 'flex',
-          flexDirection: 'column',
-          overflowY: 'auto'
+          animation: 'slideUp 0.4s var(--ease-smooth)',
+          animationDelay: '0.1s',
+          animationFillMode: 'both'
         }}>
-          <div style={{
-            padding: '20px',
-            borderBottom: '1px solid var(--panel-border)',
-            position: 'sticky',
-            top: 0,
-            background: 'var(--surface-0)',
-            zIndex: 1
+          <h2 style={{
+            margin: 0,
+            marginBottom: 'var(--space-4)',
+            fontSize: 'var(--font-size-xl)',
+            fontWeight: 'var(--font-weight-semibold)',
+            color: 'var(--text-primary)'
           }}>
-            <h3 style={{
-              margin: 0,
-              fontSize: '16px',
-              fontWeight: 600,
-              color: 'var(--text-color)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
-              <span style={{ fontSize: '20px' }}>🔧</span>
-              Clinical Tools
-            </h3>
-            <p style={{
-              margin: '8px 0 0 0',
-              fontSize: '12px',
-              color: 'var(--muted-text)',
-              lineHeight: 1.4
-            }}>
-              Select a tool to enhance your clinical queries
-            </p>
-          </div>
-
-          <div style={{ padding: '12px' }}>
-            {clinicalTools.map((tool) => (
-              <button
+            Clinical Tools
+          </h2>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+            gap: 'var(--space-4)'
+          }}>
+            {toolRegistry.map((tool) => (
+              <ToolCard
                 key={tool.id}
-                onClick={() => handleSelectTool(tool.id)}
-                style={{
-                  width: '100%',
-                  padding: '16px',
-                  marginBottom: '8px',
-                  background: selectedTool === tool.id 
-                    ? `linear-gradient(135deg, ${tool.color}22, ${tool.color}11)` 
-                    : 'var(--surface-1)',
-                  border: selectedTool === tool.id 
-                    ? `2px solid ${tool.color}` 
-                    : '1px solid var(--panel-border)',
-                  borderRadius: '12px',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  transition: 'all 0.2s ease',
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedTool !== tool.id) {
-                    e.currentTarget.style.background = 'var(--surface-2)';
-                    e.currentTarget.style.borderColor = tool.color + '66';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedTool !== tool.id) {
-                    e.currentTarget.style.background = 'var(--surface-1)';
-                    e.currentTarget.style.borderColor = 'var(--panel-border)';
-                  }
-                }}
-              >
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  marginBottom: '8px'
-                }}>
-                  <div style={{
-                    fontSize: '24px',
-                    width: '32px',
-                    height: '32px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderRadius: '8px',
-                    background: selectedTool === tool.id ? tool.color + '33' : 'transparent'
-                  }}>
-                    {tool.icon}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{
-                      fontSize: '14px',
-                      fontWeight: 600,
-                      color: selectedTool === tool.id ? tool.color : 'var(--text-color)',
-                      marginBottom: '2px'
-                    }}>
-                      {tool.name}
-                    </div>
-                  </div>
-                  {selectedTool === tool.id && (
-                    <div style={{
-                      fontSize: '16px',
-                      color: tool.color
-                    }}>
-                      ✓
-                    </div>
-                  )}
-                </div>
-                <div style={{
-                  fontSize: '12px',
-                  color: 'var(--muted-text)',
-                  lineHeight: 1.4
-                }}>
-                  {tool.description}
-                </div>
-              </button>
+                icon={tool.icon}
+                name={tool.name}
+                description={tool.description}
+                color={tool.color}
+                shortcut={tool.shortcut}
+                onClick={() => handleToolClick(tool)}
+                isFavorite={favorites.includes(tool.id)}
+                recentlyUsed={recentTools.includes(tool.id)}
+              />
             ))}
           </div>
         </div>
-      </div>
 
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 0.7; }
-          50% { opacity: 1; }
-        }
-      `}</style>
+        {/* Activity Feed and Alerts */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gap: 'var(--space-4)',
+          animation: 'slideUp 0.4s var(--ease-smooth)',
+          animationDelay: '0.15s',
+          animationFillMode: 'both'
+        }}>
+          <ActivityFeed
+            activities={activities}
+            onActivityClick={handleActivityClick}
+          />
+          <AlertsPanel
+            alerts={alerts}
+            onAcknowledge={handleAcknowledgeAlert}
+            onAlertClick={handleAlertClick}
+          />
+        </div>
+
+        {/* Patients Section */}
+        <div style={{
+          animation: 'slideUp 0.4s var(--ease-smooth)',
+          animationDelay: '0.2s',
+          animationFillMode: 'both'
+        }}>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 'var(--space-3)',
+            marginBottom: 'var(--space-4)'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 'var(--space-3)',
+              flexWrap: 'wrap'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--space-3)'
+              }}>
+                <h2 style={{
+                  margin: 0,
+                  fontSize: 'var(--font-size-xl)',
+                  fontWeight: 'var(--font-weight-semibold)',
+                  color: 'var(--text-primary)'
+                }}>
+                  {sectionTitle}
+                </h2>
+                <span style={{
+                  padding: '4px 12px',
+                  fontSize: 'var(--font-size-sm)',
+                  fontWeight: 'var(--font-weight-semibold)',
+                  color: '#fff',
+                  background: patientStatusFilter === 'critical' ? '#EF4444' : 'var(--clinical-info)',
+                  borderRadius: '999px'
+                }}>
+                  {criticalPatients.length}
+                </span>
+              </div>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--space-2)'
+              }}>
+                <button
+                  onClick={() => {
+                    if (allExpanded) {
+                      setExpandedPatients(new Set());
+                    } else {
+                      setExpandedPatients(new Set(criticalPatients.map((patient) => patient.id)));
+                    }
+                  }}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: 'var(--font-size-xs)',
+                    fontWeight: 'var(--font-weight-medium)',
+                    borderRadius: '999px',
+                    border: '1px solid var(--border-subtle)',
+                    background: 'transparent',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {allExpanded ? 'Collapse All' : 'Expand All'}
+                </button>
+              </div>
+            </div>
+
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--space-3)',
+              flexWrap: 'wrap'
+            }}>
+              <div style={{
+                display: 'flex',
+                gap: 'var(--space-2)',
+                flexWrap: 'wrap'
+              }}>
+                {statusOptions.map((option) => (
+                  <button
+                    key={option.id}
+                    onClick={() => setPatientStatusFilter(option.id)}
+                    style={{
+                      padding: '6px 12px',
+                      fontSize: 'var(--font-size-xs)',
+                      fontWeight: 'var(--font-weight-medium)',
+                      borderRadius: '999px',
+                      border: option.id === patientStatusFilter
+                        ? '1px solid var(--clinical-primary)'
+                        : '1px solid var(--border-subtle)',
+                      background: option.id === patientStatusFilter
+                        ? 'var(--clinical-primary-light)'
+                        : 'transparent',
+                      color: option.id === patientStatusFilter
+                        ? 'var(--clinical-primary)'
+                        : 'var(--text-secondary)',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+              <div style={{
+                marginLeft: 'auto',
+                flex: '1 1 240px',
+                maxWidth: '320px'
+              }}>
+                <input
+                  type="search"
+                  placeholder="Search patients..."
+                  value={patientSearch}
+                  onChange={(event) => setPatientSearch(event.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    fontSize: 'var(--font-size-sm)',
+                    borderRadius: '999px',
+                    border: '1px solid var(--border-subtle)',
+                    outline: 'none',
+                    background: 'var(--surface-1)'
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {criticalPatients.length === 0 ? (
+            <div style={{
+              padding: 'var(--space-6)',
+              textAlign: 'center',
+              color: 'var(--text-tertiary)',
+              border: '1px dashed var(--border-subtle)',
+              borderRadius: 'var(--radius-lg)'
+            }}>
+              <p style={{ margin: 0 }}>No patients match the current filters.</p>
+            </div>
+          ) : (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 'var(--space-4)'
+            }}>
+              {criticalPatients.map((patient) => {
+                const isExpanded = expandedPatients.has(patient.id);
+                return (
+                  <PatientCard
+                    key={patient.id}
+                    patient={patient}
+                    compact={!isExpanded}
+                    showVitals={isExpanded}
+                    showActions={isExpanded}
+                    onClick={() => {
+                      setExpandedPatients((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(patient.id)) {
+                          next.delete(patient.id);
+                        } else {
+                          next.add(patient.id);
+                        }
+                        return next;
+                      });
+                    }}
+                    onViewDetails={handleViewPatientDetails}
+                    onUpdateVitals={handleUpdateVitals}
+                    onAddNote={handleAddNote}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
     </AppShell>
   );
 }

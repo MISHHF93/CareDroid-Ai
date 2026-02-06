@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import Card from '../components/ui/card';
-import Button from '../components/ui/button';
-import Input from '../components/ui/input';
+import { Card } from '../components/ui/molecules/Card';
+import { Button } from '../components/ui/atoms/Button';
+import { Input } from '../components/ui/atoms/Input';
 import TwoFactorSettings from '../components/TwoFactorSettings';
 import { useNotificationActions } from '../hooks/useNotificationActions';
 

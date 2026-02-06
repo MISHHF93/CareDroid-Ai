@@ -1,0 +1,201 @@
+/* ===== CLINICAL BADGE COMPONENT ===== */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-family-primary);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+  user-select: none;
+}
+
+/* ===== BADGE SIZES ===== */
+
+.badge-xs {
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-tight);
+  padding: var(--space-1) var(--space-2);
+  min-height: var(--space-4);
+}
+
+.badge-sm {
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-tight);
+  padding: var(--space-1) var(--space-2);
+  min-height: var(--space-5);
+}
+
+.badge-md {
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-tight);
+  padding: var(--space-1) var(--space-3);
+  min-height: var(--space-6);
+}
+
+.badge-lg {
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-snug);
+  padding: var(--space-2) var(--space-4);
+  min-height: var(--space-8);
+}
+
+/* ===== BADGE SHAPES ===== */
+
+.badge-square {
+  border-radius: var(--radius-md);
+}
+
+.badge-rounded {
+  border-radius: var(--radius-lg);
+}
+
+.badge-pill {
+  border-radius: var(--radius-full);
+}
+
+/* ===== BADGE VARIANTS ===== */
+
+.badge-default {
+  background: var(--surface-tertiary);
+  color: var(--text-secondary);
+  border: var(--border-width-1) solid var(--border-color-subtle);
+}
+
+.badge-primary {
+  background: var(--clinical-primary);
+  color: white;
+  border: var(--border-width-1) solid var(--clinical-primary);
+}
+
+.badge-secondary {
+  background: var(--clinical-secondary);
+  color: white;
+  border: var(--border-width-1) solid var(--clinical-secondary);
+}
+
+.badge-success {
+  background: var(--clinical-success);
+  color: white;
+  border: var(--border-width-1) solid var(--clinical-success);
+}
+
+.badge-warning {
+  background: var(--clinical-warning);
+  color: var(--text-primary);
+  border: var(--border-width-1) solid var(--clinical-warning);
+}
+
+.badge-error {
+  background: var(--clinical-error);
+  color: white;
+  border: var(--border-width-1) solid var(--clinical-error);
+}
+
+.badge-info {
+  background: var(--clinical-info);
+  color: white;
+  border: var(--border-width-1) solid var(--clinical-info);
+}
+
+/* ===== CLINICAL EMERGENCY VARIANTS ===== */
+
+.badge-critical {
+  background: var(--emergency-critical);
+  color: white;
+  border: var(--border-width-1) solid var(--emergency-critical);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  box-shadow: 0 0 0 1px var(--emergency-critical-bg);
+}
+
+.badge-urgent {
+  background: var(--emergency-urgent);
+  color: white;
+  border: var(--border-width-1) solid var(--emergency-urgent);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  box-shadow: 0 0 0 1px var(--emergency-urgent-bg);
+}
+
+.badge-moderate {
+  background: var(--emergency-moderate);
+  color: var(--text-primary);
+  border: var(--border-width-1) solid var(--emergency-moderate);
+  font-weight: var(--font-weight-medium);
+  box-shadow: 0 0 0 1px var(--emergency-moderate-bg);
+}
+
+/* ===== BADGE ANIMATIONS ===== */
+
+.badge-critical {
+  animation: pulse-critical 2s infinite;
+}
+
+.badge-urgent {
+  animation: pulse-urgent 3s infinite;
+}
+
+@keyframes pulse-critical {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes pulse-urgent {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.02);
+  }
+}
+
+/* ===== DARK MODE ADJUSTMENTS ===== */
+
+@media (prefers-color-scheme: dark) {
+  .badge-default {
+    background: var(--surface-glass-dark);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-inverse);
+  }
+
+  .badge-warning {
+    color: var(--text-inverse);
+  }
+
+  .badge-moderate {
+    color: var(--text-inverse);
+  }
+}
+
+/* ===== ACCESSIBILITY ===== */
+
+@media (prefers-reduced-motion: reduce) {
+  .badge-critical,
+  .badge-urgent {
+    animation: none;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .badge {
+    border-width: 2px;
+  }
+
+  .badge-critical,
+  .badge-urgent {
+    border-width: 3px;
+  }
+}

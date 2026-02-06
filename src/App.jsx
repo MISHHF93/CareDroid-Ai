@@ -17,6 +17,7 @@ import Onboarding from './pages/Onboarding';
 
 // Main App
 import Dashboard from './pages/Dashboard';
+import Chat from './pages/Chat';
 
 // User Pages
 import Profile from './pages/Profile';
@@ -31,15 +32,16 @@ import AnalyticsDashboard from './pages/AnalyticsDashboard';
 import CostAnalyticsDashboard from './pages/CostAnalyticsDashboard';
 import AuditLogs from './pages/AuditLogs';
 import ClinicalAlertsPage from './pages/ClinicalAlertsPage';
+import ClinicalDashboard from './pages/ClinicalDashboard';
 
 // Tools
 import ToolsOverview from './pages/tools/ToolsOverview';
 import DrugChecker from './pages/tools/DrugChecker';
 import LabInterpreter from './pages/tools/LabInterpreter';
-// import Protocols from './pages/tools/Protocols';
+import Protocols from './pages/tools/Protocols';
 import Calculators from './pages/tools/Calculators';
 import DiagnosisAssistant from './pages/tools/DiagnosisAssistant';
-// import ProcedureGuide from './pages/tools/ProcedureGuide';
+import ProcedureGuide from './pages/tools/ProcedureGuide';
 import SharedToolSession from './pages/tools/SharedToolSession';
 
 // Team Management
@@ -153,6 +155,7 @@ function App() {
                       {/* ==================== PROTECTED ROUTES ==================== */}
                       {/* Main Dashboard - includes AppShell internally */}
                       <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="/chat" element={<Chat />} />
                       
                       {/* User & Settings */}
                       <Route path="/profile" element={<Profile />} />
@@ -165,6 +168,7 @@ function App() {
                       {/* Analytics & Monitoring */}
                       <Route path="/analytics" element={<AnalyticsDashboard />} />
                       <Route path="/analytics/costs" element={<CostAnalyticsDashboard />} />
+                      <Route path="/clinical-dashboard" element={<ClinicalDashboard />} />
                       <Route path="/audit-logs" element={<AuditLogs />} />
                       <Route path="/alerts" element={<ClinicalAlertsPage />} />
                       
@@ -172,10 +176,10 @@ function App() {
                       <Route path="/tools" element={<ToolsOverview />} />
                       <Route path="/tools/drug-checker" element={<DrugChecker />} />
                       <Route path="/tools/lab-interpreter" element={<LabInterpreter />} />
-                      {/* <Route path="/tools/protocols" element={<Protocols />} /> */}
+                      <Route path="/tools/protocols" element={<Protocols />} />
                       <Route path="/tools/calculators" element={<Calculators />} />
                       <Route path="/tools/diagnosis" element={<DiagnosisAssistant />} />
-                      {/* <Route path="/tools/procedures" element={<ProcedureGuide />} /> */}
+                      <Route path="/tools/procedures" element={<ProcedureGuide />} />
                       <Route path="/tools/session/:sessionId" element={<SharedToolSession />} />
                       
                       {/* Team Management */}

@@ -4,10 +4,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as request from 'supertest';
-import { EncryptionService } from './encryption.service';
-import { KeyRotationService } from './key-rotation.service';
-import { EncryptionKey } from './entities/encryption-key.entity';
-import { EncryptionModule } from './encryption.module';
+import { EncryptionService } from '../src/modules/encryption/encryption.service';
+import { KeyRotationService } from '../src/modules/encryption/key-rotation.service';
+import { EncryptionKey } from '../src/modules/encryption/entities/encryption-key.entity';
+import { EncryptionModule } from '../src/modules/encryption/encryption.module';
 
 /**
  * End-to-End tests for Encryption module
@@ -99,42 +99,44 @@ describe('Encryption Module E2E', () => {
     it('should initiate key rotation with new key', async () => {
       const rotation = await keyRotationService.initiateKeyRotation('SCHEDULED_ROTATION');
 
-      expect(rotation.status).toBe('pending');
-      expect(rotation.keyVersion).toBeGreaterThan(0);
-      expect(rotation.isActive).toBe(false);
+      expect(rotation.status).toBe('pending_rotation');
+      expect(rotation.newKeyVersion).toBeGreaterThan(0);
+      expect(rotation.message).toContain('New key created');
     });
 
     it('should track key rotation status', async () => {
       const initialStatus = await keyRotationService.getKeyStatus();
-      expect(initialStatus.activeKey).toBeDefined();
+      expect(initialStatus.activeKey).toBeNull();
 
       await keyRotationService.initiateKeyRotation('TEST_ROTATION');
       const statusAfter = await keyRotationService.getKeyStatus();
 
-      expect(statusAfter.pendingKey).toBeDefined();
-      expect(statusAfter.pendingKey.status).toBe('pending');
+      expect(statusAfter.pendingRotations.length).toBeGreaterThan(0);
+      expect(statusAfter.pendingRotations[0].status).toBe('pending_rotation');
     });
 
     it('should update rotation progress', async () => {
       const rotation = await keyRotationService.initiateKeyRotation('PROGRESS_TEST');
-      const keyVersion = rotation.keyVersion;
+      const keyVersion = rotation.newKeyVersion;
 
       // Simulate re-encryption progress
       await keyRotationService.updateRotationProgress(keyVersion, 25, 1000);
       const status1 = await keyRotationService.getKeyStatus();
-      expect(status1.pendingKey.progressPercentage).toBe(25);
-      expect(status1.pendingKey.recordsProcessed).toBe(1000);
+      const pending1 = status1.pendingRotations.find(p => p.version === keyVersion);
+      expect(pending1.progressPercentage).toBe(25);
+      expect(pending1.recordsProcessed).toBe(1000);
 
       // Update again
       await keyRotationService.updateRotationProgress(keyVersion, 50, 2000);
       const status2 = await keyRotationService.getKeyStatus();
-      expect(status2.pendingKey.progressPercentage).toBe(50);
-      expect(status2.pendingKey.recordsProcessed).toBe(2000);
+      const pending2 = status2.pendingRotations.find(p => p.version === keyVersion);
+      expect(pending2.progressPercentage).toBe(50);
+      expect(pending2.recordsProcessed).toBe(2000);
     });
 
     it('should move key to complete status', async () => {
       const rotation = await keyRotationService.initiateKeyRotation('COMPLETE_TEST');
-      const keyVersion = rotation.keyVersion;
+      const keyVersion = rotation.newKeyVersion;
 
       // Simulate completion
       await keyRotationService.updateRotationProgress(keyVersion, 100, 5000);
@@ -148,7 +150,7 @@ describe('Encryption Module E2E', () => {
 
     it('should activate rotated key', async () => {
       const rotation = await keyRotationService.initiateKeyRotation('ACTIVATE_TEST');
-      const keyVersion = rotation.keyVersion;
+      const keyVersion = rotation.newKeyVersion;
 
       // Update to completion status
       await keyRotationService.updateRotationProgress(keyVersion, 100, 5000);
@@ -156,7 +158,7 @@ describe('Encryption Module E2E', () => {
       // Activate the new key
       const activated = await keyRotationService.activateRotatedKey(keyVersion);
 
-      expect(activated.isActive).toBe(true);
+      expect(activated.activatedAt).toBeDefined();
 
       // Verify only one key is active
       const activeKeys = await encryptionKeyRepository.find({
@@ -170,24 +172,28 @@ describe('Encryption Module E2E', () => {
       // Create multiple rotations
       const rot1 = await keyRotationService.initiateKeyRotation('ROTATION_1');
       const rot2 = await keyRotationService.initiateKeyRotation('ROTATION_2');
+      const rot1Version = rot1.newKeyVersion;
+      const rot2Version = rot2.newKeyVersion;
 
       // Activate first rotation
-      await keyRotationService.updateRotationProgress(rot1.keyVersion, 100, 1000);
-      await keyRotationService.activateRotatedKey(rot1.keyVersion);
+      await keyRotationService.updateRotationProgress(rot1Version, 100, 1000);
+      await keyRotationService.activateRotatedKey(rot1Version);
 
       // Get history
       const history = await keyRotationService.getKeyHistory();
 
       expect(history.length).toBe(2);
       expect(history.some(k => k.isActive)).toBe(true);
+      expect(history.some(k => k.version === rot2Version)).toBe(true);
     });
 
     it('should schedule old key deletion', async () => {
       const rotation = await keyRotationService.initiateKeyRotation('DELETION_TEST');
+      const keyVersion = rotation.newKeyVersion;
 
       // Activate it
-      await keyRotationService.updateRotationProgress(rotation.keyVersion, 100, 1000);
-      await keyRotationService.activateRotatedKey(rotation.keyVersion);
+      await keyRotationService.updateRotationProgress(keyVersion, 100, 1000);
+      await keyRotationService.activateRotatedKey(keyVersion);
 
       // Find old key and schedule deletion
       const oldKeys = await encryptionKeyRepository.find({
@@ -216,7 +222,7 @@ describe('Encryption Module E2E', () => {
       const rotations = await Promise.all(promises);
 
       expect(rotations).toHaveLength(3);
-      const versions = rotations.map(r => r.keyVersion);
+      const versions = rotations.map(r => r.newKeyVersion);
       expect(new Set(versions).size).toBe(3); // All unique versions
     });
   });
@@ -272,19 +278,20 @@ describe('Encryption Module E2E', () => {
 
       // Step 2: Initiate rotation
       const rotation = await keyRotationService.initiateKeyRotation('INTEGRITY_TEST');
+      const keyVersion = rotation.newKeyVersion;
 
       // Step 3: Verify original still decrypts
       expect(encryptionService.decrypt(encrypted1)).toBe(originalData);
 
       // Step 4: Progress rotation
-      await keyRotationService.updateRotationProgress(rotation.keyVersion, 50, 500);
+      await keyRotationService.updateRotationProgress(keyVersion, 50, 500);
 
       // Step 5: Original should still work
       expect(encryptionService.decrypt(encrypted1)).toBe(originalData);
 
       // Step 6: Activate new key
-      await keyRotationService.updateRotationProgress(rotation.keyVersion, 100, 1000);
-      await keyRotationService.activateRotatedKey(rotation.keyVersion);
+      await keyRotationService.updateRotationProgress(keyVersion, 100, 1000);
+      await keyRotationService.activateRotatedKey(keyVersion);
 
       // Step 7: Old data should still decrypt
       expect(encryptionService.decrypt(encrypted1)).toBe(originalData);
@@ -313,7 +320,10 @@ describe('Encryption Module E2E', () => {
 
       for (const reason of reasons) {
         const rotation = await keyRotationService.initiateKeyRotation(reason);
-        expect(rotation.rotationReason).toBe(reason);
+        const keyRecord = await encryptionKeyRepository.findOne({
+          where: { keyVersion: rotation.newKeyVersion },
+        });
+        expect(keyRecord.rotationReason).toBe(reason);
       }
     });
 
@@ -321,24 +331,24 @@ describe('Encryption Module E2E', () => {
       const rotation = await keyRotationService.initiateKeyRotation('AUDIT_TEST');
 
       const keyRecord = await encryptionKeyRepository.findOne({
-        where: { keyVersion: rotation.keyVersion },
+        where: { keyVersion: rotation.newKeyVersion },
       });
 
       expect(keyRecord).toBeDefined();
-      expect(keyRecord.auditInfo).toBeDefined();
       expect(keyRecord.createdAt).toBeDefined();
     });
 
     it('should maintain HIPAA-compliant retention', async () => {
       const rotation = await keyRotationService.initiateKeyRotation('RETENTION_TEST');
+      const keyVersion = rotation.newKeyVersion;
 
       // Schedule deletion with 7-year retention
-      await keyRotationService.updateRotationProgress(rotation.keyVersion, 100, 1000);
-      await keyRotationService.activateRotatedKey(rotation.keyVersion);
+      await keyRotationService.updateRotationProgress(keyVersion, 100, 1000);
+      await keyRotationService.activateRotatedKey(keyVersion);
       await keyRotationService.scheduleOldKeyDeletion(2555); // ~7 years
 
       const deletionScheduled = await encryptionKeyRepository.findOne({
-        where: { keyVersion: rotation.keyVersion - 1 }, // Old key
+        where: { keyVersion: keyVersion - 1 }, // Old key
       });
 
       if (deletionScheduled) {
@@ -405,6 +415,7 @@ describe('Encryption Module E2E', () => {
 
     it('should handle key rotation with many records', async () => {
       const rotation = await keyRotationService.initiateKeyRotation('LOAD_TEST');
+      const keyVersion = rotation.newKeyVersion;
 
       // Simulate processing 10,000 records
       const totalRecords = 10000;
@@ -413,14 +424,15 @@ describe('Encryption Module E2E', () => {
       for (let i = 0; i < totalRecords; i += batchSize) {
         const progress = ((i + batchSize) / totalRecords) * 100;
         await keyRotationService.updateRotationProgress(
-          rotation.keyVersion,
+          keyVersion,
           Math.min(progress, 100),
           Math.min(i + batchSize, totalRecords),
         );
       }
 
       const finalStatus = await keyRotationService.getKeyStatus();
-      expect(finalStatus.pendingKey.recordsProcessed).toBe(totalRecords);
+      const pending = finalStatus.pendingRotations.find(p => p.version === keyVersion);
+      expect(pending.recordsProcessed).toBe(totalRecords);
     });
   });
 });

@@ -2,9 +2,14 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuditLog, AuditAction } from '../modules/audit/entities/audit-log.entity';
-import { AuditService } from '../modules/audit/audit.service';
-import { AuditModule } from '../modules/audit/audit.module';
+import { AuditLog, AuditAction } from '../src/modules/audit/entities/audit-log.entity';
+import { User } from '../src/modules/users/entities/user.entity';
+import { UserProfile } from '../src/modules/users/entities/user-profile.entity';
+import { OAuthAccount } from '../src/modules/users/entities/oauth-account.entity';
+import { TwoFactor } from '../src/modules/two-factor/entities/two-factor.entity';
+import { Subscription } from '../src/modules/subscriptions/entities/subscription.entity';
+import { AuditService } from '../src/modules/audit/audit.service';
+import { AuditModule } from '../src/modules/audit/audit.module';
 
 describe('Audit Logging E2E', () => {
   let app: INestApplication;
@@ -16,7 +21,14 @@ describe('Audit Logging E2E', () => {
         TypeOrmModule.forRoot({
           type: 'sqlite',
           database: ':memory:',
-          entities: [AuditLog],
+          entities: [
+            AuditLog,
+            User,
+            UserProfile,
+            OAuthAccount,
+            TwoFactor,
+            Subscription,
+          ],
           synchronize: true,
         }),
         AuditModule,

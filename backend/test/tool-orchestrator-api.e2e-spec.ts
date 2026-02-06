@@ -8,13 +8,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { ToolOrchestratorController } from '../../../src/modules/medical-control-plane/tool-orchestrator/tool-orchestrator.controller';
-import { ToolOrchestratorService } from '../../../src/modules/medical-control-plane/tool-orchestrator/tool-orchestrator.service';
-import { SofaCalculatorService } from '../../../src/modules/medical-control-plane/tool-orchestrator/services/sofa-calculator.service';
-import { DrugCheckerService } from '../../../src/modules/medical-control-plane/tool-orchestrator/services/drug-checker.service';
-import { LabInterpreterService } from '../../../src/modules/medical-control-plane/tool-orchestrator/services/lab-interpreter.service';
-import { AuditService } from '../../../src/modules/audit/audit.service';
-import { AIService } from '../../../src/modules/ai/ai.service';
+import { ToolOrchestratorController } from '../src/modules/medical-control-plane/tool-orchestrator/tool-orchestrator.controller';
+import { ToolOrchestratorService } from '../src/modules/medical-control-plane/tool-orchestrator/tool-orchestrator.service';
+import { SofaCalculatorService } from '../src/modules/medical-control-plane/tool-orchestrator/services/sofa-calculator.service';
+import { DrugCheckerService } from '../src/modules/medical-control-plane/tool-orchestrator/services/drug-checker.service';
+import { LabInterpreterService } from '../src/modules/medical-control-plane/tool-orchestrator/services/lab-interpreter.service';
+import { AuditService } from '../src/modules/audit/audit.service';
+import { AIService } from '../src/modules/ai/ai.service';
 
 describe('Tool Orchestrator API (e2e)', () => {
   let app: INestApplication;

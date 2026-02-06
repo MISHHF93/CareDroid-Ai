@@ -2,11 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import * as request from 'supertest';
-import { AuthorizationGuard } from '../guards/authorization.guard';
-import { Permission } from '../enums/permission.enum';
-import { UserRole } from '../../users/entities/user.entity';
-import { AuditService } from '../../audit/audit.service';
-import { hasPermission, hasAnyPermission } from '../config/role-permissions.config';
+import { AuthorizationGuard } from '../src/modules/auth/guards/authorization.guard';
+import { Permission } from '../src/modules/auth/enums/permission.enum';
+import { UserRole } from '../src/modules/users/entities/user.entity';
+import { AuditService } from '../src/modules/audit/audit.service';
+import { hasPermission, hasAnyPermission } from '../src/modules/auth/config/role-permissions.config';
 
 /**
  * Role-Based Access Control (RBAC) E2E Tests

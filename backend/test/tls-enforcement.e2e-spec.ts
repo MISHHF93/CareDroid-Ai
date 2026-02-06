@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { AppModule } from '../app.module';
+import { AppModule } from '../src/app.module';
 import * as helmet from 'helmet';
 
 /**
@@ -46,11 +46,6 @@ describe('TLS 1.3 & Security Headers (E2E)', () => {
         noSniff: true,
         referrerPolicy: {
           policy: 'strict-origin-when-cross-origin',
-        },
-        permissionsPolicy: {
-          camera: [],
-          microphone: [],
-          geolocation: [],
         },
       })
     );

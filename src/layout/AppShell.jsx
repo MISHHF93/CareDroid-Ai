@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '../contexts/NotificationContext';
 import { useUser } from '../contexts/UserContext';
@@ -22,6 +22,7 @@ const AppShell = ({
   const { notifications } = useNotifications();
   const { user } = useUser();
   const navigate = useNavigate();
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   return (
     <div className="app-shell" style={{
@@ -43,6 +44,8 @@ const AppShell = ({
         healthStatus={healthStatus}
         currentTool={currentTool}
         onToolSelect={onToolSelect}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
       />
 
       {/* Main Content Area - Pushed by sidebar width */}
@@ -50,10 +53,10 @@ const AppShell = ({
         flex: 1, 
         display: 'flex', 
         flexDirection: 'column',
-        marginLeft: '280px',
+        marginLeft: isSidebarCollapsed ? '70px' : '280px',
         minWidth: 0,
         height: '100vh',
-        overflow: 'hidden',
+        overflow: 'auto',
         transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
       }}>
         {children}

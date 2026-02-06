@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import Card from '../components/ui/card';
-import Button from '../components/ui/button';
+import { Card } from '../components/ui/molecules/Card';
+import { Button } from '../components/ui/atoms/Button';
 import { useNotificationActions } from '../hooks/useNotificationActions';
 
 const AuthCallback = ({ onAuthSuccess }) => {

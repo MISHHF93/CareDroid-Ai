@@ -45,7 +45,7 @@ describe('AuditService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockAuditRepository.findOne.mockResolvedValue(null);
+    mockAuditRepository.find.mockResolvedValue([]);
   });
 
   it('should be defined', () => {
@@ -305,7 +305,7 @@ describe('hash chaining and integrity verification', () => {
         integrityVerified: true,
       };
 
-      mockAuditRepository.findOne.mockResolvedValue(null); // No previous log
+      mockAuditRepository.find.mockResolvedValue([]); // No previous log
       mockAuditRepository.create.mockReturnValue(logWithHash);
       mockAuditRepository.save.mockResolvedValue(logWithHash);
 
@@ -331,7 +331,7 @@ describe('hash chaining and integrity verification', () => {
         userAgent: 'Chrome',
       };
 
-      mockAuditRepository.findOne.mockResolvedValue(previousLog);
+      mockAuditRepository.find.mockResolvedValue([previousLog]);
       mockAuditRepository.create.mockImplementation((data) => ({
         ...data,
       }));

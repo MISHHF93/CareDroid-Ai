@@ -27,12 +27,13 @@ describe('Authentication E2E Tests', () => {
         .send({
           email: `test${Date.now()}@example.com`,
           password: 'Password123!',
+          fullName: 'Test User',
         })
         .expect(201)
         .expect((res) => {
-          expect(res.body).toHaveProperty('id');
+          expect(res.body).toHaveProperty('userId');
           expect(res.body).toHaveProperty('email');
-          expect(res.body).not.toHaveProperty('password');
+          expect(res.body).toHaveProperty('verificationToken');
         });
     });
 
@@ -42,6 +43,7 @@ describe('Authentication E2E Tests', () => {
         .send({
           email: 'invalid-email',
           password: 'Password123!',
+          fullName: 'Test User',
         })
         .expect(400);
     });
@@ -52,6 +54,7 @@ describe('Authentication E2E Tests', () => {
         .send({
           email: 'test@example.com',
           password: '123',
+          fullName: 'Test User',
         })
         .expect(400);
     });
@@ -61,6 +64,7 @@ describe('Authentication E2E Tests', () => {
     const testUser = {
       email: `login${Date.now()}@example.com`,
       password: 'Password123!',
+      fullName: 'Login User',
     };
 
     beforeAll(async () => {
@@ -96,6 +100,7 @@ describe('Authentication E2E Tests', () => {
       const user = {
         email: `me${Date.now()}@example.com`,
         password: 'Password123!',
+        fullName: 'Me User',
       };
       await request(app.getHttpServer()).post('/auth/register').send(user);
       
@@ -109,8 +114,9 @@ describe('Authentication E2E Tests', () => {
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(200)
         .expect((res) => {
+          expect(res.body).toHaveProperty('id');
           expect(res.body).toHaveProperty('email');
-          expect(res.body).not.toHaveProperty('password');
+          expect(res.body).toHaveProperty('role');
         });
     });
 

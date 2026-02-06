@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Button from '../components/ui/button';
-import Card from '../components/ui/card';
+import { Button } from './ui/atoms/Button';
+import { Card } from './ui/molecules/Card';
 import { apiFetch } from '../services/apiClient';
 import { useNotificationActions } from '../hooks/useNotificationActions';
 import logger from '../utils/logger';

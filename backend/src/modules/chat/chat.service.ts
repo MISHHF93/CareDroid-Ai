@@ -121,6 +121,7 @@ export class ChatService {
             toolId: classification.toolId,
             confidence: classification.confidence,
             method: classification.method,
+            modelVersion: classification.modelVersion,
             isEmergency: classification.isEmergency,
           },
           ipAddress: '0.0.0.0',

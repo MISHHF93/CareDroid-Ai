@@ -42,6 +42,7 @@ class PredictResponse(BaseModel):
     subcategory: Optional[str] = None
     key_terms: List[str]
     latency_ms: float
+    model_version: str
 
 
 class BatchPredictRequest(BaseModel):
@@ -168,6 +169,7 @@ async def predict(request: PredictRequest):
             subcategory=result.get("subcategory"),
             key_terms=result.get("key_terms", []),
             latency_ms=result["latency_ms"],
+            model_version=result.get("model_version", "unknown"),
         )
     except Exception as e:
         logger.error(f"Prediction failed: {str(e)}")

@@ -3,7 +3,7 @@
  * 
  * Three-Phase Classification Pipeline:
  * 1. Keyword Matching (fast, rule-based)
- * 2. NLU Model (fine-tuned BERT - not yet implemented, falls through to Phase 3)
+ * 2. NLU Model (fine-tuned BERT service via /predict)
  * 3. LLM Fallback (GPT-4 for complex cases)
  * 
  * Emergency Detection: 100% recall (no false negatives)
@@ -42,6 +42,8 @@ export class IntentClassifierService {
   private readonly llmFailureThreshold = 3;
   private readonly llmResetMs = 30_000;
   private readonly nluEnabled: boolean;
+  private readonly defaultConfidenceThreshold: number;
+  private readonly intentThresholds: Record<string, number>;
 
   private readonly nluCircuitBreaker = {
     failureCount: 0,
@@ -62,6 +64,8 @@ export class IntentClassifierService {
     const baseUrl = nluConfig?.url || 'http://localhost:8000';
     this.nluServiceUrl = baseUrl.replace(/\/$/, '');
     this.nluEnabled = nluConfig?.enabled !== false;
+    this.defaultConfidenceThreshold = nluConfig?.confidenceThreshold ?? 0.7;
+    this.intentThresholds = nluConfig?.intentThresholds || {};
   }
 
   /**
@@ -112,6 +116,7 @@ export class IntentClassifierService {
         emergencyKeywords: this.mapEmergencyKeywords(emergencyPatterns),
         emergencySeverity,
         method: 'keyword',
+        modelVersion: 'keyword-rules-v1',
         classifiedAt: new Date(),
       };
     }
@@ -132,7 +137,7 @@ export class IntentClassifierService {
       this.nluMetrics.recordModelPhaseDuration(nluDurationSec, 'success');
       this.nluMetrics.recordConfidenceScore(nluResult.confidence, nluResult.primaryIntent, 'model');
 
-      if (nluResult.confidence >= 0.7) {
+      if (nluResult.confidence >= this.getThresholdForIntent(nluResult.primaryIntent)) {
         this.logger.log(
           `✅ Phase 2 (NLU): High confidence (${nluResult.confidence.toFixed(2)}) - ${nluResult.primaryIntent}`,
         );
@@ -146,6 +151,7 @@ export class IntentClassifierService {
           emergencyKeywords: this.mapEmergencyKeywords(emergencyPatterns),
           emergencySeverity,
           method: 'nlu',
+          modelVersion: nluResult.modelVersion || 'nlu-unknown',
           classifiedAt: new Date(),
         };
       }
@@ -175,6 +181,7 @@ export class IntentClassifierService {
         emergencyKeywords: this.mapEmergencyKeywords(emergencyPatterns),
         emergencySeverity,
         method: 'llm',
+        modelVersion: llmResult.modelVersion || 'llm-unknown',
         classifiedAt: new Date(),
       };
     } catch (error) {
@@ -192,6 +199,7 @@ export class IntentClassifierService {
         emergencyKeywords: this.mapEmergencyKeywords(emergencyPatterns),
         emergencySeverity,
         method: 'keyword',
+        modelVersion: 'keyword-rules-v1',
         classifiedAt: new Date(),
       };
     }
@@ -274,7 +282,7 @@ export class IntentClassifierService {
   private async nluMatcher(
     message: string,
     context?: IntentClassificationContext,
-  ): Promise<Omit<IntentClassification, 'isEmergency' | 'emergencyKeywords' | 'emergencySeverity' | 'method' | 'classifiedAt'> | null> {
+  ): Promise<(Omit<IntentClassification, 'isEmergency' | 'emergencyKeywords' | 'emergencySeverity' | 'method' | 'classifiedAt'> & { modelVersion?: string }) | null> {
     if (!this.nluEnabled) {
       this.logger.warn('NLU service disabled by configuration. Skipping NLU phase.');
       return null;
@@ -324,6 +332,7 @@ export class IntentClassifierService {
         confidence: result.confidence ?? 0.0,
         extractedParameters: result.parameters || {},
         matchedPatterns: ['nlu-model'],
+        modelVersion: result.model_version || result.modelVersion || 'nlu-unknown',
       };
     } catch (error) {
       this.logger.warn(`NLU service unavailable: ${error instanceof Error ? error.message : String(error)}`);
@@ -429,11 +438,17 @@ Respond in JSON format:
         confidence: response.confidence || 0.8,
         extractedParameters: response.extractedParameters || {},
         matchedPatterns: ['llm-classified'],
+        modelVersion: 'openai-structured-json',
       };
     } catch (error) {
       this.recordFailure(this.llmCircuitBreaker, this.llmFailureThreshold, this.llmResetMs);
       throw new Error(`LLM classification failed: ${error instanceof Error ? error.message : String(error)}`);
     }
+  }
+
+
+  private getThresholdForIntent(intent: PrimaryIntent): number {
+    return this.intentThresholds[intent] ?? this.defaultConfidenceThreshold;
   }
 
   private isCircuitOpen(breaker: { failureCount: number; openUntil: number }): boolean {

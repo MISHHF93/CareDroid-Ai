@@ -45,6 +45,7 @@ class NLUModel:
         self.tokenizer: Optional[AutoTokenizer] = None
         self.model: Optional[AutoModelForSequenceClassification] = None
         self.loaded = False
+        self.model_version = self._resolve_model_version()
         
         logger.info(f"NLUModel initialized. Device: {self.device}")
 
@@ -57,6 +58,11 @@ class NLUModel:
             device = torch.device("cpu")
             logger.info("Using CPU for inference")
         return device
+
+    def _resolve_model_version(self) -> str:
+        """Resolve a stable model version string for telemetry/audit."""
+        model_name = MODEL_CONFIG.get("model_name", "unknown-model")
+        return str(model_name).replace("/", "-")
 
     def load(self) -> None:
         """
@@ -165,6 +171,7 @@ class NLUModel:
                 "subcategory": subcategory,
                 "key_terms": key_terms,
                 "latency_ms": round(latency_ms, 2),
+                "model_version": self.model_version,
             }
 
         except Exception as e:
@@ -241,6 +248,7 @@ class NLUModel:
                     "probabilities": probabilities.tolist(),
                     "subcategory": subcategory,
                     "key_terms": key_terms,
+                    "model_version": self.model_version,
                 })
 
             latency_ms = (time.time() - start_time) * 1000
@@ -280,6 +288,7 @@ class NLUModel:
             return {
                 "status": "not_loaded",
                 "model_name": self.model_path,
+            "model_version": self.model_version,
             }
 
         model_size_mb = sum(
@@ -289,6 +298,7 @@ class NLUModel:
         return {
             "status": "loaded",
             "model_name": self.model_path,
+            "model_version": self.model_version,
             "device": str(self.device),
             "model_size_mb": round(model_size_mb, 2),
             "num_parameters": sum(p.numel() for p in self.model.parameters()),

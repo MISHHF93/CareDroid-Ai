@@ -43,6 +43,9 @@ export interface IntentClassification {
   
   // Classification method used
   method: 'keyword' | 'nlu' | 'llm';
+
+  // Model version identifier for traceability (NLU/LLM)
+  modelVersion?: string;
   
   // Extracted parameters from the message
   extractedParameters: Record<string, any>;

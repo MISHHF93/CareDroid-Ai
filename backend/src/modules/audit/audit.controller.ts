@@ -37,41 +37,31 @@ export class AuditController {
       startDate,
       endDate,
       action,
-      limit = 100,
-      offset = 0,
+      search,
+      phiOnly,
+      cursor,
+      limit = 50,
     } = query;
 
     try {
-      let logs: any[];
+      const result = await this.auditService.findAll({
+        userId,
+        action,
+        startDate: startDate ? new Date(startDate) : undefined,
+        endDate: endDate ? new Date(endDate) : undefined,
+        search,
+        phiOnly: phiOnly === 'true',
+        cursor,
+        limit: parseInt(limit),
+      });
 
-      // Apply filters
-      if (userId && startDate && endDate) {
-        logs = await this.auditService.findByUserAndDateRange(
-          userId,
-          new Date(startDate),
-          new Date(endDate),
-        );
-      } else if (userId) {
-        logs = await this.auditService.findByUser(userId, parseInt(limit));
-      } else if (action) {
-        logs = await this.auditService.findByAction(action, parseInt(limit));
-      } else if (startDate && endDate) {
-        logs = await this.auditService.findByDateRange(
-          new Date(startDate),
-          new Date(endDate),
-        );
-      } else {
-        // Return all logs (limited)
-        logs = [];
-      }
-
-      this.logger.log(`Audit logs retrieved: ${logs.length} records`);
+      this.logger.log(`Audit logs retrieved: ${result.logs.length} records`);
 
       return {
         success: true,
-        data: logs.slice(offset, offset + parseInt(limit)),
-        total: logs.length,
-        offset,
+        data: result.logs,
+        total: result.total,
+        nextCursor: result.nextCursor,
         limit: parseInt(limit),
       };
     } catch (error) {

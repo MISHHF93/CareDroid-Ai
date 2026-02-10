@@ -34,7 +34,7 @@
 
 /* Color variants */
 .spinner-accent {
-  border-color: rgba(0, 255, 136, 0.2);
+  border-color: var(--accent-20);
   border-top-color: var(--accent-1);
 }
 

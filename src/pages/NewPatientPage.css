@@ -1,0 +1,263 @@
+/* ─── New Patient Page ─── */
+
+.npp-container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--space-6, 24px);
+  padding-bottom: var(--space-10, 64px);
+}
+
+/* Page header */
+.npp-page-header {
+  margin-bottom: var(--space-6, 24px);
+}
+
+.npp-page-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 12px);
+  margin-bottom: var(--space-2, 8px);
+}
+
+.npp-back-btn {
+  background: none;
+  border: none;
+  color: var(--clinical-primary, #00d4aa);
+  font-size: var(--font-size-sm, 0.875rem);
+  font-weight: var(--font-weight-medium, 500);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--border-radius, 8px);
+  transition: background 0.15s;
+  font-family: inherit;
+}
+
+.npp-back-btn:hover {
+  background: rgba(0, 212, 170, 0.08);
+}
+
+.npp-page-title {
+  margin: 0;
+  font-size: var(--font-size-2xl, 1.5rem);
+  font-weight: var(--font-weight-bold, 700);
+  color: var(--text-primary, #f8fafc);
+}
+
+.npp-page-subtitle {
+  margin: 0;
+  font-size: var(--font-size-sm, 0.875rem);
+  color: var(--text-secondary, rgba(248, 250, 252, 0.7));
+}
+
+/* Form */
+.npp-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 16px);
+}
+
+/* Sections */
+.npp-section {
+  background: var(--surface-primary, #060609);
+  border: 1px solid var(--border-color-subtle, rgba(255, 255, 255, 0.08));
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.npp-section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 12px);
+  width: 100%;
+  padding: var(--space-4, 16px) var(--space-5, 20px);
+  background: none;
+  border: none;
+  color: var(--text-primary, #f8fafc);
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.npp-section-header:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.npp-section-icon {
+  font-size: 1.25rem;
+}
+
+.npp-section-title {
+  flex: 1;
+  font-size: var(--font-size-base, 0.9375rem);
+  font-weight: var(--font-weight-semibold, 600);
+}
+
+.npp-chevron {
+  font-size: 1rem;
+  color: var(--text-tertiary, rgba(248, 250, 252, 0.4));
+  transition: transform 0.2s ease;
+}
+
+.npp-chevron-open {
+  transform: rotate(180deg);
+}
+
+.npp-section-body {
+  padding: 0 var(--space-5, 20px) var(--space-5, 20px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 16px);
+  border-top: 1px solid var(--border-color-subtle, rgba(255, 255, 255, 0.06));
+}
+
+/* Field layouts */
+.npp-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 4px);
+}
+
+.npp-field-full {
+  width: 100%;
+}
+
+.npp-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4, 16px);
+}
+
+.npp-row-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--space-4, 16px);
+}
+
+/* Vitals grid (from VitalsInput) */
+.vitals-input-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--space-4, 16px);
+}
+
+.vitals-input-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 4px);
+}
+
+.vitals-unit {
+  font-weight: var(--font-weight-normal, 400);
+  color: var(--text-tertiary, rgba(248, 250, 252, 0.4));
+  margin-left: 4px;
+  font-size: var(--font-size-xs, 0.75rem);
+}
+
+.vitals-range-hint {
+  font-size: 0.6875rem;
+  color: var(--text-tertiary, rgba(248, 250, 252, 0.35));
+}
+
+.vitals-abnormal {
+  border-color: #fbbf24 !important;
+}
+
+.vitals-abnormal:focus {
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.15) !important;
+}
+
+/* Dynamic list rows (medications, alerts) */
+.npp-list-row,
+.npp-alert-row {
+  display: flex;
+  gap: var(--space-2, 8px);
+  align-items: center;
+}
+
+.npp-alert-row .np-input {
+  flex: 1;
+}
+
+.npp-severity-select {
+  width: 130px;
+  flex-shrink: 0;
+}
+
+.npp-remove-btn {
+  background: none;
+  border: none;
+  color: var(--text-tertiary, rgba(248, 250, 252, 0.4));
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: var(--border-radius, 8px);
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+
+.npp-remove-btn:hover {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.1);
+}
+
+.npp-add-btn {
+  background: none;
+  border: 1px dashed var(--border-color-subtle, rgba(255, 255, 255, 0.15));
+  color: var(--clinical-primary, #00d4aa);
+  font-size: var(--font-size-sm, 0.875rem);
+  font-weight: var(--font-weight-medium, 500);
+  padding: 10px;
+  border-radius: var(--border-radius, 8px);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  font-family: inherit;
+  width: 100%;
+  text-align: center;
+}
+
+.npp-add-btn:hover {
+  background: rgba(0, 212, 170, 0.06);
+  border-color: var(--clinical-primary, #00d4aa);
+}
+
+/* Form actions */
+.npp-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3, 12px);
+  padding-top: var(--space-4, 16px);
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 600px) {
+  .npp-container {
+    padding: var(--space-4, 16px);
+  }
+
+  .npp-row-2,
+  .npp-row-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .vitals-input-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .npp-alert-row {
+    flex-wrap: wrap;
+  }
+
+  .npp-severity-select {
+    width: 100%;
+  }
+
+  .npp-actions {
+    flex-direction: column-reverse;
+  }
+
+  .npp-actions .np-btn {
+    width: 100%;
+    text-align: center;
+  }
+}

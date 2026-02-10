@@ -1,7 +1,7 @@
 /* PublicShell Layout Styles */
 
 .public-shell {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   background: var(--navy-bg);
@@ -15,6 +15,7 @@
   top: 0;
   z-index: 100;
   backdrop-filter: blur(12px);
+  padding-top: var(--safe-area-top);
 }
 
 .public-header-content {
@@ -78,7 +79,7 @@
 
 .btn-public-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 255, 136, 0.3);
+  box-shadow: 0 4px 12px var(--accent-20);
 }
 
 /* Main Content */
@@ -87,14 +88,14 @@
   max-width: 1200px;
   width: 100%;
   margin: 0 auto;
-  padding: var(--space-8) var(--space-6);
+  padding: var(--space-8) var(--space-6) calc(var(--space-8) + var(--safe-area-bottom));
 }
 
 /* Footer */
 .public-footer {
   background: var(--navy-ink);
   border-top: 1px solid var(--panel-border);
-  padding: var(--space-8) var(--space-6) var(--space-6);
+  padding: var(--space-8) var(--space-6) calc(var(--space-6) + var(--safe-area-bottom));
 }
 
 .public-footer-content {
@@ -135,9 +136,9 @@
 }
 
 .badge-hipaa {
-  background: rgba(0, 255, 136, 0.15);
+  background: var(--accent-15);
   color: var(--accent-1);
-  border: 1px solid rgba(0, 255, 136, 0.3);
+  border: 1px solid var(--accent-20);
 }
 
 .badge-version {

@@ -9,6 +9,18 @@ const mockService = vi.hoisted(() => ({
   trackToolAccess: vi.fn(),
   subscribeToActivity: vi.fn(),
   subscribeToAlerts: vi.fn(),
+  subscribeToStats: vi.fn(),
+  subscribeToAlertAcknowledged: vi.fn(),
+  subscribeToWorkload: vi.fn(),
+  subscribeToConnection: vi.fn(),
+  getWorkload: vi.fn(),
+  getMARPreview: vi.fn(),
+  getOnCallRoster: vi.fn(),
+  getBedBoard: vi.fn(),
+  getLabTimeline: vi.fn(),
+  getCDSReminders: vi.fn(),
+  toggleTask: vi.fn(),
+  placeOrder: vi.fn(),
 }));
 
 vi.mock('@/services/dashboardService', () => ({
@@ -39,13 +51,28 @@ describe('useDashboard', () => {
     mockService.getCriticalPatients.mockResolvedValue([
       { id: 'patient-1', name: 'Sarah Johnson', status: 'critical' },
     ]);
+    mockService.getWorkload.mockResolvedValue({ tasks: [], completedCount: 0, totalCount: 0 });
+    mockService.getMARPreview.mockResolvedValue([]);
+    mockService.getOnCallRoster.mockResolvedValue([]);
+    mockService.getBedBoard.mockResolvedValue({ beds: [], occupancy: 0, total: 0 });
+    mockService.getLabTimeline.mockResolvedValue([]);
+    mockService.getCDSReminders.mockResolvedValue([]);
     mockService.acknowledgeAlert.mockResolvedValue(true);
+    mockService.toggleTask.mockResolvedValue(true);
+    mockService.placeOrder.mockResolvedValue({ success: true });
     mockService.subscribeToActivity.mockImplementation((cb) => {
       mockService._activityCallback = cb;
       return vi.fn();
     });
     mockService.subscribeToAlerts.mockImplementation((cb) => {
       mockService._alertCallback = cb;
+      return vi.fn();
+    });
+    mockService.subscribeToStats.mockImplementation(() => vi.fn());
+    mockService.subscribeToAlertAcknowledged.mockImplementation(() => vi.fn());
+    mockService.subscribeToWorkload.mockImplementation(() => vi.fn());
+    mockService.subscribeToConnection.mockImplementation((cb) => {
+      cb('connected');
       return vi.fn();
     });
   });

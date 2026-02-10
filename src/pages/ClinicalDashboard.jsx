@@ -4,12 +4,14 @@ import { Card } from '../components/ui/molecules/Card';
 import { Button } from '../components/ui/atoms/Button';
 import { Badge } from '../components/ui/atoms/Badge';
 import AppShell from '../layout/AppShell';
+import { useLanguage } from '../contexts/LanguageContext';
 
 /**
  * ClinicalDashboard - Demonstration of the enhanced clinical design system
  * Showcases PatientCard component and clinical UI patterns
  */
 function ClinicalDashboard() {
+  const { t } = useLanguage();
   // Sample patient data for demonstration
   const [patients] = useState([
     {
@@ -129,18 +131,18 @@ function ClinicalDashboard() {
               margin: 0,
               marginBottom: 'var(--space-2)'
             }}>
-              Clinical Dashboard
+              {t('clinicalDashboard.title')}
             </h1>
             <p style={{
               fontSize: 'var(--font-size-lg)',
               color: 'var(--text-secondary)',
               margin: 0
             }}>
-              Enhanced clinical interface with improved design system
+              {t('clinicalDashboard.subtitle')}
             </p>
           </div>
           <Button variant="primary" size="lg">
-            Add New Patient
+            {t('clinicalDashboard.addNewPatient')}
           </Button>
         </div>
 
@@ -165,7 +167,7 @@ function ClinicalDashboard() {
               color: 'var(--text-secondary)',
               fontWeight: 'var(--font-weight-medium)'
             }}>
-              Total Patients
+              {t('clinicalDashboard.totalPatients')}
             </div>
           </Card>
 
@@ -183,7 +185,7 @@ function ClinicalDashboard() {
               color: 'var(--text-secondary)',
               fontWeight: 'var(--font-weight-medium)'
             }}>
-              Critical
+              {t('clinicalDashboard.critical')}
             </div>
           </Card>
 
@@ -201,7 +203,7 @@ function ClinicalDashboard() {
               color: 'var(--text-secondary)',
               fontWeight: 'var(--font-weight-medium)'
             }}>
-              Moderate
+              {t('clinicalDashboard.moderate')}
             </div>
           </Card>
 
@@ -219,7 +221,7 @@ function ClinicalDashboard() {
               color: 'var(--text-secondary)',
               fontWeight: 'var(--font-weight-medium)'
             }}>
-              Stable
+              {t('clinicalDashboard.stable')}
             </div>
           </Card>
         </div>
@@ -232,7 +234,7 @@ function ClinicalDashboard() {
             color: 'var(--text-primary)',
             marginBottom: 'var(--space-4)'
           }}>
-            Active Patients
+            {t('clinicalDashboard.activePatients')}
           </h2>
 
           <div style={{
@@ -260,7 +262,7 @@ function ClinicalDashboard() {
             color: 'var(--text-primary)',
             marginBottom: 'var(--space-4)'
           }}>
-            Design System Features
+            {t('clinicalDashboard.designSystemFeatures')}
           </h3>
 
           <div style={{
@@ -275,7 +277,7 @@ function ClinicalDashboard() {
                 color: 'var(--text-primary)',
                 marginBottom: 'var(--space-2)'
               }}>
-                Clinical Color System
+                {t('clinicalDashboard.clinicalColorSystem')}
               </h4>
               <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
                 <Badge variant="error">Critical</Badge>
@@ -292,7 +294,7 @@ function ClinicalDashboard() {
                 color: 'var(--text-primary)',
                 marginBottom: 'var(--space-2)'
               }}>
-                Button Variants
+                {t('clinicalDashboard.buttonVariants')}
               </h4>
               <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
                 <Button variant="primary" size="sm">Primary</Button>
@@ -308,14 +310,14 @@ function ClinicalDashboard() {
                 color: 'var(--text-primary)',
                 marginBottom: 'var(--space-2)'
               }}>
-                Card Variants
+                {t('clinicalDashboard.cardVariants')}
               </h4>
               <p style={{
                 fontSize: 'var(--font-size-sm)',
                 color: 'var(--text-secondary)',
                 margin: 0
               }}>
-                Elevated, Glass, and Outlined variants with clinical theming
+                {t('clinicalDashboard.cardVariantsDesc')}
               </p>
             </div>
           </div>

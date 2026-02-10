@@ -1,18 +1,21 @@
 import { useState } from 'react';
 import ToolPageLayout from './ToolPageLayout';
+import { useLanguage } from '../../contexts/LanguageContext';
 import './LabInterpreter.css';
 import { apiFetch } from '../../services/apiClient';
 
 const LabInterpreter = () => {
+  const { t } = useLanguage();
+
   const toolConfig = {
     id: 'lab-interpreter',
     icon: '🧪',
-    name: 'Lab Interpreter',
+    name: t('tools.labInterpreter.name'),
     path: '/tools/lab-interpreter',
     color: '#4ECDC4',
-    description: 'Interpret lab values and diagnostic tests',
+    description: t('tools.labInterpreter.description'),
     shortcut: 'Ctrl+2',
-    category: 'Diagnostic'
+    category: t('tools.labInterpreter.category')
   };
 
   const [labValues, setLabValues] = useState([]);
@@ -89,7 +92,7 @@ const LabInterpreter = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to interpret lab values');
+        throw new Error(t('tools.labInterpreter.interpretError'));
       }
 
       const data = await response.json();
@@ -148,11 +151,11 @@ const LabInterpreter = () => {
           {/* Patient Context */}
           <div className="patient-context">
             <div className="context-group">
-              <label className="context-label">Age</label>
+              <label className="context-label">{t('tools.labInterpreter.age')}</label>
               <input
                 type="number"
                 className="context-input"
-                placeholder="Years"
+                placeholder={t('tools.labInterpreter.yearsPlaceholder')}
                 value={patientAge}
                 onChange={(e) => setPatientAge(e.target.value)}
                 min="0"
@@ -160,23 +163,23 @@ const LabInterpreter = () => {
               />
             </div>
             <div className="context-group">
-              <label className="context-label">Sex</label>
+              <label className="context-label">{t('tools.labInterpreter.sex')}</label>
               <select
                 className="context-select"
                 value={patientSex}
                 onChange={(e) => setPatientSex(e.target.value)}
               >
                 <option value="">--</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
+                <option value="male">{t('tools.labInterpreter.male')}</option>
+                <option value="female">{t('tools.labInterpreter.female')}</option>
+                <option value="other">{t('tools.labInterpreter.other')}</option>
               </select>
             </div>
             <div className="context-group">
-              <label className="context-label">Clinical Context</label>
+              <label className="context-label">{t('tools.labInterpreter.clinicalContext')}</label>
               <textarea
                 className="context-textarea"
-                placeholder="e.g., Sepsis evaluation, routine check-up..."
+                placeholder={t('tools.labInterpreter.clinicalContextPlaceholder')}
                 value={clinicalContext}
                 onChange={(e) => setClinicalContext(e.target.value)}
               />
@@ -186,12 +189,12 @@ const LabInterpreter = () => {
           {/* Lab Entry Form */}
           <div className="lab-entry-form">
             <div className="lab-input-group">
-              <label className="lab-input-label">Lab Name</label>
+              <label className="lab-input-label">{t('tools.labInterpreter.labName')}</label>
               <input
                 type="text"
                 list="common-labs"
                 className="lab-input-field"
-                placeholder="e.g., Sodium, WBC"
+                placeholder={t('tools.labInterpreter.labNamePlaceholder')}
                 value={currentLab.name}
                 onChange={(e) => {
                   const selected = commonLabs.find(l => l.name === e.target.value);
@@ -209,7 +212,7 @@ const LabInterpreter = () => {
               </datalist>
             </div>
             <div className="lab-input-group">
-              <label className="lab-input-label">Value</label>
+              <label className="lab-input-label">{t('tools.labInterpreter.value')}</label>
               <input
                 type="number"
                 step="0.1"
@@ -220,7 +223,7 @@ const LabInterpreter = () => {
               />
             </div>
             <div className="lab-input-group">
-              <label className="lab-input-label">Unit</label>
+              <label className="lab-input-label">{t('tools.labInterpreter.unit')}</label>
               <input
                 type="text"
                 className="lab-input-field"
@@ -253,14 +256,14 @@ const LabInterpreter = () => {
                     className="lab-value-remove"
                     onClick={() => handleRemoveLab(index)}
                   >
-                    Remove
+                    {t('tools.labInterpreter.remove')}
                   </button>
                 </div>
               ))}
             </div>
           ) : (
             <div className="lab-values-empty">
-              No lab values added yet. Add values above to begin.
+              {t('tools.labInterpreter.noValuesYet')}
             </div>
           )}
 
@@ -274,10 +277,10 @@ const LabInterpreter = () => {
               {loading ? (
                 <>
                   <div className="lab-spinner" style={{ width: '20px', height: '20px', borderWidth: '2px' }}></div>
-                  Interpreting...
+                  {t('tools.labInterpreter.interpreting')}
                 </>
               ) : (
-                <>🔬 Interpret Lab Values</>
+                <>🔬 {t('tools.labInterpreter.interpretLabValues')}</>
               )}
             </button>
             <button className="lab-load-example-button" onClick={loadExample}>
@@ -344,7 +347,7 @@ const LabResults = ({ results }) => {
             <div className="lab-stat-label">Total Values</div>
           </div>
           <div className="lab-stat-card">
-            <div className="lab-stat-value" style={{ color: '#00ff88' }}>{summary.normal}</div>
+            <div className="lab-stat-value" style={{ color: 'var(--accent)' }}>{summary.normal}</div>
             <div className="lab-stat-label">Normal</div>
           </div>
           <div className="lab-stat-card">
@@ -409,7 +412,7 @@ const LabResults = ({ results }) => {
                 {labs.map((lab, index) => (
                   <tr key={index}>
                     <td style={{ fontWeight: 500 }}>{lab.name}</td>
-                    <td style={{ fontFamily: 'monospace', color: '#00ffff' }}>
+                    <td style={{ fontFamily: 'monospace', color: 'var(--accent-light)' }}>
                       {lab.value} {lab.unit}
                     </td>
                     <td style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>

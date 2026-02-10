@@ -1,11 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { createHash } from 'crypto';
+import { EventEmitter } from 'events';
 import { AuditLog, AuditAction } from './entities/audit-log.entity';
 
 @Injectable()
 export class AuditService {
+  private readonly logger = new Logger(AuditService.name);
+  public readonly events = new EventEmitter();
+
   constructor(
     @InjectRepository(AuditLog)
     private readonly auditRepository: Repository<AuditLog>,
@@ -74,7 +78,24 @@ export class AuditService {
       integrityVerified: true, // Assume valid when first created
     });
 
-    return this.auditRepository.save(auditLog);
+    const saved = await this.auditRepository.save(auditLog);
+
+    // Emit for SSE real-time streaming
+    try {
+      this.events.emit('audit:new', {
+        id: saved.id,
+        action: saved.action,
+        userId: saved.userId,
+        resource: saved.resource,
+        timestamp: saved.timestamp,
+        phiAccessed: saved.phiAccessed || false,
+        integrityVerified: saved.integrityVerified,
+      });
+    } catch (e) {
+      this.logger.warn('Failed to emit audit:new event', e);
+    }
+
+    return saved;
   }
 
   /**
@@ -163,12 +184,68 @@ export class AuditService {
   }
 
   async findPhiAccess(startDate: Date, endDate: Date) {
-    return this.auditRepository.find({
-      where: {
-        phiAccessed: true,
-      },
-      order: { timestamp: 'DESC' },
-    });
+    return this.auditRepository
+      .createQueryBuilder('log')
+      .where('log.phiAccessed = :phi', { phi: true })
+      .andWhere('log.timestamp >= :startDate', { startDate })
+      .andWhere('log.timestamp <= :endDate', { endDate })
+      .orderBy('log.timestamp', 'DESC')
+      .getMany();
+  }
+
+  /**
+   * Find all logs with optional filters and cursor-based pagination
+   */
+  async findAll(filters: {
+    userId?: string;
+    action?: string;
+    startDate?: Date;
+    endDate?: Date;
+    search?: string;
+    phiOnly?: boolean;
+    cursor?: string;
+    limit?: number;
+  } = {}): Promise<{ logs: AuditLog[]; nextCursor: string | null; total: number }> {
+    const limit = filters.limit || 50;
+    const qb = this.auditRepository.createQueryBuilder('log');
+
+    if (filters.userId) {
+      qb.andWhere('log.userId = :userId', { userId: filters.userId });
+    }
+    if (filters.action) {
+      qb.andWhere('log.action = :action', { action: filters.action });
+    }
+    if (filters.startDate) {
+      qb.andWhere('log.timestamp >= :startDate', { startDate: filters.startDate });
+    }
+    if (filters.endDate) {
+      qb.andWhere('log.timestamp <= :endDate', { endDate: filters.endDate });
+    }
+    if (filters.phiOnly) {
+      qb.andWhere('log.phiAccessed = :phi', { phi: true });
+    }
+    if (filters.search) {
+      qb.andWhere('(log.resource LIKE :search)', { search: `%${filters.search}%` });
+    }
+    if (filters.cursor) {
+      // Cursor is the timestamp of the last item
+      qb.andWhere('log.timestamp < :cursor', { cursor: new Date(filters.cursor) });
+    }
+
+    const total = await qb.clone().getCount();
+    const logs = await qb
+      .orderBy('log.timestamp', 'DESC')
+      .take(limit + 1)
+      .getMany();
+
+    const hasMore = logs.length > limit;
+    if (hasMore) logs.pop();
+
+    const nextCursor = hasMore && logs.length > 0
+      ? logs[logs.length - 1].timestamp.toISOString()
+      : null;
+
+    return { logs, nextCursor, total };
   }
 
   /**

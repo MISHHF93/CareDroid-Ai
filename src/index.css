@@ -42,20 +42,20 @@
   --emergency-moderate-bg: rgba(217, 119, 6, 0.1);
 
   /* ===== SEMANTIC TEXT COLORS ===== */
-  --text-primary: #0f172a;          /* Dark slate */
-  --text-secondary: #475569;        /* Medium slate */
-  --text-muted: #64748b;            /* Light slate */
-  --text-disabled: #94a3b8;         /* Disabled slate */
-  --text-inverse: #f8fafc;          /* Light background text */
+  --text-primary: #f8fafc;          /* Light on dark */
+  --text-secondary: rgba(248, 250, 252, 0.7);
+  --text-muted: rgba(248, 250, 252, 0.6);
+  --text-disabled: rgba(248, 250, 252, 0.35);
+  --text-inverse: #0f172a;          /* Dark on light */
 
   /* ===== SURFACE SYSTEM ===== */
-  --surface-primary: #ffffff;       /* Pure white */
-  --surface-secondary: #f8fafc;     /* Off-white */
-  --surface-tertiary: #f1f5f9;      /* Light gray */
-  --surface-quaternary: #e2e8f0;    /* Medium gray */
-  --surface-overlay: rgba(15, 23, 42, 0.8);
-  --surface-glass: rgba(255, 255, 255, 0.8);
-  --surface-glass-dark: rgba(15, 23, 42, 0.7);
+  --surface-primary: #060609;       /* True black elevated */
+  --surface-secondary: #0c0c10;     /* True black layer 2 */
+  --surface-tertiary: #040406;      /* True black recessed */
+  --surface-quaternary: #121216;    /* True black highest */
+  --surface-overlay: rgba(0, 0, 0, 0.8);
+  --surface-glass: rgba(0, 0, 0, 0.88);
+  --surface-glass-dark: rgba(0, 0, 0, 0.7);
 
   /* ===== SPACING SCALE ===== */
   --space-px: 1px;
@@ -150,16 +150,16 @@
 
   /* ===== LEGACY SUPPORT ===== */
   /* Keep existing variables for backward compatibility */
-  --navy-bg: #0b1220;
-  --navy-ink: #0b1220;
+  --navy-bg: #000000;
+  --navy-ink: #000000;
   --text-color: #f8fafc;
   --muted-text: rgba(248, 250, 252, 0.6);
-  --panel-bg: rgba(255, 255, 255, 0.04);
-  --panel-border: rgba(255, 255, 255, 0.12);
-  --surface-1: rgba(15, 23, 42, 0.7);
-  --surface-2: rgba(15, 23, 42, 0.4);
-  --shadow-1: 0 8px 24px rgba(2, 6, 23, 0.25);
-  --shadow-2: 0 14px 40px rgba(2, 6, 23, 0.35);
+  --panel-bg: rgba(255, 255, 255, 0.06);
+  --panel-border: rgba(255, 255, 255, 0.14);
+  --surface-1: rgba(0, 0, 0, 0.7);
+  --surface-2: rgba(0, 0, 0, 0.4);
+  --shadow-1: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-2: 0 14px 40px rgba(0, 0, 0, 0.45);
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 18px;
@@ -187,9 +187,9 @@
   --gradient-accent: linear-gradient(135deg, #00ff88, #00ffff);
   --danger: #ff6b6b;
   --warning: #ffd166;
-  --text-primary: #f8fafc;
-  --text-muted: rgba(248, 250, 252, 0.6);
-  --text-xs: 12px;
+
+  /* (text/surface/border tokens defined above in design system block) */
+
   --text-sm: 14px;
   --text-md: 16px;
   --text-lg: 18px;
@@ -200,13 +200,33 @@
   --space-lg: 16px;
   --space-xl: 20px;
   --space-2xs: 4px;
-  --border-subtle: rgba(255, 255, 255, 0.12);
-  --surface-glass: rgba(15, 23, 42, 0.7);
 
   /* Animation timing functions */
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
   --ease-elastic: cubic-bezier(0.68, -0.6, 0.32, 1.6);
+
+  /* ===== APPEARANCE SYSTEM (set by AppearanceProvider) ===== */
+  --accent: #3B82F6;
+  --accent-light: #60A5FA;
+  --accent-dark: #2563EB;
+  --accent-rgb: 59,130,246;
+  --accent-10: rgba(59,130,246,0.10);
+  --accent-15: rgba(59,130,246,0.15);
+  --accent-20: rgba(59,130,246,0.20);
+  --app-font-base: 14px;
+  --app-font-scale: 1.0;
+  --density-padding: 10px;
+  --density-gap: 10px;
+  --density-row: 44px;
+  --density-section: 16px;
+  --code-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Safe area insets (Android/iOS WebView) */
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
 }
 
 @media (prefers-color-scheme: light) {
@@ -214,21 +234,41 @@
     --navy-bg: #f5f7fb;
     --navy-ink: #1b2340;
     --text-color: #1b2340;
+    --text-primary: #1b2340;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    --text-disabled: #94a3b8;
+    --text-inverse: #f8fafc;
     --muted-text: rgba(27, 35, 64, 0.7);
     --panel-bg: rgba(27, 35, 64, 0.04);
     --panel-border: rgba(27, 35, 64, 0.12);
+    --surface-primary: #ffffff;
+    --surface-secondary: #f8fafc;
+    --surface-tertiary: #f1f5f9;
+    --surface-quaternary: #e2e8f0;
+    --surface-overlay: rgba(15, 23, 42, 0.6);
+    --surface-glass: rgba(255, 255, 255, 0.8);
+    --surface-glass-dark: rgba(255, 255, 255, 0.6);
     --surface-1: rgba(255, 255, 255, 0.9);
     --surface-2: rgba(255, 255, 255, 0.6);
     --shadow-1: 0 8px 24px rgba(15, 23, 42, 0.12);
     --shadow-2: 0 14px 40px rgba(15, 23, 42, 0.16);
+    --border-subtle: rgba(27, 35, 64, 0.10);
+    --border-color-subtle: rgba(27, 35, 64, 0.08);
+    --border-color-default: rgba(27, 35, 64, 0.14);
   }
 }
 
 /* ===== BASE STYLES ===== */
 
-/* Smooth scrolling */
+/* Smooth scrolling & base sizing */
 html {
   scroll-behavior: smooth;
+  height: 100%;
+}
+
+html, body {
+  min-height: 100%;
 }
 
 body {
@@ -239,12 +279,103 @@ body {
   font-weight: var(--font-weight-normal);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: radial-gradient(circle at top, rgba(0, 212, 170, 0.08), transparent 40%),
-    radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.06), transparent 45%),
+  background: radial-gradient(circle at top, rgba(0, 212, 170, 0.03), transparent 40%),
+    radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.02), transparent 45%),
     var(--surface-secondary);
   color: var(--text-primary);
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   transition: background var(--transition-normal);
+}
+
+#root {
+  width: 100%;
+  min-height: 100dvh;
+  height: 100%;
+}
+
+/* ===== APP LAYOUT SHELLS ===== */
+
+.app-shell {
+  display: flex;
+  min-height: 100dvh;
+  width: 100%;
+  background: var(--navy-bg);
+  color: var(--text-color);
+  overflow: hidden;
+  position: relative;
+}
+
+.app-shell-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-left: 280px;
+  min-width: 0;
+  min-height: 100dvh;
+  overflow: auto;
+  padding-bottom: var(--safe-area-bottom);
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.app-shell.app-shell-collapsed .app-shell-main {
+  margin-left: 70px;
+}
+
+.app-shell-overlay {
+  display: none;
+}
+
+.auth-shell {
+  min-height: 100dvh;
+  width: 100%;
+  background: var(--navy-bg);
+  color: var(--text-color);
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) minmax(320px, 520px);
+  gap: 32px;
+  padding: calc(48px + var(--safe-area-top))
+    calc(48px + var(--safe-area-right))
+    calc(48px + var(--safe-area-bottom))
+    calc(48px + var(--safe-area-left));
+}
+
+.auth-shell-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 20px;
+}
+
+.auth-shell-title {
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1.1;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.auth-shell-subtitle {
+  font-size: 16px;
+  color: var(--muted-text);
+  max-width: 480px;
+}
+
+.auth-shell-features {
+  display: grid;
+  gap: 10px;
+  max-width: 380px;
+}
+
+.auth-shell-feature {
+  padding: 14px 16px;
+}
+
+.auth-shell-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* ===== TYPOGRAPHY SYSTEM ===== */
@@ -337,12 +468,12 @@ p {
 }
 
 .focus-ring {
-  outline: 2px solid var(--clinical-primary);
+  outline: 2px solid var(--accent, #3B82F6);
   outline-offset: 2px;
 }
 
 .focus-ring:focus-visible {
-  outline: 2px solid var(--clinical-primary);
+  outline: 2px solid var(--accent, #3B82F6);
   outline-offset: 2px;
 }
 
@@ -350,6 +481,44 @@ p {
 
 @media (max-width: 768px) {
   .hidden-mobile { display: none !important; }
+
+  .app-shell-main {
+    margin-left: 0;
+    padding-left: var(--safe-area-left);
+    padding-right: var(--safe-area-right);
+  }
+
+  .app-shell-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 900;
+  }
+
+  .app-shell:not(.app-shell-collapsed) .app-shell-overlay {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .auth-shell {
+    grid-template-columns: 1fr;
+    padding: calc(28px + var(--safe-area-top))
+      calc(20px + var(--safe-area-right))
+      calc(32px + var(--safe-area-bottom))
+      calc(20px + var(--safe-area-left));
+  }
+
+  .auth-shell-title {
+    font-size: 28px;
+  }
+
+  .auth-shell-content {
+    justify-content: flex-start;
+  }
 }
 
 @media (min-width: 769px) {
@@ -374,14 +543,6 @@ p {
   }
 }
 
-#root {
-  width: 100vw;
-  height: 100vh;
-  position: fixed;
-  top: 0;
-  left: 0;
-}
-
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;
@@ -389,16 +550,16 @@ p {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 255, 136, 0.3);
+  background: var(--accent-15);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 255, 136, 0.5);
+  background: var(--accent-20);
 }
 
 /* Textarea auto-resize */
@@ -521,10 +682,10 @@ code {
 
 @keyframes glow {
   0%, 100% {
-    box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
+    box-shadow: 0 0 20px var(--accent-20);
   }
   50% {
-    box-shadow: 0 0 30px rgba(0, 255, 136, 0.4);
+    box-shadow: 0 0 30px var(--accent-20);
   }
 }
 
@@ -535,6 +696,11 @@ code {
   to {
     transform: rotate(360deg);
   }
+}
+
+@keyframes livePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.4; transform: scale(0.85); }
 }
 
 /* Utility Animation Classes */
@@ -598,14 +764,32 @@ code {
 }
 
 .hover-glow:hover {
-  box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+  box-shadow: 0 0 20px var(--accent-20);
 }
 
 /* Focus States */
 *:focus-visible {
-  outline: 2px solid var(--accent-green);
+  outline: 2px solid var(--accent, #3B82F6);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
+}
+
+/* Text Selection */
+::selection {
+  background: rgba(var(--accent-rgb, 59,130,246), 0.35);
+  color: #fff;
+}
+::-moz-selection {
+  background: rgba(var(--accent-rgb, 59,130,246), 0.35);
+  color: #fff;
+}
+html.theme-light ::selection {
+  background: rgba(var(--accent-rgb, 59,130,246), 0.25);
+  color: #000;
+}
+html.theme-light ::-moz-selection {
+  background: rgba(var(--accent-rgb, 59,130,246), 0.25);
+  color: #000;
 }
 
 /* Smooth Transitions */
@@ -641,9 +825,9 @@ a, button, input, select, textarea {
 .skeleton {
   background: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.05) 25%,
-    rgba(255, 255, 255, 0.1) 50%,
-    rgba(255, 255, 255, 0.05) 75%
+    rgba(255, 255, 255, 0.08) 25%,
+    rgba(255, 255, 255, 0.14) 50%,
+    rgba(255, 255, 255, 0.08) 75%
   );
   background-size: 200% 100%;
   animation: skeleton-loading 1.5s ease-in-out infinite;
@@ -667,3 +851,238 @@ a, button, input, select, textarea {
     transform: translateX(0);
   }
 }
+
+/* ═══════════════════════════════════════════════════
+   APPEARANCE SYSTEM — Dynamic classes set by AppearanceProvider
+   ═══════════════════════════════════════════════════ */
+
+/* ─── Theme: Light mode ─── */
+html.theme-light {
+  --navy-bg: #f5f7fb;
+  --navy-ink: #1b2340;
+  --text-color: #1b2340;
+  --text-primary: #1b2340;
+  --text-secondary: rgba(27, 35, 64, 0.7);
+  --text-tertiary: rgba(27, 35, 64, 0.5);
+  --text-muted: rgba(27, 35, 64, 0.55);
+  --text-disabled: #94a3b8;
+  --text-inverse: #f8fafc;
+  --muted-text: rgba(27, 35, 64, 0.6);
+  --panel-bg: rgba(255, 255, 255, 0.85);
+  --panel-border: rgba(27, 35, 64, 0.12);
+  --surface-1: rgba(255, 255, 255, 0.92);
+  --surface-2: rgba(255, 255, 255, 0.65);
+  --surface-primary: #ffffff;
+  --surface-secondary: #f0f2f7;
+  --surface-tertiary: #e8ebf2;
+  --surface-quaternary: #dde1ec;
+  --surface-glass: rgba(255, 255, 255, 0.85);
+  --surface-glass-dark: rgba(255, 255, 255, 0.7);
+  --shadow-1: 0 8px 24px rgba(15, 23, 42, 0.08);
+  --shadow-2: 0 14px 40px rgba(15, 23, 42, 0.12);
+  --border-subtle: rgba(27, 35, 64, 0.10);
+  --border-color-subtle: rgba(27, 35, 64, 0.08);
+  --border-color-default: rgba(27, 35, 64, 0.14);
+  --border-color-strong: rgba(27, 35, 64, 0.24);
+  color-scheme: light;
+}
+
+html.theme-light body {
+  background: linear-gradient(135deg, #f0f4ff 0%, #f5f7fb 50%, #faf5ff 100%);
+  color: var(--text-primary);
+}
+
+/* ─── Theme: Dark mode (explicit) ─── */
+html.theme-dark {
+  --navy-bg: #000000;
+  --navy-ink: #000000;
+  --text-color: #f8fafc;
+  --text-primary: #f8fafc;
+  --text-secondary: rgba(248, 250, 252, 0.7);
+  --text-tertiary: rgba(248, 250, 252, 0.5);
+  --text-muted: rgba(248, 250, 252, 0.6);
+  --muted-text: rgba(248, 250, 252, 0.6);
+  --panel-bg: rgba(255, 255, 255, 0.06);
+  --panel-border: rgba(255, 255, 255, 0.14);
+  --surface-1: rgba(0, 0, 0, 0.7);
+  --surface-2: rgba(0, 0, 0, 0.4);
+  --surface-primary: #060609;
+  --surface-secondary: #0c0c10;
+  --surface-tertiary: #040406;
+  --surface-quaternary: #121216;
+  --surface-glass: rgba(0, 0, 0, 0.88);
+  --surface-glass-dark: rgba(0, 0, 0, 0.7);
+  --shadow-1: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-2: 0 14px 40px rgba(0, 0, 0, 0.45);
+  --border-subtle: rgba(255, 255, 255, 0.14);
+  --border-color-subtle: rgba(255, 255, 255, 0.12);
+  --border-color-default: rgba(255, 255, 255, 0.18);
+  --border-color-strong: rgba(255, 255, 255, 0.24);
+  color-scheme: dark;
+}
+
+/* ─── Font‑size scaling ─── */
+html {
+  font-size: var(--app-font-base);
+}
+
+/* Zoom the entire app to scale px-based inline styles */
+html[data-font-size="small"] .app-shell  { zoom: 0.88; }
+html[data-font-size="large"] .app-shell  { zoom: 1.12; }
+
+/* Also scale CSS-driven text via html font-size */
+html[data-font-size="small"]  { font-size: 12px; }
+html[data-font-size="medium"] { font-size: 14px; }
+html[data-font-size="large"]  { font-size: 16px; }
+
+/* ─── Density scaling ─── */
+html[data-density="compact"] .app-shell {
+  gap: 4px;
+}
+html[data-density="compact"] .sidebar-section,
+html[data-density="compact"] .settings-card,
+html[data-density="compact"] .card,
+html[data-density="compact"] .panel {
+  padding: 8px;
+  margin-bottom: 6px;
+}
+html[data-density="compact"] .nav-item,
+html[data-density="compact"] .sidebar-link,
+html[data-density="compact"] .list-row,
+html[data-density="compact"] tr {
+  padding-top: 4px;
+  padding-bottom: 4px;
+  min-height: 32px;
+}
+
+html[data-density="spacious"] .app-shell {
+  gap: 20px;
+}
+html[data-density="spacious"] .sidebar-section,
+html[data-density="spacious"] .settings-card,
+html[data-density="spacious"] .card,
+html[data-density="spacious"] .panel {
+  padding: 20px;
+  margin-bottom: 16px;
+}
+html[data-density="spacious"] .nav-item,
+html[data-density="spacious"] .sidebar-link,
+html[data-density="spacious"] .list-row,
+html[data-density="spacious"] tr {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  min-height: 48px;
+}
+
+/* ─── Code font ─── */
+code, pre, .code-block, .code-font,
+textarea.code, .monospace {
+  font-family: var(--code-font);
+}
+
+/* ─── High Contrast mode ─── */
+html.high-contrast {
+  --text-primary: #ffffff;
+  --text-color: #ffffff;
+  --text-secondary: rgba(255,255,255,0.92);
+  --muted-text: rgba(255,255,255,0.88);
+  --panel-bg: rgba(255,255,255,0.10);
+  --panel-border: rgba(255,255,255,0.4);
+  --border-color-subtle: rgba(255,255,255,0.3);
+  --border-color-default: rgba(255,255,255,0.45);
+  --border-subtle: rgba(255,255,255,0.35);
+  --surface-primary: #0a0a0c;
+  --surface-secondary: #101014;
+}
+html.theme-light.high-contrast {
+  --text-primary: #000000;
+  --text-color: #000000;
+  --text-secondary: rgba(0,0,0,0.88);
+  --muted-text: rgba(0,0,0,0.85);
+  --panel-bg: rgba(0,0,0,0.06);
+  --panel-border: rgba(0,0,0,0.5);
+  --border-color-subtle: rgba(0,0,0,0.35);
+  --border-color-default: rgba(0,0,0,0.5);
+  --border-subtle: rgba(0,0,0,0.4);
+}
+
+html.high-contrast * {
+  border-color: currentColor !important;
+}
+
+html.high-contrast button,
+html.high-contrast a {
+  text-decoration-thickness: 2px;
+}
+
+/* ─── Reduced Motion ─── */
+html.reduced-motion *,
+html.reduced-motion *::before,
+html.reduced-motion *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* ─── Accent‑aware utility classes ─── */
+.accent-bg    { background: var(--accent) !important; }
+.accent-text  { color: var(--accent) !important; }
+.accent-border{ border-color: var(--accent) !important; }
+.accent-glow  { box-shadow: 0 4px 20px rgba(var(--accent-rgb), 0.3) !important; }
+.accent-bg-10 { background: var(--accent-10) !important; }
+.accent-bg-15 { background: var(--accent-15) !important; }
+.accent-bg-20 { background: var(--accent-20) !important; }
+
+/* ═══════════════════════════════════════════════════
+   RTL SUPPORT — Hebrew & Arabic
+   ═══════════════════════════════════════════════════ */
+html[dir="rtl"] {
+  direction: rtl;
+}
+
+/* Flip the sidebar to the right side for RTL */
+html[dir="rtl"] .sidebar {
+  border-right: none;
+  border-left: 1px solid var(--sb-divider);
+}
+
+/* Mirror text-alignment for nav items & section headers */
+html[dir="rtl"] .nav-item,
+html[dir="rtl"] .section-header,
+html[dir="rtl"] .tools-subsection-header,
+html[dir="rtl"] .sidebar-user,
+html[dir="rtl"] .btn-new-conversation {
+  text-align: right;
+  flex-direction: row-reverse;
+}
+
+/* Flip icons in nav items for RTL */
+html[dir="rtl"] .nav-icon {
+  margin-left: 10px;
+  margin-right: 0;
+}
+
+/* Sidebar toggle should flip */
+html[dir="rtl"] .sidebar-toggle {
+  transform: scaleX(-1);
+}
+
+/* Flip sidebar section toggle chevrons */
+html[dir="rtl"] .section-toggle-icon {
+  margin-right: auto;
+  margin-left: 0;
+}
+
+/* General RTL text alignment helpers */
+html[dir="rtl"] input,
+html[dir="rtl"] textarea,
+html[dir="rtl"] select {
+  text-align: right;
+}
+
+/* Ensure proper padding direction for layout shells */
+html[dir="rtl"] .app-shell-content {
+  direction: rtl;
+}
+

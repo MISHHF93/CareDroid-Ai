@@ -1,9 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, MoreThan } from 'typeorm';
+import { EventEmitter } from 'events';
 import { AnalyticsEvent } from '../entities/analytics-event.entity';
 
-interface EventMetrics {
+export interface EventMetrics {
   totalEvents: number;
   uniqueUsers: number;
   topEvents: Array<{ event: string; count: number }>;
@@ -15,6 +16,7 @@ interface EventMetrics {
 @Injectable()
 export class AnalyticsService {
   private readonly logger = new Logger(AnalyticsService.name);
+  public readonly events = new EventEmitter();
 
   constructor(
     @InjectRepository(AnalyticsEvent)
@@ -41,7 +43,9 @@ export class AnalyticsService {
       referrer: properties?.referrer,
     });
 
-    return await this.analyticsEventRepository.save(analyticsEvent);
+    const saved = await this.analyticsEventRepository.save(analyticsEvent);
+    this.events.emit('analytics:event', { id: saved.id, event: saved.event, userId: saved.userId, timestamp: saved.createdAt });
+    return saved;
   }
 
   /**
@@ -72,6 +76,9 @@ export class AnalyticsService {
 
     await this.analyticsEventRepository.save(analyticsEvents);
     this.logger.log(`Tracked ${events.length} events in bulk`);
+    analyticsEvents.forEach(e => {
+      this.events.emit('analytics:event', { id: e.id, event: e.event, userId: e.userId, timestamp: e.createdAt });
+    });
   }
 
   /**
@@ -264,5 +271,74 @@ export class AnalyticsService {
 
     this.logger.log(`Cleaned up ${result.affected} old analytics events`);
     return result.affected || 0;
+  }
+
+  /**
+   * Get event trends (hourly or daily aggregation)
+   */
+  async getTrends(
+    startDate: Date,
+    endDate: Date,
+    granularity: 'hour' | 'day' = 'day',
+  ): Promise<Array<{ period: string; count: number }>> {
+    const events = await this.analyticsEventRepository.find({
+      where: { createdAt: Between(startDate, endDate) },
+      order: { createdAt: 'ASC' },
+    });
+
+    const buckets: Record<string, number> = {};
+    events.forEach(e => {
+      const d = new Date(e.createdAt);
+      let key: string;
+      if (granularity === 'hour') {
+        key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}T${String(d.getHours()).padStart(2, '0')}:00`;
+      } else {
+        key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      }
+      buckets[key] = (buckets[key] || 0) + 1;
+    });
+
+    return Object.entries(buckets).map(([period, count]) => ({ period, count }));
+  }
+
+  /**
+   * Get top tools by usage count with trend %
+   */
+  async getTopTools(
+    startDate: Date,
+    endDate: Date,
+    limit: number = 10,
+  ): Promise<Array<{ tool: string; count: number; trend: number }>> {
+    const rangeDays = Math.max(1, (endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
+    const priorStart = new Date(startDate.getTime() - rangeDays * 24 * 60 * 60 * 1000);
+
+    const currentEvents = await this.analyticsEventRepository.find({
+      where: { createdAt: Between(startDate, endDate) },
+    });
+    const priorEvents = await this.analyticsEventRepository.find({
+      where: { createdAt: Between(priorStart, startDate) },
+    });
+
+    const toolFilter = (ev: AnalyticsEvent) =>
+      ev.event === 'tool_access' || ev.event === 'tool_used' || ev.event.startsWith('tool_');
+
+    const countByTool = (events: AnalyticsEvent[]) =>
+      events.filter(toolFilter).reduce((acc, e) => {
+        const tool = (e.properties as any)?.toolId || (e.properties as any)?.tool || e.event;
+        acc[tool] = (acc[tool] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+    const currentCounts = countByTool(currentEvents);
+    const priorCounts = countByTool(priorEvents);
+
+    return Object.entries(currentCounts)
+      .map(([tool, count]) => {
+        const prior = priorCounts[tool] || 0;
+        const trend = prior > 0 ? Math.round(((count - prior) / prior) * 100) : 100;
+        return { tool, count, trend };
+      })
+      .sort((a, b) => b.count - a.count)
+      .slice(0, limit);
   }
 }

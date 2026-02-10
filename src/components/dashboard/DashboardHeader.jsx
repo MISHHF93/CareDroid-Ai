@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '../ui/atoms/Button';
-import { Badge } from '../ui/atoms/Badge';
-import { NotificationDropdown } from './NotificationDropdown';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 /**
  * DashboardHeader - Top header section of the dashboard
@@ -9,29 +8,26 @@ import { NotificationDropdown } from './NotificationDropdown';
  */
 export const DashboardHeader = ({
   userName = 'User',
-  notificationCount = 0,
-  notifications = [],
+
   onNewPatient,
   onEmergency,
   onSearch,
   searchValue = '',
   onSearchChange,
   onSearchSubmit,
-  onNotificationClick,
-  onMarkNotificationRead,
-  onMarkAllNotificationsRead,
-  onClearNotifications,
   systemStatus = 'online',
   onRefresh,
-  refreshing = false
+  refreshing = false,
+  autoRefresh = true,
+  connectionState = 'disconnected'
 }) => {
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const { t } = useLanguage();
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
+    if (hour < 12) return t('dashboard.goodMorning');
+    if (hour < 17) return t('dashboard.goodAfternoon');
+    return t('dashboard.goodEvening');
   };
 
   const getFormattedDate = () => {
@@ -82,21 +78,6 @@ export const DashboardHeader = ({
             gap: 'var(--space-2)'
           }}>
             <span>{getFormattedDate()}</span>
-            <span>•</span>
-            <span style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}>
-              <span style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                background: statusColors[systemStatus],
-                boxShadow: `0 0 6px ${statusColors[systemStatus]}`
-              }} />
-              <span style={{ textTransform: 'capitalize' }}>{systemStatus}</span>
-            </span>
           </p>
         </div>
 
@@ -122,8 +103,8 @@ export const DashboardHeader = ({
                     onSearchSubmit?.(searchValue);
                   }
                 }}
-                placeholder="Search patients"
-                aria-label="Search patients"
+                placeholder={t('dashboard.searchPatients')}
+                aria-label={t('dashboard.searchPatients')}
                 style={{
                   width: '220px',
                   padding: '8px 12px',
@@ -142,7 +123,7 @@ export const DashboardHeader = ({
             onClick={onNewPatient}
           >
             <span style={{ marginRight: '6px' }}>+</span>
-            New Patient
+            {t('dashboard.newPatient')}
           </Button>
 
           <Button
@@ -151,107 +132,54 @@ export const DashboardHeader = ({
             onClick={onEmergency}
           >
             <span style={{ marginRight: '6px' }}>🚨</span>
-            Emergency
+            {t('dashboard.emergency')}
           </Button>
 
-          {onSearch && (
-            <Button
-              variant="ghost"
-              size="md"
-              onClick={() => onSearch(searchValue)}
-              aria-label="Search"
-            >
-              🔍
-            </Button>
-          )}
-
-          {/* Refresh Button */}
-          {onRefresh && (
-            <button
-              onClick={onRefresh}
-              disabled={refreshing}
-              style={{
-                padding: 'var(--space-2)',
-                background: 'transparent',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: 'var(--radius-md)',
-                cursor: refreshing ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s ease',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '18px',
-                opacity: refreshing ? 0.6 : 1
-              }}
-              aria-label="Refresh dashboard"
-              title="Refresh"
-            >
-              <span style={{
-                display: 'inline-block',
-                animation: refreshing ? 'spin 1s linear infinite' : 'none'
-              }}>
-                🔄
-              </span>
-            </button>
-          )}
-
-          {/* Notification Bell */}
-          <div style={{ position: 'relative' }}>
-            <button
-              onClick={() => {
-                onNotificationClick?.();
-                setIsNotificationsOpen((prev) => !prev);
-              }}
-              style={{
-                position: 'relative',
-                padding: 'var(--space-2)',
-                background: 'transparent',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: 'var(--radius-md)',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '20px'
-              }}
-              aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} unread)` : ''}`}
-              aria-expanded={isNotificationsOpen}
-            >
-              🔔
-              {notificationCount > 0 && (
-                <span style={{
-                  position: 'absolute',
-                  top: '-6px',
-                  right: '-6px',
-                  minWidth: '20px',
-                  height: '20px',
-                  padding: '0 6px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '11px',
-                  fontWeight: 'var(--font-weight-bold)',
-                  color: '#fff',
-                  background: '#EF4444',
-                  borderRadius: '10px',
-                  border: '2px solid var(--background)'
-                }}>
-                  {notificationCount > 9 ? '9+' : notificationCount}
-                </span>
-              )}
-            </button>
-
-            {isNotificationsOpen && (
-              <NotificationDropdown
-                notifications={notifications}
-                onMarkRead={onMarkNotificationRead}
-                onMarkAllRead={onMarkAllNotificationsRead}
-                onClearAll={onClearNotifications}
-                onClose={() => setIsNotificationsOpen(false)}
-              />
-            )}
+          {/* Live indicator — shows SSE connection status */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 12px',
+              fontSize: 'var(--font-size-xs)',
+              color: connectionState === 'connected' ? '#10B981'
+                   : connectionState === 'connecting' ? '#F59E0B'
+                   : 'var(--text-tertiary)',
+              borderRadius: '999px',
+              border: '1px solid',
+              borderColor: connectionState === 'connected' ? 'rgba(16, 185, 129, 0.3)'
+                         : connectionState === 'connecting' ? 'rgba(245, 158, 11, 0.3)'
+                         : 'var(--border-subtle)',
+              background: connectionState === 'connected' ? 'rgba(16, 185, 129, 0.08)'
+                        : connectionState === 'connecting' ? 'rgba(245, 158, 11, 0.08)'
+                        : 'transparent',
+              transition: 'all 0.3s ease'
+            }}
+            title={connectionState === 'connected'
+              ? t('dashboard.realtimeActive')
+              : connectionState === 'connecting'
+              ? t('dashboard.connectingStream')
+              : t('dashboard.disconnectedReconnect')}
+            aria-label={`Real-time status: ${connectionState}`}
+          >
+            <span style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              background: connectionState === 'connected' ? '#10B981'
+                        : connectionState === 'connecting' ? '#F59E0B'
+                        : 'var(--text-tertiary)',
+              animation: connectionState === 'connected' ? 'livePulse 2s ease-in-out infinite'
+                       : connectionState === 'connecting' ? 'livePulse 0.8s ease-in-out infinite'
+                       : 'none',
+              flexShrink: 0
+            }} />
+            {connectionState === 'connected' ? t('dashboard.live')
+             : connectionState === 'connecting' ? t('dashboard.connecting')
+             : t('status.offline')}
           </div>
+
         </div>
       </div>
     </header>

@@ -4,8 +4,8 @@ import React from 'react';
 function App() {
   return (
     <div style={{
-      minHeight: '100vh',
-      background: '#0b1220',
+      minHeight: '100dvh',
+      background: '#000000',
       color: '#00ff88',
       display: 'flex',
       alignItems: 'center',
@@ -24,7 +24,7 @@ function App() {
           padding: '12px 24px',
           fontSize: '16px',
           background: '#00ff88',
-          color: '#0b1220',
+          color: '#000000',
           border: 'none',
           borderRadius: '8px',
           cursor: 'pointer',

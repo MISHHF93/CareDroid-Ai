@@ -1,6 +1,6 @@
 /* Legal Pages Common Styles */
 .legal-page {
-  min-height: 100vh;
+  min-height: 100dvh;
   background: var(--bg-primary, #0a0b0d);
   color: var(--text-primary, #e8eaed);
   padding: 2rem 1rem;

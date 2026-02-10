@@ -97,8 +97,8 @@
 
 .notification-mark-all {
   padding: 4px var(--space-2);
-  background: rgba(0, 255, 136, 0.1);
-  border: 1px solid rgba(0, 255, 136, 0.3);
+  background: var(--accent-10);
+  border: 1px solid var(--accent-20);
   color: var(--accent-1);
   border-radius: var(--radius-sm);
   font-size: var(--font-12);
@@ -108,7 +108,7 @@
 }
 
 .notification-mark-all:hover {
-  background: rgba(0, 255, 136, 0.15);
+  background: var(--accent-15);
 }
 
 /* Filters */
@@ -166,7 +166,7 @@
 }
 
 .notification-item-unread {
-  background: rgba(0, 255, 136, 0.03);
+  background: var(--accent-10);
 }
 
 .notification-item-icon {
@@ -491,7 +491,7 @@
 
 .btn-save:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 255, 136, 0.3);
+  box-shadow: 0 4px 12px var(--accent-20);
 }
 
 /* Scrollbar Styling */

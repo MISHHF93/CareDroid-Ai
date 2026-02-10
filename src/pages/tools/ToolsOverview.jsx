@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useConversation } from '../../contexts/ConversationContext';
 import { useToolPreferences } from '../../contexts/ToolPreferencesContext';
 import { useWorkspace } from '../../contexts/WorkspaceContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import toolRegistry, { toolRegistryById } from '../../data/toolRegistry';
 import './ToolsOverview.css';
 
@@ -17,6 +18,7 @@ const ToolsOverview = () => {
     recordToolAccess
   } = useToolPreferences();
   const { workspaces, activeWorkspaceId, setActiveWorkspaceId } = useWorkspace();
+  const { t } = useLanguage();
 
   const tools = toolRegistry;
   const activeWorkspace = workspaces.find((workspace) => workspace.id === activeWorkspaceId);
@@ -44,12 +46,12 @@ const ToolsOverview = () => {
     <div className="tools-overview">
       <div className="tools-overview-header">
         <div className="header-content">
-          <h1>🔧 Clinical Tools Suite</h1>
+          <h1>🔧 {t('tools.overview.title')}</h1>
           <p className="header-subtitle">
-            Comprehensive medical decision support tools powered by AI and evidence-based guidelines
+            {t('tools.overview.subtitle')}
           </p>
           <div className="tools-workspace">
-            <label htmlFor="workspaceSelect">Workspace</label>
+            <label htmlFor="workspaceSelect">{t('tools.overview.workspace')}</label>
             <select
               id="workspaceSelect"
               value={activeWorkspaceId}
@@ -65,15 +67,15 @@ const ToolsOverview = () => {
           <div className="header-stats">
             <div className="stat">
               <span className="stat-number">{tools.length}</span>
-              <span className="stat-label">Tools Available</span>
+              <span className="stat-label">{t('tools.overview.toolsAvailable')}</span>
             </div>
             <div className="stat">
               <span className="stat-number">{categories.length}</span>
-              <span className="stat-label">Categories</span>
+              <span className="stat-label">{t('tools.overview.categories')}</span>
             </div>
             <div className="stat">
               <span className="stat-number">24/7</span>
-              <span className="stat-label">Availability</span>
+              <span className="stat-label">{t('tools.overview.availability')}</span>
             </div>
           </div>
         </div>
@@ -82,8 +84,8 @@ const ToolsOverview = () => {
       {recentToolItems.length > 0 && (
         <div className="tools-recent">
           <div className="tools-recent-header">
-            <h2>🕓 Recent Tools</h2>
-            <p>Pick up where you left off with your most used tools.</p>
+            <h2>🕓 {t('tools.overview.recentTools')}</h2>
+            <p>{t('tools.overview.recentToolsDescription')}</p>
           </div>
           <div className="tools-recent-list">
             {recentToolItems.map((tool) => (
@@ -98,7 +100,7 @@ const ToolsOverview = () => {
                   <span className="tools-recent-name">{tool.name}</span>
                   <span className="tools-recent-category">{tool.category}</span>
                 </div>
-                <span className="tools-recent-action">Open →</span>
+                <span className="tools-recent-action">{t('tools.overview.open')} →</span>
               </button>
             ))}
           </div>
@@ -126,7 +128,7 @@ const ToolsOverview = () => {
               <div className="tool-card-actions">
                 <button
                   className={`tool-card-action ${favorites.includes(tool.id) ? 'active' : ''}`}
-                  title={favorites.includes(tool.id) ? 'Remove from favorites' : 'Add to favorites'}
+                  title={favorites.includes(tool.id) ? t('tools.removeFromFavorites') : t('tools.addToFavorites')}
                   onClick={(e) => {
                     e.stopPropagation();
                     toggleFavorite(tool.id);
@@ -137,7 +139,7 @@ const ToolsOverview = () => {
                 </button>
                 <button
                   className={`tool-card-action ${pinned.includes(tool.id) ? 'active' : ''}`}
-                  title={pinned.includes(tool.id) ? 'Unpin tool' : 'Pin tool'}
+                  title={pinned.includes(tool.id) ? t('tools.unpinTool') : t('tools.pinTool')}
                   onClick={(e) => {
                     e.stopPropagation();
                     togglePinned(tool.id);
@@ -155,7 +157,7 @@ const ToolsOverview = () => {
             <p className="tool-description">{tool.description}</p>
 
             <div className="tool-features">
-              <h4>Key Features:</h4>
+              <h4>{t('tools.overview.keyFeatures')}:</h4>
               <ul>
                 {tool.features.map((feature, idx) => (
                   <li key={idx}>
@@ -167,7 +169,7 @@ const ToolsOverview = () => {
             </div>
 
             <div className="tool-use-cases">
-              <h4>Use Cases:</h4>
+              <h4>{t('tools.overview.useCases')}:</h4>
               <div className="use-cases-tags">
                 {tool.useCases.map((useCase, idx) => (
                   <span key={idx} className="use-case-tag">
@@ -186,7 +188,7 @@ const ToolsOverview = () => {
                   handleToolClick(tool);
                 }}
               >
-                Open Tool →
+                {t('tools.overview.openTool')} →
               </button>
               <button
                 className="btn-chat-tool"
@@ -196,7 +198,7 @@ const ToolsOverview = () => {
                   navigate('/dashboard', { state: { toolMention: `/${tool.id}` } });
                 }}
               >
-                Use in Chat
+                {t('tools.overview.useInChat')}
               </button>
             </div>
           </div>
@@ -205,27 +207,27 @@ const ToolsOverview = () => {
 
       {/* Quick Tips Section */}
       <div className="tools-tips">
-        <h2>💡 Quick Tips</h2>
+        <h2>💡 {t('tools.overview.quickTips')}</h2>
         <div className="tips-grid">
           <div className="tip-card">
             <span className="tip-icon">⌨️</span>
-            <h3>Keyboard Shortcuts</h3>
-            <p>Use Ctrl+1 through Ctrl+6 to quickly access tools from anywhere</p>
+            <h3>{t('tools.overview.keyboardShortcuts')}</h3>
+            <p>{t('tools.overview.keyboardShortcutsDescription')}</p>
           </div>
           <div className="tip-card">
             <span className="tip-icon">💬</span>
-            <h3>Chat Integration</h3>
-            <p>Type /tool-name in chat to invoke tools directly in conversation</p>
+            <h3>{t('tools.overview.chatIntegration')}</h3>
+            <p>{t('tools.overview.chatIntegrationDescription')}</p>
           </div>
           <div className="tip-card">
             <span className="tip-icon">💾</span>
-            <h3>State Persistence</h3>
-            <p>Tool inputs are saved per conversation for easy reference</p>
+            <h3>{t('tools.overview.statePersistence')}</h3>
+            <p>{t('tools.overview.statePersistenceDescription')}</p>
           </div>
           <div className="tip-card">
             <span className="tip-icon">🤖</span>
-            <h3>AI Awareness</h3>
-            <p>CareDroid can read and reference tool data in responses</p>
+            <h3>{t('tools.overview.aiAwareness')}</h3>
+            <p>{t('tools.overview.aiAwarenessDescription')}</p>
           </div>
         </div>
       </div>

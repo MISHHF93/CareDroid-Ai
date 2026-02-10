@@ -1,6 +1,11 @@
 /**
  * useDashboard Hook
- * Manages dashboard data fetching, real-time updates, and state
+ * Manages dashboard data fetching, real-time SSE push updates, and state.
+ *
+ * Data flow:
+ *   1. Initial full fetch on mount (10 parallel API calls)
+ *   2. SSE push for incremental updates (activity, alert, stats, workload)
+ *   3. NO polling — all updates arrive via Server-Sent Events instantly
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -17,6 +22,12 @@ export function useDashboard() {
   const [activities, setActivities] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [criticalPatients, setCriticalPatients] = useState([]);
+  const [workload, setWorkload] = useState(null);
+  const [marMedications, setMarMedications] = useState([]);
+  const [onCallRoster, setOnCallRoster] = useState([]);
+  const [bedBoard, setBedBoard] = useState(null);
+  const [labTimeline, setLabTimeline] = useState([]);
+  const [cdsReminders, setCdsReminders] = useState([]);
   const [patientFilters, setPatientFilters] = useState({
     status: 'critical',
     search: '',
@@ -25,6 +36,8 @@ export function useDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  /** @type {'connected'|'connecting'|'disconnected'} */
+  const [connectionState, setConnectionState] = useState('disconnected');
 
   // Track latest activity to prevent duplicates
   const latestActivityId = useRef(null);
@@ -48,17 +61,29 @@ export function useDashboard() {
       setError(null);
 
       // Fetch all data in parallel
-      const [statsData, activitiesData, alertsData, patientsData] = await Promise.all([
+      const [statsData, activitiesData, alertsData, patientsData, workloadData, marData, rosterData, bedData, labData, cdsData] = await Promise.all([
         dashboardService.getStats(),
         dashboardService.getRecentActivity(10),
         dashboardService.getActiveAlerts(),
         dashboardService.getCriticalPatients(patientFiltersRef.current),
+        dashboardService.getWorkload(),
+        dashboardService.getMARPreview(),
+        dashboardService.getOnCallRoster(),
+        dashboardService.getBedBoard(),
+        dashboardService.getLabTimeline(),
+        dashboardService.getCDSReminders(),
       ]);
 
       setStats(statsData);
       setActivities(activitiesData);
       setAlerts(alertsData);
       setCriticalPatients(patientsData);
+      setWorkload(workloadData);
+      setMarMedications(marData);
+      setOnCallRoster(rosterData);
+      setBedBoard(bedData);
+      setLabTimeline(labData);
+      setCdsReminders(cdsData);
 
       // Track latest activity
       if (activitiesData.length > 0) {
@@ -126,24 +151,18 @@ export function useDashboard() {
   }, []);
 
   /**
-   * Handle new alert from real-time updates
+   * Handle new alert from real-time SSE push
    */
   const handleNewAlert = useCallback((alert) => {
     setAlerts(prev => {
-      // Check if alert already exists
       if (prev.some(a => a.id === alert.id)) {
         return prev;
       }
-      // Add new alert at the beginning
       return [alert, ...prev];
     });
 
-    // Also refresh stats to update counts
-    dashboardService.getStats().then(setStats).catch(err => {
-      logger.error('Failed to refresh stats after new alert', err);
-    });
-
-    logger.info('New alert received', { severity: alert.severity });
+    // Stats are updated separately via the 'stats' SSE event — no re-fetch needed
+    logger.info('New alert received via SSE', { severity: alert.severity });
   }, []);
 
   /**
@@ -174,8 +193,56 @@ export function useDashboard() {
       await dashboardService.trackToolAccess(toolId);
     } catch (err) {
       logger.error('Failed to track tool access', err);
-      // Non-critical, don't throw
     }
+  }, []);
+
+  /**
+   * Toggle a workload task
+   */
+  const toggleTask = useCallback(async (taskId) => {
+    // Optimistic update
+    setWorkload(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        tasks: prev.tasks.map(t => t.id === taskId ? { ...t, done: !t.done } : t),
+      };
+    });
+    try {
+      await dashboardService.toggleTask(taskId);
+      logger.info('Task toggled', { taskId });
+    } catch (err) {
+      logger.error('Failed to toggle task', err);
+    }
+  }, []);
+
+  /**
+   * Place a quick order
+   */
+  const placeOrder = useCallback(async (order) => {
+    try {
+      const result = await dashboardService.placeOrder(order);
+      logger.info('Order placed', { orderRef: result.orderRef });
+      return result;
+    } catch (err) {
+      logger.error('Failed to place order', err);
+      return { success: false };
+    }
+  }, []);
+
+  /**
+   * Create a new patient and refresh the dashboard
+   */
+  const createPatient = useCallback(async (data) => {
+    const patient = await dashboardService.createPatient(data);
+    // Refresh patient list and stats after successful creation
+    const [patientsData, statsData] = await Promise.all([
+      dashboardService.getCriticalPatients(patientFiltersRef.current),
+      dashboardService.getStats(),
+    ]);
+    setCriticalPatients(patientsData);
+    setStats(statsData);
+    return patient;
   }, []);
 
   /**
@@ -190,37 +257,47 @@ export function useDashboard() {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  // Subscribe to real-time updates
+  // Subscribe to real-time SSE push updates (no polling)
   useEffect(() => {
-    // Subscribe to activity updates
-    const unsubscribeActivity = dashboardService.subscribeToActivity(handleNewActivity);
-    
-    // Subscribe to alert updates
-    const unsubscribeAlerts = dashboardService.subscribeToAlerts(handleNewAlert);
+    // Activity & alert subscriptions (existing)
+    const unsubActivity = dashboardService.subscribeToActivity(handleNewActivity);
+    const unsubAlerts = dashboardService.subscribeToAlerts(handleNewAlert);
 
-    logger.info('Subscribed to real-time dashboard updates');
+    // Stats push — instant update when mutations happen on the backend
+    const unsubStats = dashboardService.subscribeToStats((data) => {
+      if (data.stats) setStats(data.stats);
+      logger.debug('Stats pushed via SSE');
+    });
 
-    // Cleanup on unmount
+    // Alert-acknowledged — remove from alerts list instantly
+    const unsubAckd = dashboardService.subscribeToAlertAcknowledged((ack) => {
+      setAlerts(prev => prev.filter(a => a.id !== ack.id));
+      logger.debug('Alert acknowledged via SSE', { alertId: ack.id });
+    });
+
+    // Workload push — instant update on task toggle
+    const unsubWorkload = dashboardService.subscribeToWorkload((data) => {
+      setWorkload(data);
+      logger.debug('Workload pushed via SSE');
+    });
+
+    // Connection state for the Live indicator
+    const unsubConnection = dashboardService.subscribeToConnection((state) => {
+      setConnectionState(state);
+    });
+
+    logger.info('Subscribed to real-time SSE push (zero polling)');
+
     return () => {
-      unsubscribeActivity();
-      unsubscribeAlerts();
-      logger.info('Unsubscribed from dashboard updates');
+      unsubActivity();
+      unsubAlerts();
+      unsubStats();
+      unsubAckd();
+      unsubWorkload();
+      unsubConnection();
+      logger.info('Unsubscribed from SSE push');
     };
   }, [handleNewActivity, handleNewAlert]);
-
-  // Auto-refresh stats every 60 seconds
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      try {
-        const statsData = await dashboardService.getStats();
-        setStats(statsData);
-      } catch (err) {
-        logger.error('Failed to refresh stats', err);
-      }
-    }, 60000); // 60 seconds
-
-    return () => clearInterval(interval);
-  }, []);
 
   return {
     // Data
@@ -228,16 +305,26 @@ export function useDashboard() {
     activities,
     alerts,
     criticalPatients,
+    workload,
+    marMedications,
+    onCallRoster,
+    bedBoard,
+    labTimeline,
+    cdsReminders,
     
     // State
     loading,
     refreshing,
     error,
     patientFilters,
+    connectionState,
     
     // Methods
     acknowledgeAlert,
     trackToolAccess,
+    toggleTask,
+    placeOrder,
+    createPatient,
     refresh,
     setPatientFilters,
   };

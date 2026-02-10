@@ -61,6 +61,21 @@ export default defineConfig({
             return 'analytics';
           }
           
+          // Dashboard widgets — separate chunk for lazy-loadable
+          if (id.includes('components/dashboard/')) {
+            return 'dashboard-widgets';
+          }
+
+          // Clinical tools pages
+          if (id.includes('pages/tools/')) {
+            return 'tools';
+          }
+
+          // Legal pages
+          if (id.includes('pages/legal/')) {
+            return 'legal';
+          }
+          
           // Chart components
           if (id.includes('components/charts/')) {
             return 'charts';

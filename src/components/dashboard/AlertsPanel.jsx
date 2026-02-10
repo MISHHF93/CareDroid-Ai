@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { Card } from '../ui/molecules/Card';
 import { Badge } from '../ui/atoms/Badge';
 import { Button } from '../ui/atoms/Button';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 /**
  * AlertsPanel - Clinical alerts and notifications panel
  * Displays actionable alerts with severity levels
  */
 export const AlertsPanel = ({ alerts = [], onAcknowledge, onAlertClick }) => {
+  const { t } = useLanguage();
   const [acknowledgingIds, setAcknowledgingIds] = useState(new Set());
 
   const getSeverityColor = (severity) => {
@@ -37,9 +39,9 @@ export const AlertsPanel = ({ alerts = [], onAcknowledge, onAlertClick }) => {
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
 
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins} min ago`;
-    return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffMins < 1) return t('widgets.alertsPanel.justNow');
+    if (diffMins < 60) return `${diffMins} ${t('widgets.alertsPanel.minAgo')}`;
+    return `${diffHours} ${t('widgets.alertsPanel.hourAgo')}`;
   };
 
   return (
@@ -66,7 +68,7 @@ export const AlertsPanel = ({ alerts = [], onAcknowledge, onAlertClick }) => {
             alignItems: 'center',
             gap: 'var(--space-2)'
           }}>
-            Active Alerts
+            {t('widgets.alertsPanel.title')}
             {alerts.length > 0 && (
               <Badge variant="danger" size="sm">
                 {alerts.length}
@@ -90,9 +92,9 @@ export const AlertsPanel = ({ alerts = [], onAcknowledge, onAlertClick }) => {
               color: 'var(--text-tertiary)'
             }}>
               <div style={{ fontSize: '32px', marginBottom: 'var(--space-2)' }}>✅</div>
-              <p style={{ margin: 0 }}>No active alerts</p>
+              <p style={{ margin: 0 }}>{t('widgets.alertsPanel.noActiveAlerts')}</p>
               <p style={{ margin: 0, fontSize: 'var(--font-size-sm)', marginTop: 'var(--space-1)' }}>
-                All systems normal
+                {t('widgets.alertsPanel.allSystemsNormal')}
               </p>
             </div>
           ) : (
@@ -153,7 +155,7 @@ export const AlertsPanel = ({ alerts = [], onAcknowledge, onAlertClick }) => {
                         fontSize: 'var(--font-size-xs)',
                         color: 'var(--text-secondary)'
                       }}>
-                        Patient: {alert.patient || alert.patientName}
+                        {t('widgets.alertsPanel.patient')}: {alert.patient || alert.patientName}
                       </div>
                     )}
                     {alert.location && (
@@ -161,7 +163,7 @@ export const AlertsPanel = ({ alerts = [], onAcknowledge, onAlertClick }) => {
                         fontSize: 'var(--font-size-xs)',
                         color: 'var(--text-secondary)'
                       }}>
-                        Location: {alert.location}
+                        {t('widgets.alertsPanel.location')}: {alert.location}
                       </div>
                     )}
                   </div>
@@ -189,7 +191,7 @@ export const AlertsPanel = ({ alerts = [], onAcknowledge, onAlertClick }) => {
                           }
                         }}
                       >
-                        Acknowledge
+                        {t('widgets.alertsPanel.acknowledge')}
                       </Button>
                     </div>
                   )}
@@ -210,7 +212,7 @@ export const AlertsPanel = ({ alerts = [], onAcknowledge, onAlertClick }) => {
                           display: 'inline-block',
                           animation: 'spin 1s linear infinite'
                         }}>⏳</span>
-                        Acknowledging...
+                        {t('widgets.alertsPanel.acknowledging')}
                       </span>
                     </div>
                   )}

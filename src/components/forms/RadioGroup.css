@@ -210,8 +210,8 @@
 
 .radio-card-input:checked + .radio-card-label {
   border-color: var(--accent-1);
-  background: rgba(0, 255, 136, 0.05);
-  box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.1);
+  background: var(--accent-10);
+  box-shadow: 0 0 0 3px var(--accent-10);
 }
 
 .radio-card-input:focus + .radio-card-label {

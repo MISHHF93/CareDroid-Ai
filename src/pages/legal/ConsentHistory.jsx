@@ -5,6 +5,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { apiFetch } from '../../services/apiClient';
 import './ConsentHistory.css';
 import logger from '../../utils/logger';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 /**
  * ConsentHistory Component
@@ -13,6 +14,7 @@ import logger from '../../utils/logger';
  * Shows all consent events with timestamps and IP addresses
  */
 export const ConsentHistory = () => {
+  const { t } = useLanguage();
   const [consents, setConsents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -37,7 +39,7 @@ export const ConsentHistory = () => {
       setConsents(data.consents || []);
     } catch (err) {
       logger.error('Error fetching consent history', { err });
-      setError('Failed to load consent history');
+      setError(t('legal.consentHistory.loadError'));
     } finally {
       setLoading(false);
     }
@@ -71,7 +73,7 @@ export const ConsentHistory = () => {
     return (
       <div className="consent-history-loading">
         <Spinner size="lg" />
-        <p>Loading consent history...</p>
+        <p>{t('legal.consentHistory.loading')}</p>
       </div>
     );
   }
@@ -81,10 +83,10 @@ export const ConsentHistory = () => {
       <div className="consent-history-error">
         <EmptyState
           icon="⚠️"
-          title="Error Loading Consent History"
+          title={t('legal.consentHistory.errorTitle')}
           message={error}
           action={{
-            label: 'Try Again',
+            label: t('legal.consentHistory.tryAgain'),
             onClick: fetchConsentHistory,
           }}
         />
@@ -97,10 +99,10 @@ export const ConsentHistory = () => {
       <div className="consent-history-empty">
         <EmptyState
           icon="📄"
-          title="No Consent Records"
-          message="You haven't provided any consents yet"
+          title={t('legal.consentHistory.noRecordsTitle')}
+          message={t('legal.consentHistory.noRecordsMessage')}
           action={{
-            label: 'Provide Consent',
+            label: t('legal.consentHistory.provideConsent'),
             onClick: () => window.location.href = '/consent',
           }}
         />
@@ -112,19 +114,18 @@ export const ConsentHistory = () => {
     <div className="consent-history">
       <div className="consent-history-container">
         <div className="consent-history-header">
-          <h1>Consent History</h1>
+          <h1>{t('legal.consentHistory.title')}</h1>
           <p className="consent-history-intro">
-            Your complete consent and authorization history as required by HIPAA. 
-            All consent actions are permanently logged for audit purposes.
+            {t('legal.consentHistory.intro')}
           </p>
         </div>
 
         <div className="consent-history-actions">
           <Link to="/privacy" className="btn-consent-link">
-            View Privacy Policy
+            {t('legal.consentHistory.viewPrivacyPolicy')}
           </Link>
           <Link to="/terms" className="btn-consent-link">
-            View Terms of Service
+            {t('legal.consentHistory.viewTerms')}
           </Link>
         </div>
 
@@ -139,18 +140,18 @@ export const ConsentHistory = () => {
                   </span>
                 </div>
                 <span className={`consent-record-status consent-record-status-${consent.action}`}>
-                  {consent.action === 'granted' ? 'Consented' : 'Revoked'}
+                  {consent.action === 'granted' ? t('legal.consentHistory.consented') : t('legal.consentHistory.revoked')}
                 </span>
               </div>
 
               <div className="consent-record-body">
-                <h3>Consent Event</h3>
+                <h3>{t('legal.consentHistory.consentEvent')}</h3>
                 <div className="consent-record-details">
                   {Object.entries(consent.consents || {}).map(([key, value]) => (
                     <div key={key} className="consent-detail-item">
                       <span className="consent-detail-label">{getConsentLabel(key)}:</span>
                       <span className={`consent-detail-value consent-detail-value-${value ? 'yes' : 'no'}`}>
-                        {value ? '✓ Accepted' : '✗ Declined'}
+                        {value ? `✓ ${t('legal.consentHistory.accepted')}` : `✗ ${t('legal.consentHistory.declined')}`}
                       </span>
                     </div>
                   ))}
@@ -170,7 +171,7 @@ export const ConsentHistory = () => {
 
         <div className="consent-history-footer">
           <div className="consent-history-info">
-            <h3>About Consent Records</h3>
+            <h3>{t('legal.consentHistory.aboutTitle')}</h3>
             <p>
               As required by HIPAA, we maintain a permanent, tamper-proof audit log of all 
               consent actions. Records include:
@@ -189,7 +190,7 @@ export const ConsentHistory = () => {
 
           <div className="consent-history-actions-footer">
             <Link to="/consent" className="btn-consent-secondary">
-              Manage Consents
+              {t('legal.consentHistory.manageConsents')}
             </Link>
             <button
               className="btn-consent-export"
@@ -205,7 +206,7 @@ export const ConsentHistory = () => {
                 URL.revokeObjectURL(url);
               }}
             >
-              Export as JSON
+              {t('legal.consentHistory.exportJson')}
             </button>
           </div>
         </div>

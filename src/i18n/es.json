@@ -1,0 +1,1184 @@
+{
+  "app": {
+    "name": "CareDroid",
+    "subtitle": "IA Clínica",
+    "tagline": "Plataforma de IA Clínica para Profesionales de la Salud",
+    "loading": "Cargando...",
+    "signIn": "Iniciar sesión"
+  },
+  "nav": {
+    "dashboard": "Panel",
+    "profile": "Perfil",
+    "team": "Equipo",
+    "auditLogs": "Registros de auditoría",
+    "analytics": "Analíticas",
+    "settings": "Configuración",
+    "navigation": "Navegación",
+    "newConversation": "Nueva conversación",
+    "clinicalTools": "Herramientas clínicas",
+    "newWorkspace": "Nuevo espacio de trabajo",
+    "favorites": "Favoritos",
+    "recentTools": "Herramientas recientes",
+    "clear": "Limpiar",
+    "allTools": "Todas las herramientas",
+    "viewAllTools": "Ver todas las herramientas",
+    "recent": "Recientes",
+    "hipaaCompliant": "Conforme con HIPAA",
+    "expandSidebar": "Expandir barra lateral",
+    "collapseSidebar": "Contraer barra lateral",
+    "home": "Home",
+    "signOut": "Sign Out",
+    "toggleMenu": "Toggle navigation menu"
+  },
+  "status": {
+    "available": "Disponible",
+    "busy": "Ocupado",
+    "doNotDisturb": "No molestar",
+    "inSurgery": "En cirugía",
+    "offShift": "Fuera de turno",
+    "user": "Usuario",
+    "clinician": "Médico",
+    "status": "Estado",
+    "viewProfile": "Ver perfil",
+    "signOut": "Cerrar sesión",
+    "connectedLive": "Conectado · En vivo",
+    "offline": "Sin conexión"
+  },
+  "tools": {
+    "removeFromFavorites": "Eliminar de favoritos",
+    "addToFavorites": "Agregar a favoritos",
+    "unpinTool": "Desanclar herramienta",
+    "pinTool": "Fijar herramienta arriba"
+  },
+  "dashboard": {
+    "goodMorning": "Buenos días",
+    "goodAfternoon": "Buenas tardes",
+    "goodEvening": "Buenas noches",
+    "searchPatients": "Buscar pacientes",
+    "newPatient": "Nuevo paciente",
+    "emergency": "Emergencia",
+    "live": "En vivo",
+    "connecting": "Conectando…",
+    "realtimeActive": "Push en tiempo real activo — las actualizaciones llegan al instante",
+    "connectingStream": "Conectando al flujo en tiempo real...",
+    "disconnectedReconnect": "Desconectado — intentando reconectar",
+    "all": "Todos",
+    "critical": "Crítico",
+    "urgent": "Urgente",
+    "stable": "Estable",
+    "patients": "Pacientes",
+    "failedToLoad": "Error al cargar el panel",
+    "tryAgain": "Intentar de nuevo",
+    "criticalPatients": "Pacientes críticos",
+    "activePatients": "Pacientes activos",
+    "pendingLabs": "Laboratorios pendientes",
+    "stablePatients": "Pacientes estables",
+    "collapseAll": "Contraer todo",
+    "expandAll": "Expandir todo",
+    "searchPatientsPlaceholder": "Buscar pacientes...",
+    "noMatchFilters": "Ningún paciente coincide con los filtros actuales."
+  },
+  "authShell": {
+    "branding": "CareDroid Clinical AI",
+    "tagline": "A premium clinical AI workspace for fast, structured guidance. Secure, compliant, and built for teams.",
+    "feature1": "⚡ Evidence‑based responses and clinical calculators",
+    "feature2": "🔒 HIPAA‑ready workflow with auditability",
+    "feature3": "🧠 Contextual tools surfaced inside chat"
+  },
+  "publicShell": {
+    "nav": {
+      "help": "Help",
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "signIn": "Sign In"
+    },
+    "footer": {
+      "tagline": "Evidence-based clinical decision support powered by AI",
+      "hipaaCompliant": "🔒 HIPAA Compliant",
+      "legal": "Legal",
+      "privacyPolicy": "Privacy Policy",
+      "termsOfService": "Terms of Service",
+      "resources": "Resources",
+      "helpCenter": "Help Center",
+      "documentation": "Documentation",
+      "contactSupport": "Contact Support",
+      "compliance": "Compliance",
+      "hipaaCompliance": "HIPAA Compliance",
+      "securityPractices": "Security Practices",
+      "auditLogs": "Audit Logs",
+      "copyright": "CareDroid. All rights reserved.",
+      "disclaimer": "CareDroid is a clinical decision support tool. Always use clinical judgment and follow your facility's protocols."
+    }
+  },
+  "auth": {
+    "twoFactor": {
+      "title": "Two-Factor Authentication",
+      "subtitle": "Enter the 6-digit code from your authenticator app",
+      "cancel": "Cancel",
+      "verify": "Verify",
+      "backupCode": "Use backup code instead?",
+      "placeholder": "000000"
+    },
+    "institutionalTitle": "Institutional Sign-In",
+    "institutionalSubtitle": "Secure access for hospitals, universities, and clinical teams.",
+    "sendLink": "Send Link",
+    "ssoOidc": "🔐 Institutional SSO (OIDC)",
+    "ssoSaml": "🏢 Institutional SSO (SAML)",
+    "socialLoginDivider": "Or continue with social login",
+    "continueGoogle": "🔎 Continue with Google",
+    "continueLinkedIn": "💼 Continue with LinkedIn",
+    "directSignIn": "⚡ Direct Sign-In (no auth)",
+    "emailPasswordDivider": "Or sign in with email and password",
+    "fullNamePlaceholder": "Full name",
+    "emailPlaceholder": "Email address",
+    "passwordPlaceholder": "Password",
+    "signInButton": "Sign in",
+    "createAccountButton": "Create account",
+    "newHere": "New here?",
+    "createAccountLink": "Create account",
+    "alreadyHaveAccount": "Already have an account?",
+    "signInLink": "Sign in",
+    "backToChat": "← Back to chat",
+    "magicLinkPlaceholder": "name@institution.org",
+    "notify": {
+      "twoFactorRequired": {
+        "title": "Two-factor required",
+        "message": "Please enter your 2FA code."
+      },
+      "signedIn": {
+        "title": "Signed in",
+        "message": "Welcome to CareDroid!"
+      },
+      "registrationComplete": {
+        "title": "Registration complete",
+        "message": "Please verify your email."
+      },
+      "authFailed": {
+        "title": "Authentication failed",
+        "message": "Unable to authenticate. Check your credentials."
+      },
+      "invalidCode": {
+        "title": "Invalid code",
+        "message": "Please enter a valid 6-digit code."
+      },
+      "signedIn2fa": {
+        "message": "Successfully authenticated."
+      },
+      "invalid2fa": {
+        "title": "Invalid 2FA code",
+        "message": "Please try again."
+      },
+      "emailRequired": {
+        "title": "Email required",
+        "message": "Enter your institutional email to receive a link."
+      },
+      "magicLinkSent": {
+        "title": "Magic link sent",
+        "message": "Check your email."
+      },
+      "magicLinkFailed": {
+        "title": "Magic link failed",
+        "message": "Unable to send magic link."
+      },
+      "ssoStatus": {
+        "title": "SSO status"
+      },
+      "ssoUnavailable": {
+        "title": "SSO unavailable",
+        "message": "OIDC SSO is not available."
+      },
+      "ssoSamlStatus": {
+        "message": "SAML SSO is not configured."
+      },
+      "signingIn": {
+        "title": "Signing in",
+        "message": "Signing in..."
+      }
+    }
+  },
+  "chat": {
+    "emptyState": {
+      "title": "Welcome to CareDroid",
+      "subtitle": "Ask me anything about medicine, drugs, lab values, clinical protocols, and more.",
+      "hint": "💡 Select a clinical tool from the sidebar to get started"
+    },
+    "thinking": "Thinking...",
+    "suggestedTools": "Suggested tools",
+    "inputPlaceholder": "Ask me anything... (e.g., drug interactions, lab values, diagnosis)",
+    "sendButton": "Send",
+    "notify": {
+      "messageFailed": {
+        "title": "Message failed",
+        "message": "Failed to send message."
+      }
+    }
+  },
+  "chatInterface": {
+    "emptyState": "Start a conversation to see messages here.",
+    "unknownTime": "Unknown time",
+    "ragChunks": "{chunks} chunks from {sources} sources",
+    "connectionError": "I'm having trouble connecting to the server. Please try again in a moment.",
+    "hints": {
+      "summarizeProtocol": "Summarize a protocol",
+      "checkDrugInteraction": "Check drug interaction",
+      "interpretLabs": "Interpret labs"
+    },
+    "inputPlaceholder": "Ask CareDroid anything clinical...",
+    "sendButton": "Send",
+    "sendingIndicator": "...",
+    "disclaimer": "CareDroid can make mistakes. Verify medical information.",
+    "notify": {
+      "connectionFailed": {
+        "title": "Connection failed",
+        "message": "Unable to reach the server. Please try again."
+      }
+    },
+    "fallbackResponse": "I encountered an error processing your request."
+  },
+  "onboarding": {
+    "step1": {
+      "title": "Choose your role",
+      "description": "Help us tailor CareDroid to your workflow.",
+      "options": {
+        "physician": "Physician",
+        "nurse": "Nurse",
+        "pharmacist": "Pharmacist",
+        "student": "Student"
+      }
+    },
+    "step2": {
+      "title": "Set your focus",
+      "description": "Pick the clinical areas you use most.",
+      "options": {
+        "emergency": "Emergency",
+        "icu": "ICU",
+        "primaryCare": "Primary Care",
+        "cardiology": "Cardiology"
+      }
+    },
+    "step3": {
+      "title": "Safety & compliance",
+      "description": "Always verify medical information before action.",
+      "options": {
+        "agree": "I understand and agree"
+      }
+    },
+    "stepCounter": "Step {current} of {total}",
+    "backButton": "Back",
+    "finishButton": "Finish",
+    "nextButton": "Next",
+    "backToChat": "← Back to chat",
+    "notify": {
+      "complete": {
+        "title": "Onboarding complete",
+        "message": "Onboarding completed."
+      }
+    }
+  },
+  "profile": {
+    "permissionGroups": {
+      "phiData": "PHI Data Access",
+      "clinicalTools": "Clinical Tools",
+      "userManagement": "User Management",
+      "auditCompliance": "Audit & Compliance",
+      "systemAdmin": "System Admin",
+      "emergencySafety": "Emergency & Safety"
+    },
+    "roles": {
+      "physician": "Physician",
+      "nurse": "Nurse",
+      "student": "Student",
+      "admin": "Admin"
+    },
+    "verified": "✅ Verified",
+    "trustScore": "Trust Score",
+    "profileComplete": "Profile Complete",
+    "editProfile": "✏️ Edit Profile",
+    "completeProfile": "Complete your profile ({completed}/{total})",
+    "missing": "Missing:",
+    "completeNow": "Complete Now",
+    "professionalDetails": "Professional Details",
+    "fieldLabels": {
+      "license": "License",
+      "specialty": "Specialty",
+      "institution": "Institution",
+      "country": "Country",
+      "timezone": "Timezone",
+      "language": "Language",
+      "email": "Email",
+      "twoFactorAuth": "Two-Factor Auth",
+      "lastLogin": "Last Login",
+      "lastIp": "Last IP",
+      "password": "Password"
+    },
+    "memberSince": "Member since {date}",
+    "accountSecurity": "Account & Security",
+    "emailVerified": "✓ Verified",
+    "emailUnverified": "Unverified",
+    "twoFAEnabled": "✅ Enabled",
+    "twoFANotConfigured": "⚠️ Not configured",
+    "changePassword": "Change Password",
+    "activitySummary": "Activity Summary",
+    "topToolsUsed": "🔧 Top Tools Used",
+    "noToolUsage": "No tool usage recorded yet. Start using clinical tools to see your activity.",
+    "viewAuditLog": "📜 View My Audit Log",
+    "permissionsAccess": "Permissions & Access",
+    "completenessLabels": {
+      "avatar": "Avatar",
+      "name": "Name",
+      "specialty": "Specialty",
+      "institution": "Institution",
+      "license": "License",
+      "twoFA": "2FA",
+      "timezone": "Timezone"
+    }
+  },
+  "profileSettings": {
+    "title": "Profile Settings",
+    "subtitle": "Update your clinical profile and preferences.",
+    "backToProfile": "← Back to Profile",
+    "tabs": {
+      "personal": "👤 Personal",
+      "security": "🔒 Security",
+      "notifications": "🔔 Notifications",
+      "privacy": "🛡️ Privacy"
+    },
+    "personal": {
+      "identity": "Identity",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "displayName": "Display Name",
+      "professional": "Professional",
+      "specialty": "Specialty",
+      "selectSpecialty": "Select specialty…",
+      "institution": "Institution",
+      "licenseNumber": "License Number",
+      "locale": "Locale",
+      "country": "Country",
+      "language": "Language",
+      "timezone": "Timezone",
+      "saveProfile": "Save Profile",
+      "saving": "Saving…"
+    },
+    "security": {
+      "changePassword": "Change Password",
+      "currentPassword": "Current Password",
+      "newPassword": "New Password",
+      "confirmPassword": "Confirm Password",
+      "changePasswordBtn": "Change Password",
+      "changing": "Changing…"
+    },
+    "notifications": {
+      "alertNotifications": "Alert Notifications",
+      "critical": "Critical alerts",
+      "high": "High priority alerts",
+      "medium": "Medium priority alerts",
+      "low": "Low priority alerts",
+      "clinicalUpdates": "Clinical Updates",
+      "shiftReminders": "Shift reminders",
+      "labResults": "Lab result notifications",
+      "orderUpdates": "Order status updates",
+      "systemAnnouncements": "System announcements",
+      "saveButton": "Save Notification Preferences"
+    },
+    "privacy": {
+      "consentManagement": "Consent Management",
+      "gdprDisclaimer": "Manage your data consent preferences in compliance with GDPR/CCPA regulations.",
+      "marketingComms": "Marketing communications",
+      "dataProcessing": "Data processing for analytics",
+      "thirdPartySharing": "Third-party data sharing",
+      "updateConsent": "Update Consent",
+      "savingConsent": "Saving…",
+      "dataAccount": "Data & Account",
+      "downloadMyData": "📥 Download My Data",
+      "requestDeletion": "🗑️ Request Account Deletion",
+      "confirmDeletion": "Are you sure you want to request account deletion? This action is irreversible."
+    },
+    "placeholders": {
+      "firstName": "First name",
+      "lastName": "Last name",
+      "displayName": "Display name (shown in sidebar)",
+      "institution": "Hospital or clinic name",
+      "licenseNumber": "Medical license number",
+      "country": "Country",
+      "timezone": "e.g. America/New_York",
+      "currentPassword": "Current password",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm new password"
+    },
+    "notify": {
+      "profileSaved": {
+        "title": "Profile saved",
+        "message": "Your profile has been updated."
+      },
+      "savedLocally": {
+        "title": "Profile saved locally",
+        "message": "Changes saved. Backend sync pending."
+      },
+      "savedLocallyRetry": {
+        "message": "Changes saved. Backend sync will retry."
+      },
+      "consentUpdated": {
+        "title": "Consent updated",
+        "message": "Your privacy preferences have been saved."
+      },
+      "passwordMismatch": {
+        "title": "Password mismatch",
+        "message": "New password and confirmation do not match."
+      },
+      "tooShort": {
+        "title": "Too short",
+        "message": "Password must be at least 8 characters."
+      },
+      "passwordChanged": {
+        "title": "Password changed",
+        "message": "Your password has been updated."
+      },
+      "passwordChangeFailed": {
+        "title": "Failed",
+        "message": "Could not change password. Check your current password."
+      },
+      "passwordChangeError": {
+        "title": "Error",
+        "message": "Password change failed. Please try again."
+      },
+      "notifSaved": {
+        "title": "Saved",
+        "message": "Notification preferences updated."
+      },
+      "dataExport": {
+        "title": "Requested",
+        "message": "Your data export has been queued. You will receive it via email."
+      },
+      "deletionRequest": {
+        "title": "Requested",
+        "message": "Account deletion request submitted. An admin will review your request."
+      }
+    }
+  },
+  "team": {
+    "title": "Team Management",
+    "subtitle": "Manage team members, roles, and permissions",
+    "inviteMember": "+ Invite Member",
+    "stats": {
+      "total": "Total",
+      "online": "Online",
+      "onCall": "On-Call",
+      "physicians": "Physicians",
+      "nurses": "Nurses",
+      "students": "Students"
+    },
+    "search": {
+      "placeholder": "Search name, email, specialty..."
+    },
+    "filter": {
+      "allRoles": "All Roles",
+      "physician": "Physician",
+      "nurse": "Nurse",
+      "student": "Student",
+      "admin": "Admin",
+      "allStatus": "All Status",
+      "active": "Active",
+      "inactive": "Inactive",
+      "onCall": "On-Call"
+    },
+    "memberCount": "{count} member(s)",
+    "listView": {
+      "headers": {
+        "name": "Name",
+        "role": "Role",
+        "specialty": "Specialty",
+        "status": "Status",
+        "lastSeen": "Last Seen",
+        "actions": "Actions"
+      },
+      "viewButton": "View"
+    },
+    "emptyState": "No team members found",
+    "clearFilters": "Clear Filters",
+    "activityFeed": {
+      "title": "Recent Team Activity",
+      "roleChanged": "User role changed to {role}",
+      "deactivated": "Team member deactivated",
+      "reactivated": "Team member reactivated",
+      "login": "{userId} came online",
+      "logout": "{userId} went offline",
+      "statusChanged": "{userId} is now {status}"
+    },
+    "statusLabels": {
+      "available": "Available",
+      "busy": "Busy",
+      "dnd": "DND",
+      "inSurgery": "In Surgery",
+      "offShift": "Off Shift"
+    },
+    "timeAgo": {
+      "never": "Never",
+      "justNow": "Just now"
+    },
+    "confirmDeactivate": "Deactivate this team member? They will lose access.",
+    "badges": {
+      "onCall": "ON-CALL",
+      "inactive": "INACTIVE"
+    },
+    "drawer": {
+      "title": "Member Detail",
+      "professionalDetails": "📋 Professional Details",
+      "fieldLabels": {
+        "license": "License",
+        "specialty": "Specialty",
+        "institution": "Institution",
+        "country": "Country",
+        "timezone": "Timezone",
+        "memberSince": "Member Since",
+        "lastLogin": "Last Login",
+        "lastIp": "Last IP",
+        "email": "Email",
+        "status": "Status"
+      },
+      "rolePermissions": "🔐 Role & Permissions",
+      "assignedRole": "Assigned Role",
+      "activity": "📊 Activity",
+      "schedule": "📅 Schedule",
+      "currentlyOnCall": "🩺 Currently On-Call",
+      "onCallDescription": "Available for emergency consults and patient escalation",
+      "messageButton": "📧 Message",
+      "deactivateButton": "🔒 Deactivate",
+      "reactivateButton": "🔓 Reactivate"
+    },
+    "invite": {
+      "title": "Invite Team Members",
+      "description": "Send invitations to join your team. Separate multiple emails with commas.",
+      "emailLabel": "Email Address(es)",
+      "emailPlaceholder": "colleague@hospital.org, another@hospital.org",
+      "validEmails": "✓ {count} valid email(s)",
+      "invalidEmail": "Please enter a valid email address",
+      "assignRole": "Assign Role",
+      "cancelButton": "Cancel",
+      "sendInvite": "Send Invite(s)",
+      "sending": "Sending..."
+    },
+    "permissions": {
+      "readAll": "Read All",
+      "writeAll": "Write All",
+      "manageUsers": "Manage Users",
+      "manageRoles": "Manage Roles",
+      "viewAuditLogs": "View Audit Logs",
+      "configureSystem": "Configure System",
+      "readPhi": "Read PHI",
+      "writePhi": "Write PHI",
+      "useDrugChecker": "Use Drug Checker",
+      "useLabInterpreter": "Use Lab Interpreter",
+      "useCalculators": "Use Calculators",
+      "useProtocols": "Use Protocols",
+      "orderTests": "Order Tests",
+      "prescribe": "Prescribe",
+      "updateVitals": "Update Vitals",
+      "documentCare": "Document Care",
+      "readCases": "Read Cases",
+      "viewGuidelines": "View Guidelines",
+      "educationalResources": "Educational Resources"
+    }
+  },
+  "errorBoundary": {
+    "title": "⚠️ Something went wrong",
+    "description": "The application encountered an unexpected error. This has been automatically reported.",
+    "errorDetails": "Error Details",
+    "reload": "🔄 Reload Application"
+  },
+  "toolsOverview": {
+    "title": "🔧 Clinical Tools Suite",
+    "subtitle": "Comprehensive medical decision support tools powered by AI and evidence-based guidelines",
+    "workspaceLabel": "Workspace",
+    "stats": {
+      "toolsAvailable": "Tools Available",
+      "categories": "Categories",
+      "availability": "24/7",
+      "availabilityLabel": "Availability"
+    },
+    "recentTools": {
+      "title": "🕓 Recent Tools",
+      "subtitle": "Pick up where you left off with your most used tools.",
+      "open": "Open →"
+    },
+    "toolCard": {
+      "keyFeatures": "Key Features:",
+      "useCases": "Use Cases:",
+      "openTool": "Open Tool →",
+      "useInChat": "Use in Chat",
+      "favoriteTitle": {
+        "add": "Add to favorites",
+        "remove": "Remove from favorites"
+      },
+      "pinTitle": {
+        "pin": "Pin tool",
+        "unpin": "Unpin tool"
+      }
+    },
+    "tips": {
+      "title": "💡 Quick Tips",
+      "keyboard": {
+        "title": "Keyboard Shortcuts",
+        "description": "Use Ctrl+1 through Ctrl+6 to quickly access tools from anywhere"
+      },
+      "chat": {
+        "title": "Chat Integration",
+        "description": "Type /tool-name in chat to invoke tools directly in conversation"
+      },
+      "state": {
+        "title": "State Persistence",
+        "description": "Tool inputs are saved per conversation for easy reference"
+      },
+      "ai": {
+        "title": "AI Awareness",
+        "description": "CareDroid can read and reference tool data in responses"
+      }
+    }
+  },
+  "drugChecker": {
+    "inputSection": {
+      "title": "Enter Medications",
+      "subtitle": "Add medications to check for interactions, contraindications, and dosing guidelines"
+    },
+    "inputPlaceholder": "Enter medication name (e.g., Warfarin)",
+    "removeTitle": "Remove medication",
+    "addAnother": "+ Add Another Medication",
+    "checkButton": "🔍 Check Interactions",
+    "checkingButton": "🔄 Checking...",
+    "alertMinMeds": "Please enter at least 2 medications to check for interactions",
+    "results": {
+      "interactionsFound": "⚠️ Drug Interactions Found",
+      "effect": "Effect:",
+      "evidence": "Evidence:",
+      "management": "Management:",
+      "clinicalWarnings": "⚡ Clinical Warnings",
+      "recommendation": "Recommendation:",
+      "noInteractions": {
+        "title": "✅ No Major Interactions Detected",
+        "body": "The medications checked do not have documented major interactions.",
+        "disclaimer": "Note: Always consult drug references and clinical judgment for comprehensive assessment."
+      }
+    },
+    "quickRef": {
+      "title": "💡 Quick Reference",
+      "severityLevels": "Severity Levels",
+      "major": "Major: Avoid combination",
+      "moderate": "Moderate: Monitor closely",
+      "minor": "Minor: Usually safe",
+      "commonChecks": "Common Checks",
+      "check1": "Drug-drug interactions",
+      "check2": "Contraindications",
+      "check3": "Dose adjustments (renal/hepatic)",
+      "check4": "Adverse effects",
+      "bestPractices": "Best Practices",
+      "practice1": "Include all medications (Rx + OTC)",
+      "practice2": "Check supplements and herbals",
+      "practice3": "Consider patient comorbidities",
+      "practice4": "Review with pharmacist when needed"
+    }
+  },
+  "diagnosisAssistant": {
+    "input": {
+      "title": "📋 Patient Presentation",
+      "symptomsLabel": "Presenting Symptoms / Chief Complaint",
+      "symptomsPlaceholder": "e.g., Chest pain with diaphoresis and nausea, onset 2 hours ago, radiating to left arm...",
+      "ageLabel": "Age (optional)",
+      "agePlaceholder": "Years",
+      "sexLabel": "Sex (optional)",
+      "sexOptions": {
+        "male": "Male",
+        "female": "Female"
+      },
+      "historyLabel": "Relevant Medical History (optional)",
+      "historyPlaceholder": "e.g., HTN, DM, prior MI...",
+      "generateButton": "🔍 Generate DDx",
+      "generating": "Generating...",
+      "clearButton": "Clear"
+    },
+    "results": {
+      "title": "🎯 Differential Diagnosis",
+      "analyzing": "Analyzing symptoms and generating differential diagnosis...",
+      "emptyState": "Enter patient symptoms and click \"Generate DDx\" to begin"
+    },
+    "alert": {
+      "noSymptoms": "Please enter presenting symptoms"
+    }
+  },
+  "labInterpreter": {
+    "inputPanel": {
+      "title": "Lab Values Input"
+    },
+    "context": {
+      "ageLabel": "Age",
+      "agePlaceholder": "Years",
+      "sexLabel": "Sex",
+      "sexOptions": {
+        "male": "Male",
+        "female": "Female",
+        "other": "Other"
+      },
+      "clinicalContextLabel": "Clinical Context",
+      "clinicalContextPlaceholder": "e.g., Sepsis evaluation, routine check-up..."
+    },
+    "entry": {
+      "labNameLabel": "Lab Name",
+      "labNamePlaceholder": "e.g., Sodium, WBC",
+      "valueLabel": "Value",
+      "valuePlaceholder": "0.0",
+      "unitLabel": "Unit",
+      "unitPlaceholder": "mg/dL",
+      "addButton": "+ Add",
+      "removeButton": "Remove"
+    },
+    "emptyValues": "No lab values added yet. Add values above to begin.",
+    "actions": {
+      "interpret": "🔬 Interpret Lab Values",
+      "interpreting": "Interpreting...",
+      "loadExample": "📋 Load Example",
+      "clearAll": "🗑️ Clear All"
+    },
+    "results": {
+      "title": "Interpretation Results",
+      "analyzing": "Analyzing lab values...",
+      "noResults": "No results yet",
+      "noResultsHint": "Add lab values and click \"Interpret Lab Values\" to see results",
+      "stats": {
+        "totalValues": "Total Values",
+        "normal": "Normal",
+        "abnormal": "Abnormal",
+        "critical": "Critical"
+      },
+      "criticalAlert": "CRITICAL VALUES DETECTED",
+      "immediateReview": "Immediate clinical review and intervention required.",
+      "table": {
+        "lab": "Lab",
+        "value": "Value",
+        "referenceRange": "Reference Range",
+        "status": "Status"
+      },
+      "keyFindings": "Key Findings",
+      "clinicalSignificance": "Clinical Significance",
+      "suggestedActions": "Suggested Actions"
+    },
+    "disclaimer": "⚠️ Clinical Disclaimer: Lab interpretation is context-dependent. Results should be evaluated by qualified healthcare providers in conjunction with clinical presentation and patient history. This tool provides educational information only and should not replace professional medical judgment."
+  },
+  "toolPage": {
+    "breadcrumb": {
+      "dashboard": "💬 Dashboard",
+      "tools": "🔧 Tools"
+    },
+    "header": {
+      "shortcut": "Shortcut: {shortcut}",
+      "shareResults": "📤 Share Results",
+      "shareSession": "Share Session",
+      "allTools": "← All Tools"
+    },
+    "clinicalIntelligence": "Clinical Intelligence",
+    "riskGauge": {
+      "label": "Overall Patient Risk"
+    },
+    "clinicalAlerts": "Clinical Alerts ({count})",
+    "keyFindings": "Key Findings",
+    "recommendations": "Recommendations",
+    "aiIntegration": {
+      "title": "🤖 AI Integration",
+      "subtitle": "This tool can interact with CareDroid AI for enhanced analysis",
+      "discussResults": "Discuss Results with AI",
+      "useInConversation": "Use in Active Conversation",
+      "tip": "Tip: Type /{toolId} in any chat to invoke this tool"
+    },
+    "shareAlert": "Share link copied to clipboard.",
+    "sharePrompt": "Copy this link to share:"
+  },
+  "consent": {
+    "title": "Privacy & Consent",
+    "intro": "Before you can use CareDroid, we need your consent to collect and process Protected Health Information (PHI) in compliance with HIPAA regulations.",
+    "hipaa": {
+      "title": "1. HIPAA Authorization",
+      "badge": "Required",
+      "body": "I authorize CareDroid to use and disclose my Protected Health Information (PHI) for the purpose of providing clinical decision support services.",
+      "phiUsedTitle": "What PHI May Be Used:",
+      "phiUsed1": "Patient identifiers (as provided by you)",
+      "phiUsed2": "Medical history and clinical data",
+      "phiUsed3": "Laboratory results and diagnostic information",
+      "phiUsed4": "Treatment plans and recommendations",
+      "accessTitle": "Who May Access PHI:",
+      "access1": "You (the authorized user)",
+      "access2": "Authorized users in your organization",
+      "access3": "CareDroid's AI processing systems",
+      "access4": "HIPAA-compliant service providers under Business Associate Agreements",
+      "rightsTitle": "Your Rights:",
+      "rights1": "You may revoke this authorization at any time by contacting privacy@caredroid.ai",
+      "rights2": "Revocation will not affect actions already taken",
+      "rights3": "After revocation, you will not be able to use CareDroid's clinical tools",
+      "checkboxLabel": "I authorize the use of PHI as described above"
+    },
+    "privacy": {
+      "title": "2. Privacy Policy",
+      "badge": "Required",
+      "body": "Please review our Privacy Policy to understand how we collect, use, and protect your information.",
+      "checkboxLabel": "I have read and accept the Privacy Policy"
+    },
+    "terms": {
+      "title": "3. Terms of Service",
+      "badge": "Required",
+      "body": "Please review our Terms of Service including our medical disclaimer and acceptable use policy.",
+      "warning": "⚠️ Important: CareDroid is a decision support tool only. It is NOT a substitute for professional medical judgment.",
+      "checkboxLabel": "I have read and accept the Terms of Service"
+    },
+    "dataSharing": {
+      "title": "4. Anonymized Data for Research",
+      "badge": "Optional",
+      "body": "Help us improve CareDroid by allowing us to use anonymized, de-identified data for research and AI model training. No PHI or personal information will be included.",
+      "checkboxLabel": "I consent to anonymized data use for research purposes",
+      "description": "You can change this preference later in Settings"
+    },
+    "communications": {
+      "title": "5. Communications",
+      "badge": "Optional",
+      "body": "Receive updates about new features, clinical guidelines, and educational content. You can unsubscribe at any time.",
+      "checkboxLabel": "I want to receive product updates and educational content",
+      "description": "No marketing or promotional emails"
+    },
+    "cancelButton": "Cancel",
+    "submitButton": "Accept and Continue",
+    "submitting": "Recording Consent...",
+    "footerNote": "This consent will be recorded with a timestamp, your IP address, and user information for our audit log as required by HIPAA.",
+    "errors": {
+      "hipaaRequired": "HIPAA authorization is required to use CareDroid",
+      "privacyRequired": "You must accept the Privacy Policy to continue",
+      "termsRequired": "You must accept the Terms of Service to continue",
+      "submitFailed": "Failed to record your consent. Please try again."
+    }
+  },
+  "emergency": {
+    "severity": {
+      "critical": "Critical — Immediate life threat",
+      "urgent": "Urgent — Requires rapid response",
+      "moderate": "Moderate — Needs prompt attention"
+    },
+    "types": {
+      "cardiac": "Cardiac Arrest / STEMI",
+      "respiratory": "Respiratory Failure",
+      "stroke": "Stroke / Neurological",
+      "trauma": "Trauma / Hemorrhage",
+      "sepsis": "Sepsis / Septic Shock",
+      "anaphylaxis": "Anaphylaxis",
+      "seizure": "Seizure / Status Epilepticus",
+      "overdose": "Overdose / Toxicology",
+      "other": "Other — specify in notes"
+    },
+    "confirmation": {
+      "title": "🚨 Emergency Documented",
+      "heading": "Emergency Record Saved",
+      "room": "Room {room}",
+      "roomNA": "N/A",
+      "actionsTakenTitle": "Actions Taken",
+      "done": "Done"
+    },
+    "protocolTitle": "🚨 Emergency Protocol",
+    "sections": {
+      "patientIdentification": "Patient Identification",
+      "emergencyClassification": "Emergency Classification",
+      "vitalSigns": "Vital Signs",
+      "immediateActions": "Immediate Actions",
+      "clinicalNotes": "Clinical Notes & Documentation"
+    },
+    "fields": {
+      "quickSelectPatient": "Quick-Select Patient",
+      "selectExistingPatient": "— Select existing patient —",
+      "patientName": "Patient Name",
+      "patientNamePlaceholder": "e.g. John Doe",
+      "roomLocation": "Room / Location",
+      "roomPlaceholder": "ICU-4A",
+      "severityLevel": "Severity Level",
+      "emergencyType": "Emergency Type",
+      "selectType": "Select emergency type…",
+      "chiefComplaint": "Chief Complaint",
+      "chiefComplaintPlaceholder": "Describe the presenting emergency…",
+      "clinicalNotes": "Clinical Notes",
+      "clinicalNotesPlaceholder": "Document interventions, patient response, timeline of events…"
+    },
+    "actions": {
+      "call911": {
+        "title": "Call 911",
+        "subtitle": "Dispatch emergency services"
+      },
+      "escalateMd": {
+        "title": "Escalate to MD",
+        "subtitle": "Notify attending physician"
+      },
+      "activateCode": "Activate Code",
+      "codeActivated": "Code Activated",
+      "codeActivatedSub": "Team has been paged",
+      "pageCodeSub": "Page code team & RRT",
+      "pageRrt": {
+        "title": "Page RRT",
+        "subtitle": "Rapid Response Team"
+      },
+      "actionLogTitle": "Action Log"
+    },
+    "validation": {
+      "patientNameRequired": "Patient name is required",
+      "emergencyTypeRequired": "Select an emergency type"
+    },
+    "disclaimer": "⚠️ Medical Disclaimer: This system provides decision support only. Always use clinical judgment and follow your facility's emergency protocols.",
+    "footer": {
+      "cancel": "Cancel",
+      "submit": "Document & Close",
+      "submitting": "Documenting…"
+    },
+    "actionLog": {
+      "called911": "Called 911 — Emergency services dispatched",
+      "escalatedMd": "Escalated to Attending Physician",
+      "codeActivated": "{codeType} activated — Team paged",
+      "rrtPaged": "Rapid Response Team paged"
+    },
+    "codeTypes": {
+      "codeBlue": "Code Blue",
+      "codeStroke": "Code Stroke",
+      "codeTrauma": "Code Trauma",
+      "rapidResponse": "Rapid Response"
+    }
+  },
+  "newPatient": {
+    "title": "New Patient Intake",
+    "genderOptions": {
+      "male": "Male",
+      "female": "Female",
+      "nonBinary": "Non-binary",
+      "other": "Other",
+      "preferNotToSay": "Prefer not to say"
+    },
+    "statusOptions": {
+      "stable": "Stable",
+      "moderate": "Moderate",
+      "urgent": "Urgent",
+      "critical": "Critical"
+    },
+    "sections": {
+      "demographics": "Demographics",
+      "clinicalStatus": "Clinical Status",
+      "vitalSigns": "Vital Signs",
+      "medications": "Medications",
+      "alerts": "Alerts"
+    },
+    "fields": {
+      "fullName": "Full Name",
+      "fullNamePlaceholder": "e.g. Sarah Johnson",
+      "age": "Age",
+      "agePlaceholder": "45",
+      "gender": "Gender",
+      "genderSelect": "Select…",
+      "room": "Room",
+      "roomPlaceholder": "312",
+      "bed": "Bed",
+      "bedPlaceholder": "A",
+      "acuityStatus": "Acuity Status",
+      "admittingDiagnosis": "Admitting Diagnosis",
+      "admittingDiagnosisPlaceholder": "e.g. Acute Myocardial Infarction with cardiogenic shock",
+      "medicationPlaceholder": "Medication {n}",
+      "alertPlaceholder": "Alert message"
+    },
+    "addMedication": "+ Add Medication",
+    "addAlert": "+ Add Alert",
+    "cancelButton": "Cancel",
+    "saveButton": "Save Patient",
+    "saving": "Saving…",
+    "validation": {
+      "nameRequired": "Name is required",
+      "nameMinLength": "Name must be at least 2 characters",
+      "ageRequired": "Age is required",
+      "ageInvalid": "Enter a valid age (0–150)",
+      "genderRequired": "Gender is required"
+    },
+    "failedToCreate": "Failed to create patient"
+  },
+  "settings": {
+    "title": "Configuración",
+    "searchPlaceholder": "Buscar configuración…",
+    "recentActivity": "Actividad reciente",
+    "noActivity": "Sin actividad aún",
+    "tabs": {
+      "appearance": "Apariencia",
+      "appearanceDesc": "Tema, colores, diseño",
+      "accessibility": "Accesibilidad",
+      "accessibilityDesc": "Movimiento, contraste, lector",
+      "security": "Seguridad",
+      "securityDesc": "Sesiones, 2FA, bloqueos",
+      "notifications": "Notificaciones",
+      "notificationsDesc": "Alertas, canales",
+      "dataStorage": "Datos y almacenamiento",
+      "dataStorageDesc": "Caché, exportar, registros",
+      "about": "Acerca de",
+      "aboutDesc": "Versión, estado, enlaces"
+    },
+    "theme": {
+      "title": "Tema",
+      "system": "Sistema",
+      "systemDesc": "Seguir preferencia del SO",
+      "light": "Claro",
+      "lightDesc": "Fondo brillante",
+      "dark": "Oscuro",
+      "darkDesc": "Suave para los ojos"
+    },
+    "accentColor": "Color de acento",
+    "display": {
+      "title": "Pantalla",
+      "fontSize": "Tamaño de fuente",
+      "layoutDensity": "Densidad del diseño",
+      "preview": "Vista previa: Signos vitales del paciente dentro del rango normal. Confianza de recomendación IA: 94%."
+    },
+    "feedback": {
+      "title": "Retroalimentación y efectos",
+      "soundEffects": "Efectos de sonido",
+      "soundEffectsDesc": "Reproducir sonidos para notificaciones y acciones",
+      "hapticFeedback": "Retroalimentación háptica",
+      "hapticFeedbackDesc": "Vibrar en móvil para interacciones clave",
+      "animateCharts": "Animar gráficos",
+      "animateChartsDesc": "Transiciones suaves para visualizaciones de datos",
+      "showTooltips": "Mostrar tooltips",
+      "showTooltipsDesc": "Sugerencias al pasar el cursor sobre botones y controles"
+    },
+    "language": "Idioma",
+    "clinical": {
+      "title": "Clínico",
+      "safetyBanner": "Banner de seguridad clínica",
+      "safetyBannerDesc": "Mostrar siempre el aviso 'IA es solo consultivo'"
+    },
+    "accessibility": {
+      "visual": "Visual",
+      "highContrast": "Modo de alto contraste",
+      "highContrastDesc": "Relaciones de contraste WCAG AAA para texto y bordes",
+      "reducedMotion": "Movimiento reducido",
+      "reducedMotionDesc": "Desactivar animaciones, transiciones y efectos parallax",
+      "assistiveTech": "Tecnología de asistencia",
+      "screenReader": "Optimizaciones para lector de pantalla",
+      "screenReaderDesc": "Etiquetas ARIA mejoradas, regiones en vivo y puntos de referencia",
+      "codeFont": "Fuente de código y datos",
+      "keyboardShortcuts": "Atajos de teclado",
+      "accessibilityScore": "Puntuación de accesibilidad",
+      "featuresEnabled": "funciones habilitadas",
+      "maxAccessibility": "Máxima accesibilidad — ¡excelente!",
+      "enableMore": "Habilita más funciones para una mejor accesibilidad"
+    },
+    "security": {
+      "sessionLock": "Bloqueo de sesión",
+      "autoLockTimeout": "Tiempo de bloqueo automático",
+      "activeSessions": "Sesiones activas",
+      "thisDevice": "Este dispositivo",
+      "revoke": "Revocar",
+      "authentication": "Autenticación",
+      "twoFactor": "Autenticación de dos factores",
+      "twoFactorDesc": "Verificación basada en app TOTP",
+      "biometric": "Autenticación biométrica",
+      "biometricDesc": "Huella digital, Face ID o iris",
+      "changePassword": "Cambiar contraseña",
+      "changePasswordDesc": "Actualizar la contraseña de tu cuenta",
+      "developer": "Desarrollador",
+      "developerMode": "Modo desarrollador",
+      "developerModeDesc": "Mostrar tiempos de respuesta API, IDs de solicitud e información de depuración",
+      "neverLock": "La sesión nunca se bloqueará automáticamente (no recomendado)",
+      "locksAfter": "La sesión se bloquea después de",
+      "minutesInactive": "minutos de inactividad",
+      "enabled": "Habilitado",
+      "notSetUp": "No configurado",
+      "enrolled": "Inscrito",
+      "available": "Disponible"
+    },
+    "notificationsTab": {
+      "channels": "Canales",
+      "push": "Push",
+      "email": "Correo",
+      "sms": "SMS",
+      "active": "ACTIVO",
+      "off": "APAGADO",
+      "manage": "Gestionar",
+      "fullPreferences": "Preferencias de notificaciones completas",
+      "fullPreferencesDesc": "Tipos de alertas, horario silencioso, configuración de resumen",
+      "sendTest": "Enviar notificación de prueba"
+    },
+    "data": {
+      "storageBreakdown": "Desglose de almacenamiento",
+      "analyticsEvents": "Eventos analíticos",
+      "auditLogs": "Registros de auditoría",
+      "chatMessages": "Mensajes de chat",
+      "settingsChanges": "Cambios de configuración",
+      "totalStorage": "Almacenamiento total estimado",
+      "syncInfo": "Info de sincronización",
+      "lastSync": "Última sincronización",
+      "localStorage": "Almacenamiento local",
+      "actions": "Acciones",
+      "exportAll": "Exportar todos los datos",
+      "clearCache": "Limpiar caché"
+    },
+    "about": {
+      "application": "Aplicación",
+      "appName": "CareDroid AI",
+      "backendStatus": "Estado del backend",
+      "allOnline": "Todos los sistemas en línea",
+      "backendOffline": "Backend sin conexión",
+      "quickLinks": "Enlaces rápidos",
+      "documentation": "Documentación",
+      "changelog": "Registro de cambios",
+      "reportIssue": "Reportar problema",
+      "privacyPolicy": "Política de privacidad",
+      "termsOfService": "Términos de servicio",
+      "support": "Soporte",
+      "footer": "Hecho para médicos, por médicos"
+    },
+    "resetDefaults": "Restablecer valores predeterminados",
+    "saving": "Guardando…",
+    "saved": "Guardado ✓",
+    "save": "Guardar"
+  },
+  "shortcuts": {
+    "commandPalette": "Paleta de comandos",
+    "toggleSidebar": "Alternar barra lateral",
+    "newConversation": "Nueva conversación",
+    "exportData": "Exportar datos",
+    "openSettings": "Abrir configuración",
+    "toggleTheme": "Alternar tema",
+    "closeModals": "Cerrar modales",
+    "nextField": "Siguiente campo"
+  },
+  "toast": {
+    "savedLocally": "Guardado localmente (backend no disponible)",
+    "settingsReset": "Configuración restablecida a valores predeterminados",
+    "settingsExported": "Configuración exportada",
+    "exportFailed": "Error al exportar",
+    "invalidFile": "Archivo de configuración no válido",
+    "dataExportQueued": "Exportación de datos en cola — se te notificará cuando esté listo",
+    "cacheCleared": "Caché sin conexión limpiada",
+    "testNotifSent": "¡Notificación de prueba enviada!",
+    "notifUnavailable": "Servicio de notificaciones no disponible",
+    "changesReverted": "Cambios revertidos"
+  },
+  "confirm": {
+    "resetSettings": "¿Restablecer toda la configuración a valores predeterminados? Esto no se puede deshacer.",
+    "clearCache": "¿Limpiar todos los datos en caché? Esto no se puede deshacer."
+  },
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "close": "Cerrar",
+    "search": "Buscar",
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "warning": "Advertencia",
+    "info": "Info",
+    "yes": "Sí",
+    "no": "No",
+    "ok": "OK",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "submit": "Enviar",
+    "reset": "Restablecer",
+    "undo": "Deshacer",
+    "retry": "Reintentar"
+  }
+}

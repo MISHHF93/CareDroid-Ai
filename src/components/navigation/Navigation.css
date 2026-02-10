@@ -29,7 +29,7 @@
 
 .breadcrumb-link:hover {
   color: var(--accent-1);
-  background: rgba(0, 255, 136, 0.1);
+  background: var(--accent-10);
 }
 
 .breadcrumb-link.breadcrumb-active {
@@ -462,7 +462,7 @@
 
 .header-nav-link:hover {
   color: var(--accent-1);
-  background: rgba(0, 255, 136, 0.1);
+  background: var(--accent-10);
 }
 
 /* Right Side */

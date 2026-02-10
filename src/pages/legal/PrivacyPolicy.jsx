@@ -1,4 +1,5 @@
 import './LegalPage.css';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 /**
  * Privacy Policy Page
@@ -7,15 +8,15 @@ import './LegalPage.css';
  * REQUIRED for app store submission
  */
 export const PrivacyPolicy = () => {
+  const { t } = useLanguage();
+
   return (
     <div className="legal-page">
       <div className="legal-header">
-        <h1>Privacy Policy</h1>
-        <p className="legal-meta">Last Updated: January 31, 2026</p>
+        <h1>{t('legal.privacy.title')}</h1>
+        <p className="legal-meta">{t('legal.privacy.lastUpdated')}</p>
         <p className="legal-intro">
-          CareDroid is committed to protecting your privacy and complying with all applicable 
-          healthcare privacy regulations, including HIPAA (Health Insurance Portability and 
-          Accountability Act).
+          {t('legal.privacy.intro')}
         </p>
       </div>
 

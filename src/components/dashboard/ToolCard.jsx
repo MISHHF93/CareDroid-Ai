@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card } from '../ui/molecules/Card';
 import { Badge } from '../ui/atoms/Badge';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 /**
  * ToolCard - Dashboard quick access tool card
@@ -16,6 +17,8 @@ export const ToolCard = ({
   isFavorite = false,
   recentlyUsed = false
 }) => {
+  const { t } = useLanguage();
+
   return (
     <Card
       padding="lg"
@@ -48,7 +51,7 @@ export const ToolCard = ({
         )}
         {recentlyUsed && (
           <Badge variant="info" size="sm">
-            Recent
+            {t('widgets.toolCard.recent')}
           </Badge>
         )}
       </div>

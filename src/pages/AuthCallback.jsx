@@ -3,16 +3,18 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Card } from '../components/ui/molecules/Card';
 import { Button } from '../components/ui/atoms/Button';
 import { useNotificationActions } from '../hooks/useNotificationActions';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const AuthCallback = ({ onAuthSuccess }) => {
   const [params] = useSearchParams();
   const initialToken = params.get('token') || '';
   const [token, setToken] = useState(initialToken);
   const { info } = useNotificationActions();
+  const { t } = useLanguage();
 
   const handleSave = () => {
     if (!token) {
-      info('Token required', 'Paste an access token to continue.');
+      info(t('authCallback.tokenRequired'), t('authCallback.pasteTokenToContinue'));
       return;
     }
     onAuthSuccess?.(token);
@@ -21,15 +23,15 @@ const AuthCallback = ({ onAuthSuccess }) => {
   return (
     <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
       <Card style={{ width: '100%', maxWidth: '720px' }}>
-        <h2 style={{ marginTop: 0 }}>Complete Sign-In</h2>
+        <h2 style={{ marginTop: 0 }}>{t('authCallback.completeSignIn')}</h2>
         <p style={{ color: 'var(--muted-text)', fontSize: '14px' }}>
-          Paste the access token returned from your OAuth provider to finish signing in.
+          {t('authCallback.pasteTokenDescription')}
         </p>
         <textarea
           value={token}
           onChange={(e) => setToken(e.target.value)}
           rows={4}
-          placeholder="Paste access token"
+          placeholder={t('authCallback.pasteAccessToken')}
           style={{
             width: '100%',
             padding: '12px',
@@ -41,11 +43,11 @@ const AuthCallback = ({ onAuthSuccess }) => {
           }}
         />
         <Button onClick={handleSave} style={{ marginTop: '14px' }}>
-          Save token
+          {t('authCallback.saveToken')}
         </Button>
         <div style={{ marginTop: '18px', fontSize: '12px', color: 'var(--muted-text)' }}>
           <Link to="/" style={{ color: '#00FF88', textDecoration: 'none' }}>
-            ← Back to chat
+            {t('authCallback.backToChat')}
           </Link>
         </div>
       </Card>

@@ -6,6 +6,7 @@ import { Input } from '../components/ui/atoms/Input';
 import { apiFetch } from '../services/apiClient';
 import { useNotificationActions } from '../hooks/useNotificationActions';
 import logger from '../utils/logger';
+import { useLanguage } from '../contexts/LanguageContext';
 
 /**
  * TwoFactorSetup Component
@@ -18,6 +19,7 @@ import logger from '../utils/logger';
  */
 const TwoFactorSetup = ({ authToken }) => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [step, setStep] = useState('generate'); // 'generate', 'verify', 'backup'
   const [qrCode, setQrCode] = useState(null);
   const [secret, setSecret] = useState(null);
@@ -118,7 +120,7 @@ const TwoFactorSetup = ({ authToken }) => {
 
   return (
     <div style={{
-      minHeight: '100vh',
+      minHeight: '100dvh',
       background: 'var(--background)',
       display: 'flex',
       alignItems: 'center',
@@ -141,13 +143,13 @@ const TwoFactorSetup = ({ authToken }) => {
               color: 'var(--text-primary)',
               marginBottom: '8px',
             }}>
-              Set Up Two-Factor Authentication
+              {t('twoFactor.title')}
             </h1>
             <p style={{
               fontSize: '14px',
               color: 'var(--muted-text)',
             }}>
-              Add an extra layer of security to your CareDroid account
+              {t('twoFactor.subtitle')}
             </p>
           </div>
 
@@ -161,7 +163,7 @@ const TwoFactorSetup = ({ authToken }) => {
                   marginBottom: '12px',
                   color: 'var(--text-primary)',
                 }}>
-                  Step 1: Scan QR Code
+                  {t('twoFactor.step1Title')}
                 </h3>
                 <ol style={{
                   fontSize: '14px',
@@ -169,9 +171,9 @@ const TwoFactorSetup = ({ authToken }) => {
                   lineHeight: '1.6',
                   paddingLeft: '20px',
                 }}>
-                  <li>Install Google Authenticator or Authy on your mobile device</li>
-                  <li>Open the app and scan the QR code below</li>
-                  <li>Enter the 6-digit code from the app to verify</li>
+                  <li>{t('twoFactor.step1Instruction1')}</li>
+                  <li>{t('twoFactor.step1Instruction2')}</li>
+                  <li>{t('twoFactor.step1Instruction3')}</li>
                 </ol>
               </div>
 
@@ -181,7 +183,7 @@ const TwoFactorSetup = ({ authToken }) => {
                   padding: '40px',
                   color: 'var(--muted-text)',
                 }}>
-                  Generating QR code...
+                  {t('twoFactor.generatingQr')}
                 </div>
               ) : qrCode ? (
                 <div style={{
@@ -224,7 +226,7 @@ const TwoFactorSetup = ({ authToken }) => {
                   padding: '40px',
                   color: 'var(--text-error)',
                 }}>
-                  Failed to generate QR code. Please refresh the page.
+                  {t('twoFactor.qrFailed')}
                 </div>
               )}
 
@@ -233,7 +235,7 @@ const TwoFactorSetup = ({ authToken }) => {
                 disabled={!qrCode}
                 style={{ width: '100%' }}
               >
-                Continue to Verification
+                {t('twoFactor.continueToVerification')}
               </Button>
             </div>
           )}
@@ -248,14 +250,14 @@ const TwoFactorSetup = ({ authToken }) => {
                   marginBottom: '12px',
                   color: 'var(--text-primary)',
                 }}>
-                  Step 2: Verify Setup
+                  {t('twoFactor.step2Title')}
                 </h3>
                 <p style={{
                   fontSize: '14px',
                   color: 'var(--text-secondary)',
                   marginBottom: '16px',
                 }}>
-                  Enter the 6-digit code from your authenticator app to verify the setup.
+                  {t('twoFactor.step2Description')}
                 </p>
               </div>
 
@@ -285,14 +287,14 @@ const TwoFactorSetup = ({ authToken }) => {
                   onClick={() => setStep('generate')}
                   style={{ flex: 1 }}
                 >
-                  Back
+                  {t('twoFactor.back')}
                 </Button>
                 <Button
                   type="submit"
                   disabled={loading || token.length < 6}
                   style={{ flex: 1 }}
                 >
-                  {loading ? 'Verifying...' : 'Verify & Enable'}
+                  {loading ? t('twoFactor.verifying') : t('twoFactor.verifyAndEnable')}
                 </Button>
               </div>
             </form>
@@ -308,7 +310,7 @@ const TwoFactorSetup = ({ authToken }) => {
                   marginBottom: '12px',
                   color: 'var(--text-primary)',
                 }}>
-                  Step 3: Save Backup Codes
+                  {t('twoFactor.step3Title')}
                 </h3>
                 <div style={{
                   background: 'rgba(255, 184, 0, 0.1)',
@@ -322,8 +324,7 @@ const TwoFactorSetup = ({ authToken }) => {
                     color: '#FFB800',
                     margin: 0,
                   }}>
-                    ⚠️ <strong>Important:</strong> Save these backup codes in a secure location. 
-                    Each code can only be used once if you lose access to your authenticator app.
+                    ⚠️ <strong>{t('twoFactor.important')}:</strong> {t('twoFactor.backupCodesWarning')}
                   </p>
                 </div>
               </div>
@@ -358,7 +359,7 @@ const TwoFactorSetup = ({ authToken }) => {
                   onClick={handleCopyBackupCodes}
                   style={{ flex: 1 }}
                 >
-                  📋 Copy Codes
+                  📋 {t('twoFactor.copyCodes')}
                 </Button>
                 <Button
                   type="button"
@@ -366,7 +367,7 @@ const TwoFactorSetup = ({ authToken }) => {
                   onClick={handleDownloadBackupCodes}
                   style={{ flex: 1 }}
                 >
-                  💾 Download Codes
+                  💾 {t('twoFactor.downloadCodes')}
                 </Button>
               </div>
 
@@ -374,7 +375,7 @@ const TwoFactorSetup = ({ authToken }) => {
                 onClick={handleFinish}
                 style={{ width: '100%' }}
               >
-                Finish Setup
+                {t('twoFactor.finishSetup')}
               </Button>
             </div>
           )}
@@ -395,7 +396,7 @@ const TwoFactorSetup = ({ authToken }) => {
               textDecoration: 'underline',
             }}
           >
-            Skip for now
+            {t('twoFactor.skipForNow')}
           </button>
         </div>
       </div>

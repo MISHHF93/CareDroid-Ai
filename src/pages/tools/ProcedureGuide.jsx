@@ -1,15 +1,18 @@
 import SearchableToolPage from './SearchableToolPage';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const ProcedureGuide = () => {
+  const { t } = useLanguage();
+
   const toolConfig = {
     id: 'procedures',
     icon: '⚕️',
-    name: 'Procedure Guide',
+    name: t('tools.procedureGuide.name'),
     path: '/tools/procedures',
     color: '#6BCB77',
-    description: 'Procedural guidance and step-by-step instructions',
+    description: t('tools.procedureGuide.description'),
     shortcut: 'Ctrl+6',
-    category: 'Reference'
+    category: t('tools.procedureGuide.category')
   };
 
   const commonProcedures = [
@@ -29,9 +32,9 @@ const ProcedureGuide = () => {
     <SearchableToolPage
       toolConfig={toolConfig}
       commonItems={commonProcedures}
-      placeholder="Search for a procedure (e.g., Central line, Intubation)..."
-      searchPrompt="Provide a step-by-step guide for the following procedure"
-      errorMessage="Error loading procedure guide. Please try again."
+      placeholder={t('tools.procedureGuide.placeholder')}
+      searchPrompt={t('tools.procedureGuide.searchPrompt')}
+      errorMessage={t('tools.procedureGuide.errorMessage')}
     />
   );
 };

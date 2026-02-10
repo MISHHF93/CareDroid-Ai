@@ -1,9 +1,10 @@
 import React from 'react';
 import { Card } from '../ui/molecules/Card';
+import { SparklineChart } from './SparklineChart';
 
 /**
  * StatCard - Dashboard statistics card component
- * Displays key metrics with trend indicators
+ * Displays key metrics with trend indicators and optional sparkline
  */
 export const StatCard = ({
   label,
@@ -12,7 +13,8 @@ export const StatCard = ({
   trendDirection,
   color = 'info',
   icon,
-  onClick
+  onClick,
+  sparklineData
 }) => {
   const colorMap = {
     critical: '#EF4444',
@@ -25,7 +27,7 @@ export const StatCard = ({
     critical: 'rgba(239, 68, 68, 0.1)',
     warning: 'rgba(245, 158, 11, 0.1)',
     info: 'rgba(99, 179, 237, 0.1)',
-    success: 'rgba(0, 255, 136, 0.1)'
+    success: 'var(--accent-10)'
   };
 
   const getTrendColor = () => {
@@ -110,6 +112,18 @@ export const StatCard = ({
             </span>
           )}
         </div>
+
+        {/* Sparkline */}
+        {sparklineData && sparklineData.length >= 2 && (
+          <div style={{ marginTop: 'var(--space-1)' }}>
+            <SparklineChart
+              data={sparklineData}
+              color={colorMap[color]}
+              width={140}
+              height={28}
+            />
+          </div>
+        )}
       </div>
     </Card>
   );

@@ -21,7 +21,8 @@
     "backend:start": "cd backend && npm run start:prod",
     "start": "npm run build && npm run backend:dev",
     "start:all": "npm run start",
-    "dev": "npm run start",
+    "frontend:dev": "vite",
+    "dev": "concurrently \"npm run frontend:dev\" \"npm run backend:dev\"",
     "lint": "eslint . --ext .js,.jsx",
     "format": "prettier --write \"src/**/*.{js,jsx,json,css}\""
   },
@@ -38,6 +39,7 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^8.0.2",
+    "@playwright/test": "^1.58.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",

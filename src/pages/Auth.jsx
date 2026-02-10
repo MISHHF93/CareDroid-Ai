@@ -8,6 +8,7 @@ import { apiFetch } from '../services/apiClient';
 import { useNotificationActions } from '../hooks/useNotificationActions';
 import { useUser } from '../contexts/UserContext';
 import logger from '../utils/logger';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const Auth = ({ onAuthSuccess }) => {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ const Auth = ({ onAuthSuccess }) => {
   const [twoFactorToken, setTwoFactorToken] = useState('');
   const bypassToken = appConfig.dev.bearerToken;
   const { success, error, info } = useNotificationActions();
+  const { t } = useLanguage();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -45,7 +47,7 @@ const Auth = ({ onAuthSuccess }) => {
       if (data?.requiresTwoFactor) {
         setRequiresTwoFactor(true);
         setUserId(data.userId);
-        info('Two-factor required', 'Please enter your 2FA code.');
+        info(t('auth.twoFactorRequired'), t('auth.enter2FACode'));
         return;
       }
 
@@ -64,12 +66,12 @@ const Auth = ({ onAuthSuccess }) => {
         
         // Navigate to dashboard
         navigate('/dashboard', { replace: true });
-        success('Signed in', 'Welcome to CareDroid!');
+        success(t('auth.signedIn'), t('auth.welcomeMessage'));
       } else {
-        success('Registration complete', 'Please verify your email.');
+        success(t('auth.registrationComplete'), t('auth.verifyEmail'));
       }
     } catch (error) {
-      error('Authentication failed', 'Unable to authenticate. Check your credentials.');
+      error(t('auth.authFailed'), t('auth.checkCredentials'));
     }
   };
 
@@ -77,7 +79,7 @@ const Auth = ({ onAuthSuccess }) => {
     e.preventDefault();
     
     if (!twoFactorToken || twoFactorToken.length < 6) {
-      error('Invalid code', 'Please enter a valid 6-digit code.');
+      error(t('auth.invalidCode'), t('auth.enterValid6DigitCode'));
       return;
     }
 
@@ -109,10 +111,10 @@ const Auth = ({ onAuthSuccess }) => {
         
         // Navigate to dashboard
         navigate('/dashboard', { replace: true });
-        success('Signed in', 'Successfully authenticated.');
+        success(t('auth.signedIn'), t('auth.successfullyAuthenticated'));
       }
     } catch (err) {
-      error('Invalid 2FA code', 'Please try again.');
+      error(t('auth.invalid2FACode'), t('auth.pleaseTryAgain'));
     }
   };
 
@@ -125,7 +127,7 @@ const Auth = ({ onAuthSuccess }) => {
   const handleMagicLink = async (e) => {
     e.preventDefault();
     if (!magicEmail) {
-      info('Email required', 'Enter your institutional email to receive a link.');
+      info(t('auth.emailRequired'), t('auth.enterInstitutionalEmail'));
       return;
     }
 
@@ -140,9 +142,9 @@ const Auth = ({ onAuthSuccess }) => {
         throw new Error('Magic link failed');
       }
 
-      success('Magic link sent', 'Check your email.');
+      success(t('auth.magicLinkSent'), t('auth.checkEmail'));
     } catch (error) {
-      error('Magic link failed', 'Unable to send magic link.');
+      error(t('auth.magicLinkFailed'), t('auth.unableToSendMagicLink'));
     }
   };
 
@@ -153,9 +155,9 @@ const Auth = ({ onAuthSuccess }) => {
         <div>
           <div style={{ marginBottom: '24px', textAlign: 'center' }}>
             <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔐</div>
-            <h2 style={{ margin: 0, fontSize: '22px' }}>Two-Factor Authentication</h2>
+            <h2 style={{ margin: 0, fontSize: '22px' }}>{t('auth.twoFactorAuth')}</h2>
             <p style={{ marginTop: '8px', color: 'var(--muted-text)', fontSize: '14px' }}>
-              Enter the 6-digit code from your authenticator app
+              {t('auth.twoFactorPrompt')}
             </p>
           </div>
 
@@ -183,14 +185,14 @@ const Auth = ({ onAuthSuccess }) => {
                 onClick={handleCancelTwoFactor}
                 style={{ flex: 1 }}
               >
-                Cancel
+                {t('auth.cancel')}
               </Button>
               <Button
                 type="submit"
                 disabled={twoFactorToken.length < 6}
                 style={{ flex: 1 }}
               >
-                Verify
+                {t('auth.verify')}
               </Button>
             </div>
           </form>
@@ -213,7 +215,7 @@ const Auth = ({ onAuthSuccess }) => {
                 textDecoration: 'underline',
               }}
             >
-              Use backup code instead?
+              {t('auth.useBackupCode')}
             </button>
           </div>
         </div>
@@ -221,21 +223,21 @@ const Auth = ({ onAuthSuccess }) => {
         <div>
           {/* Regular Login Screen */}
           <div style={{ marginBottom: '16px' }}>
-            <h2 style={{ margin: 0, fontSize: '22px' }}>Institutional Sign-In</h2>
+            <h2 style={{ margin: 0, fontSize: '22px' }}>{t('auth.institutionalSignIn')}</h2>
             <p style={{ marginTop: '8px', color: 'var(--muted-text)', fontSize: '14px' }}>
-              Secure access for hospitals, universities, and clinical teams.
+              {t('auth.secureAccessDescription')}
             </p>
           </div>
 
       <form onSubmit={handleMagicLink} style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
         <Input
           type="email"
-          placeholder="name@institution.org"
+          placeholder={t('auth.emailPlaceholder')}
           value={magicEmail}
           onChange={(e) => setMagicEmail(e.target.value)}
           style={{ flex: 1 }}
         />
-        <Button type="submit">Send Link</Button>
+        <Button type="submit">{t('auth.sendLink')}</Button>
       </form>
 
         <div style={{ display: 'grid', gap: '8px', marginBottom: '18px' }}>
@@ -244,9 +246,9 @@ const Auth = ({ onAuthSuccess }) => {
               try {
                 const response = await apiFetch('/api/auth/oidc');
                 const data = await response.json().catch(() => ({}));
-                info('SSO status', data?.message || 'OIDC SSO is not configured.');
+                info(t('auth.ssoStatus'), data?.message || t('auth.oidcNotConfigured'));
               } catch (error) {
-                info('SSO unavailable', 'OIDC SSO is not available.');
+                info(t('auth.ssoUnavailable'), t('auth.oidcNotAvailable'));
               }
             }}
             style={{
@@ -259,16 +261,16 @@ const Auth = ({ onAuthSuccess }) => {
               textAlign: 'left'
             }}
           >
-            🔐 Institutional SSO (OIDC)
+            🔐 {t('auth.institutionalSSOOIDC')}
           </button>
           <button
             onClick={async () => {
               try {
                 const response = await apiFetch('/api/auth/saml');
                 const data = await response.json().catch(() => ({}));
-                info('SSO status', data?.message || 'SAML SSO is not configured.');
+                info(t('auth.ssoStatus'), data?.message || t('auth.samlNotConfigured'));
               } catch (error) {
-                info('SSO unavailable', 'SAML SSO is not available.');
+                info(t('auth.ssoUnavailable'), t('auth.samlNotAvailable'));
               }
             }}
             style={{
@@ -281,12 +283,12 @@ const Auth = ({ onAuthSuccess }) => {
               textAlign: 'left'
             }}
           >
-            🏢 Institutional SSO (SAML)
+            🏢 {t('auth.institutionalSSOSAML')}
           </button>
         </div>
 
         <div style={{ margin: '18px 0 12px', color: 'var(--muted-text)', fontSize: '12px' }}>
-          Or continue with social login
+          {t('auth.orContinueSocialLogin')}
         </div>
 
         <div style={{ display: 'grid', gap: '10px' }}>
@@ -302,7 +304,7 @@ const Auth = ({ onAuthSuccess }) => {
               textAlign: 'left'
             }}
           >
-            🔎 Continue with Google
+            🔎 {t('auth.continueWithGoogle')}
           </a>
           <a
             href="/api/auth/linkedin"
@@ -316,7 +318,7 @@ const Auth = ({ onAuthSuccess }) => {
               textAlign: 'left'
             }}
           >
-            💼 Continue with LinkedIn
+            💼 {t('auth.continueWithLinkedIn')}
           </a>
           <Button
             onClick={() => {
@@ -329,12 +331,31 @@ const Auth = ({ onAuthSuccess }) => {
                 const mockUser = {
                   id: 'dev-user',
                   email: 'dev@caredroid.local',
-                  name: 'Development User',
+                  name: 'Dr. Sarah Mitchell',
                   role: 'admin',
-                  fullName: 'Development User',
+                  fullName: 'Dr. Sarah Mitchell',
                   isEmailVerified: true,
                   twoFactorEnabled: false,
-                  createdAt: new Date().toISOString()
+                  createdAt: '2025-01-15T08:00:00.000Z',
+                  lastLoginAt: new Date().toISOString(),
+                  lastLoginIp: '10.0.1.42',
+                  profile: {
+                    firstName: 'Sarah',
+                    lastName: 'Mitchell',
+                    fullName: 'Dr. Sarah Mitchell',
+                    specialty: 'Critical Care Medicine',
+                    institution: 'Johns Hopkins Hospital',
+                    licenseNumber: 'MD-2024-74521',
+                    country: 'United States',
+                    languagePreference: 'English',
+                    timezone: 'America/New_York',
+                    verified: true,
+                    trustScore: 82,
+                    avatarUrl: null,
+                    consentMarketingCommunications: false,
+                    consentDataProcessing: true,
+                    consentThirdPartySharing: false,
+                  },
                 };
                 
                 // Save to localStorage FIRST
@@ -359,47 +380,47 @@ const Auth = ({ onAuthSuccess }) => {
                 
                 // Navigate to dashboard
                 navigate('/dashboard', { replace: true });
-                success('Signed in', 'Welcome to CareDroid!');
+                success(t('auth.signedIn'), t('auth.welcomeMessage'));
               } catch (error) {
                 logger.error('Error in direct sign-in', { error });
               }
               
-              info('Signing in', 'Signing in...');
+              info(t('auth.signingIn'), t('auth.signingInProgress'));
             }}
             variant="ghost"
             style={{ borderStyle: 'dashed', textAlign: 'left' }}
           >
-            ⚡ Direct Sign-In (no auth)
+            ⚡ {t('auth.directSignIn')}
           </Button>
         </div>
 
         <div style={{ margin: '18px 0 10px', color: 'var(--muted-text)', fontSize: '12px' }}>
-          Or sign in with email and password
+          {t('auth.orSignInWithEmail')}
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {mode === 'signup' && (
             <Input
               type="text"
-              placeholder="Full name"
+              placeholder={t('auth.fullName')}
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
             />
           )}
           <Input
             type="email"
-            placeholder="Email address"
+            placeholder={t('auth.emailAddress')}
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
           />
           <Input
             type="password"
-            placeholder="Password"
+            placeholder={t('auth.password')}
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
           />
           <Button type="submit" style={{ marginTop: '6px' }}>
-            {mode === 'login' ? 'Sign in' : 'Create account'}
+            {mode === 'login' ? t('auth.signIn') : t('auth.createAccount')}
           </Button>
         </form>
         <div style={{
@@ -409,7 +430,7 @@ const Auth = ({ onAuthSuccess }) => {
         }}>
           {mode === 'login' ? (
             <span>
-              New here?{' '}
+              {t('auth.newHere')}{' '}
               <button
                 onClick={() => setMode('signup')}
                 style={{
@@ -419,12 +440,12 @@ const Auth = ({ onAuthSuccess }) => {
                   cursor: 'pointer'
                 }}
               >
-                Create account
+                {t('auth.createAccount')}
               </button>
             </span>
           ) : (
             <span>
-              Already have an account?{' '}
+              {t('auth.alreadyHaveAccount')}{' '}
               <button
                 onClick={() => setMode('login')}
                 style={{
@@ -434,14 +455,14 @@ const Auth = ({ onAuthSuccess }) => {
                   cursor: 'pointer'
                 }}
               >
-                Sign in
+                {t('auth.signIn')}
               </button>
             </span>
           )}
         </div>
         <div style={{ marginTop: '18px', fontSize: '12px', color: 'var(--muted-text)' }}>
           <Link to="/" style={{ color: '#00FF88', textDecoration: 'none' }}>
-            ← Back to chat
+            {t('auth.backToChat')}
           </Link>
         </div>
         </div>

@@ -24,7 +24,7 @@
 .offline-indicator-online {
   background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
   color: var(--navy-bg);
-  box-shadow: 0 2px 8px rgba(0, 255, 136, 0.3);
+  box-shadow: 0 2px 8px var(--accent-20);
 }
 
 .offline-indicator-content {
@@ -108,7 +108,7 @@
 .sync-status-spinner {
   width: 24px;
   height: 24px;
-  border: 2px solid rgba(0, 255, 136, 0.2);
+  border: 2px solid var(--accent-20);
   border-top-color: var(--accent-1);
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -240,8 +240,8 @@
 .offline-warning-note {
   font-size: var(--font-12);
   color: var(--muted-text);
-  background: rgba(0, 255, 136, 0.05);
-  border: 1px solid rgba(0, 255, 136, 0.2);
+  background: var(--accent-10);
+  border: 1px solid var(--accent-20);
   border-radius: var(--radius-md);
   padding: var(--space-3);
   margin-top: var(--space-2);

@@ -1,4 +1,5 @@
 import './LegalPage.css';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 /**
  * Terms of Service Page
@@ -7,15 +8,15 @@ import './LegalPage.css';
  * REQUIRED for app store submission
  */
 export const TermsOfService = () => {
+  const { t } = useLanguage();
+
   return (
     <div className="legal-page">
       <div className="legal-header">
-        <h1>Terms of Service</h1>
-        <p className="legal-meta">Last Updated: January 31, 2026</p>
+        <h1>{t('legal.terms.title')}</h1>
+        <p className="legal-meta">{t('legal.terms.lastUpdated')}</p>
         <p className="legal-intro">
-          These Terms of Service ("Terms") govern your access to and use of CareDroid Clinical AI 
-          ("CareDroid", "Service", "Platform"). Please read these Terms carefully before using 
-          the Service.
+          {t('legal.terms.intro')}
         </p>
       </div>
 

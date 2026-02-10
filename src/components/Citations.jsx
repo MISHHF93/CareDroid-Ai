@@ -196,7 +196,7 @@ export const CitationModal = ({ citation, onClose }) => {
               textTransform: 'uppercase',
               letterSpacing: '0.5px',
               background: citation.type === 'protocol' ? 'rgba(255, 184, 0, 0.15)' :
-                          citation.type === 'guideline' ? 'rgba(0, 255, 136, 0.15)' :
+                          citation.type === 'guideline' ? 'var(--accent-15)' :
                           citation.type === 'drug_info' ? 'rgba(0, 180, 255, 0.15)' :
                           'rgba(255, 255, 255, 0.1)',
               color: citation.type === 'protocol' ? '#FFB800' :
@@ -204,7 +204,7 @@ export const CitationModal = ({ citation, onClose }) => {
                      citation.type === 'drug_info' ? '#00B4FF' :
                      'rgba(255, 255, 255, 0.8)',
               border: `1px solid ${citation.type === 'protocol' ? 'rgba(255, 184, 0, 0.3)' :
-                                    citation.type === 'guideline' ? 'rgba(0, 255, 136, 0.3)' :
+                                    citation.type === 'guideline' ? 'var(--accent-20)' :
                                     citation.type === 'drug_info' ? 'rgba(0, 180, 255, 0.3)' :
                                     'rgba(255, 255, 255, 0.2)'}`,
             }}>
@@ -218,9 +218,9 @@ export const CitationModal = ({ citation, onClose }) => {
                 borderRadius: '12px',
                 fontSize: '11px',
                 fontWeight: 600,
-                background: 'rgba(0, 255, 136, 0.15)',
+                background: 'var(--accent-15)',
                 color: '#00FF88',
-                border: '1px solid rgba(0, 255, 136, 0.3)',
+                border: '1px solid var(--accent-20)',
               }}>
                 Evidence Level: {citation.evidenceLevel}
               </span>

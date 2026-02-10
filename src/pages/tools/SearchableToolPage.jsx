@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import ToolPageLayout from './ToolPageLayout';
 import { apiFetch } from '../../services/apiClient';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const SearchableToolPage = ({
   toolConfig,
@@ -9,6 +10,7 @@ const SearchableToolPage = ({
   searchPrompt,
   errorMessage
 }) => {
+  const { t } = useLanguage();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);

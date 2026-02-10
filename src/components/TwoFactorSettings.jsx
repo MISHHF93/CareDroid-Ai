@@ -115,8 +115,8 @@ const TwoFactorSettings = ({ authToken }) => {
           </div>
           {twoFactorStatus?.enabled ? (
             <div style={{
-              background: 'rgba(0, 255, 136, 0.1)',
-              border: '1px solid rgba(0, 255, 136, 0.3)',
+              background: 'var(--accent-10)',
+              border: '1px solid var(--accent-20)',
               borderRadius: '12px',
               padding: '6px 12px',
               fontSize: '12px',

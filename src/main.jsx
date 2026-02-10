@@ -57,11 +57,11 @@ try {
   log('❌ ' + msg);
   logger.error('Failed to mount app', { error: error.message, stack: error.stack });
   document.body.innerHTML = `
-    <div style="padding: 20px; font-family: monospace; color: #ff4444; background: #1a1a1a; min-height: 100vh;">
+    <div style="padding: 20px; font-family: monospace; color: #ff4444; background: #1a1a1a; min-height: 100dvh;">
       <h1>⚠ App Failed to Load</h1>
       <p><strong>Error:</strong> ${error.message}</p>
       <pre style="background: #000; padding: 12px; border-radius: 4px; overflow: auto;">${error.stack || 'No stack trace'}</pre>
-      <button onclick="location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #00ff88; color: #000; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
+      <button onclick="location.reload()" style="margin-top: 20px; padding: 10px 20px; background: var(--accent, #3B82F6); color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
         Reload Page
       </button>
     </div>

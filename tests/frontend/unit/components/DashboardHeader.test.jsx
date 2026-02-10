@@ -11,23 +11,14 @@ describe('DashboardHeader', () => {
     expect(screen.getByText(/Dr. Patel/)).toBeInTheDocument();
   });
 
-  it('shows search input and handles notifications', async () => {
+  it('shows search input and handles search change', async () => {
     const user = userEvent.setup();
     const onSearchChange = vi.fn();
-    const onMarkNotificationRead = vi.fn();
 
     render(
       <DashboardHeader
         userName="Dr. Patel"
-        notificationCount={1}
-        notifications={[{
-          id: 'n1',
-          title: 'New lab result',
-          read: false,
-          timestamp: new Date().toISOString(),
-        }]}
         onSearchChange={onSearchChange}
-        onMarkNotificationRead={onMarkNotificationRead}
       />
     );
 
@@ -35,11 +26,55 @@ describe('DashboardHeader', () => {
     await user.type(searchInput, 'Sarah');
 
     expect(onSearchChange).toHaveBeenCalled();
+  });
 
-    await user.click(screen.getByLabelText(/Notifications/));
-    expect(screen.getByText('Notifications')).toBeInTheDocument();
+  it('renders New Patient and Emergency buttons', () => {
+    const onNewPatient = vi.fn();
+    const onEmergency = vi.fn();
 
-    await user.click(screen.getByText('New lab result'));
-    expect(onMarkNotificationRead).toHaveBeenCalledWith('n1');
+    render(
+      <DashboardHeader
+        userName="Dr. Patel"
+        onNewPatient={onNewPatient}
+        onEmergency={onEmergency}
+      />
+    );
+
+    expect(screen.getByText(/New Patient/)).toBeInTheDocument();
+    expect(screen.getByText(/Emergency/)).toBeInTheDocument();
+  });
+
+  it('shows Live when SSE connected', () => {
+    render(
+      <DashboardHeader
+        userName="Dr. Patel"
+        connectionState="connected"
+      />
+    );
+
+    expect(screen.getByLabelText(/Real-time status: connected/)).toBeInTheDocument();
+    expect(screen.getByText('Live')).toBeInTheDocument();
+  });
+
+  it('shows Connecting when SSE is connecting', () => {
+    render(
+      <DashboardHeader
+        userName="Dr. Patel"
+        connectionState="connecting"
+      />
+    );
+
+    expect(screen.getByText('Connecting…')).toBeInTheDocument();
+  });
+
+  it('shows Offline when SSE disconnected', () => {
+    render(
+      <DashboardHeader
+        userName="Dr. Patel"
+        connectionState="disconnected"
+      />
+    );
+
+    expect(screen.getByText('Offline')).toBeInTheDocument();
   });
 });

@@ -45,6 +45,7 @@ import { PatientModule } from './modules/patients/patient.module';
 import { EmailModule } from './modules/email/email.module';
 import { CacheModule } from './modules/cache/cache.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { SettingsModule } from './modules/settings/settings.module';
 
 // Monitoring & Observability
 import { LoggerModule } from './modules/common/logger.module';
@@ -52,14 +53,14 @@ import { MetricsModule } from './modules/metrics/metrics.module';
 
 @Module({
   imports: [
-    // Serve static frontend files from root dist folder
-    ServeStaticModule.forRoot({
-      rootPath: '/workspaces/CareDroid-Ai/dist',
-      exclude: ['/api*', '/health*', '/metrics*', '/grafana*', '/kibana*', '/prometheus*', '/alertmanager*', '/elasticsearch*', '/sentry*', '/nlu*', '/anomaly*', '/logstash*', '/test*'],
-      serveStaticOptions: {
-        cacheControl: false, // Disable caching during development
-      },
-    }),
+    // Serve static frontend files (disabled in dev — Vite serves frontend on :5173)
+    // ServeStaticModule.forRoot({
+    //   rootPath: '/workspaces/CareDroid-Ai/dist',
+    //   exclude: ['/api/{*path}', '/health', '/health/{*path}', '/metrics', '/metrics/{*path}'],
+    //   serveStaticOptions: {
+    //     cacheControl: false,
+    //   },
+    // }),
 
     // Configuration
     ConfigModule.forRoot({
@@ -127,8 +128,8 @@ import { MetricsModule } from './modules/metrics/metrics.module';
     AnalyticsModule,
     NotificationModule,
     DashboardModule,
+    SettingsModule,
     PatientModule,
-    DashboardModule,
     
     // Medical Control Plane (Intent Classification, Tool Orchestration)
     MedicalControlPlaneModule,

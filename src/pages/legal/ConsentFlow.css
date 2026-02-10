@@ -1,7 +1,7 @@
 /* ConsentFlow Styles */
 
 .consent-flow {
-  min-height: 100vh;
+  min-height: 100dvh;
   background: var(--navy-bg);
   padding: var(--space-6) var(--space-4);
 }
@@ -197,7 +197,7 @@
 
 .btn-consent-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 255, 136, 0.3);
+  box-shadow: 0 4px 12px var(--accent-20);
 }
 
 .btn-consent-primary:disabled {

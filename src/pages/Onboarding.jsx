@@ -3,30 +3,33 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Card } from '../components/ui/molecules/Card';
 import { Button } from '../components/ui/atoms/Button';
 import { useNotificationActions } from '../hooks/useNotificationActions';
-
-const steps = [
-  {
-    title: 'Choose your role',
-    description: 'Help us tailor CareDroid to your workflow.',
-    options: ['Physician', 'Nurse', 'Pharmacist', 'Student']
-  },
-  {
-    title: 'Set your focus',
-    description: 'Pick the clinical areas you use most.',
-    options: ['Emergency', 'ICU', 'Primary Care', 'Cardiology']
-  },
-  {
-    title: 'Safety & compliance',
-    description: 'Always verify medical information before action.',
-    options: ['I understand and agree']
-  }
-];
+import { useLanguage } from '../contexts/LanguageContext';
 
 const Onboarding = () => {
   const [stepIndex, setStepIndex] = useState(0);
   const [selection, setSelection] = useState({});
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const { success } = useNotificationActions();
+
+  const steps = [
+    {
+      title: t('onboarding.chooseRoleTitle'),
+      description: t('onboarding.chooseRoleDesc'),
+      options: [t('onboarding.rolePhysician'), t('onboarding.roleNurse'), t('onboarding.rolePharmacist'), t('onboarding.roleStudent')]
+    },
+    {
+      title: t('onboarding.setFocusTitle'),
+      description: t('onboarding.setFocusDesc'),
+      options: [t('onboarding.focusEmergency'), t('onboarding.focusICU'), t('onboarding.focusPrimaryCare'), t('onboarding.focusCardiology')]
+    },
+    {
+      title: t('onboarding.safetyTitle'),
+      description: t('onboarding.safetyDesc'),
+      options: [t('onboarding.agreeOption')]
+    }
+  ];
+
   const step = steps[stepIndex];
 
   const handleNext = () => {
@@ -34,7 +37,7 @@ const Onboarding = () => {
       setStepIndex(stepIndex + 1);
       return;
     }
-    success('Onboarding complete', 'Onboarding completed.');
+    success(t('onboarding.completeTitle'), t('onboarding.completeMessage'));
     navigate('/');
   };
 
@@ -49,7 +52,7 @@ const Onboarding = () => {
       <Card style={{ width: '100%', maxWidth: '720px' }}>
         <div style={{ marginBottom: '20px' }}>
           <div style={{ fontSize: '12px', color: 'var(--muted-text)', marginBottom: '6px' }}>
-            Step {stepIndex + 1} of {steps.length}
+            {t('onboarding.step')} {stepIndex + 1} {t('onboarding.of')} {steps.length}
           </div>
           <h2 style={{ margin: 0 }}>{step.title}</h2>
           <p style={{ marginTop: '8px', color: 'var(--muted-text)', fontSize: '14px' }}>
@@ -66,7 +69,7 @@ const Onboarding = () => {
                 textAlign: 'left',
                 borderRadius: '12px',
                 border: selection[stepIndex] === option ? '1px solid #00FF88' : '1px solid var(--panel-border)',
-                background: selection[stepIndex] === option ? 'rgba(0, 255, 136, 0.12)' : 'transparent',
+                background: selection[stepIndex] === option ? 'var(--accent-10)' : 'transparent',
                 color: 'var(--text-color)',
                 cursor: 'pointer'
               }}
@@ -89,7 +92,7 @@ const Onboarding = () => {
               cursor: stepIndex === 0 ? 'not-allowed' : 'pointer'
             }}
           >
-            Back
+            {t('onboarding.back')}
           </Button>
           <Button
             onClick={handleNext}
@@ -104,12 +107,12 @@ const Onboarding = () => {
               cursor: 'pointer'
             }}
           >
-            {stepIndex === steps.length - 1 ? 'Finish' : 'Next'}
+            {stepIndex === steps.length - 1 ? t('onboarding.finish') : t('onboarding.next')}
           </Button>
         </div>
         <div style={{ marginTop: '18px', fontSize: '12px', color: 'var(--muted-text)' }}>
           <Link to="/" style={{ color: '#00FF88', textDecoration: 'none' }}>
-            ← Back to chat
+            {t('onboarding.backToChat')}
           </Link>
         </div>
       </Card>

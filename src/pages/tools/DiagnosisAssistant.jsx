@@ -2,17 +2,20 @@ import { useState } from 'react';
 import ToolPageLayout from './ToolPageLayout';
 import './ToolPageLayout.css';
 import { apiFetch } from '../../services/apiClient';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const DiagnosisAssistant = () => {
+  const { t } = useLanguage();
+
   const toolConfig = {
     id: 'diagnosis',
     icon: '🔍',
-    name: 'Diagnosis Assistant',
+    name: t('tools.diagnosisAssistant.name'),
     path: '/tools/diagnosis',
     color: '#FFD93D',
-    description: 'Differential diagnosis and diagnostic support',
+    description: t('tools.diagnosisAssistant.description'),
     shortcut: 'Ctrl+5',
-    category: 'Diagnostic'
+    category: t('tools.diagnosisAssistant.category')
   };
 
   const [symptoms, setSymptoms] = useState('');
@@ -23,7 +26,7 @@ const DiagnosisAssistant = () => {
 
   const handleGenerate = async () => {
     if (!symptoms.trim()) {
-      alert('Please enter presenting symptoms');
+      alert(t('tools.diagnosisAssistant.enterSymptoms'));
       return;
     }
 
@@ -47,7 +50,7 @@ const DiagnosisAssistant = () => {
         body: JSON.stringify({ message, tool: 'diagnosis-assistant' }),
       });
 
-      if (!response.ok) throw new Error('Failed to generate differential diagnosis');
+      if (!response.ok) throw new Error(t('tools.diagnosisAssistant.generateError'));
 
       const data = await response.json();
       setResults(data.response);
@@ -64,12 +67,12 @@ const DiagnosisAssistant = () => {
         {/* Input Panel */}
         <div style={{ background: 'var(--panel-bg)', borderRadius: '16px', padding: '24px', border: '1px solid var(--border-color)' }}>
           <h2 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '20px' }}>
-            📋 Patient Presentation
+            📋 {t('tools.diagnosisAssistant.patientPresentation')}
           </h2>
 
           <div style={{ marginBottom: '20px' }}>
             <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)', marginBottom: '8px' }}>
-              Presenting Symptoms / Chief Complaint
+              {t('tools.diagnosisAssistant.symptomsLabel')}
             </label>
             <textarea
               style={{
@@ -84,7 +87,7 @@ const DiagnosisAssistant = () => {
                 fontFamily: 'inherit',
                 resize: 'vertical',
               }}
-              placeholder="e.g., Chest pain with diaphoresis and nausea, onset 2 hours ago, radiating to left arm..."
+              placeholder={t('tools.diagnosisAssistant.symptomsPlaceholder')}
               value={symptoms}
               onChange={(e) => setSymptoms(e.target.value)}
             />
@@ -93,7 +96,7 @@ const DiagnosisAssistant = () => {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '6px' }}>
-                Age (optional)
+                {t('tools.diagnosisAssistant.ageOptional')}
               </label>
               <input
                 type="number"
@@ -105,14 +108,14 @@ const DiagnosisAssistant = () => {
                   borderRadius: '8px',
                   color: 'var(--text-primary)',
                 }}
-                placeholder="Years"
+                placeholder={t('tools.diagnosisAssistant.yearsPlaceholder')}
                 value={patientInfo.age}
                 onChange={(e) => setPatientInfo({ ...patientInfo, age: e.target.value })}
               />
             </div>
             <div>
               <label style={{ display: 'block', fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '6px' }}>
-                Sex (optional)
+                {t('tools.diagnosisAssistant.sexOptional')}
               </label>
               <select
                 style={{
@@ -127,8 +130,8 @@ const DiagnosisAssistant = () => {
                 onChange={(e) => setPatientInfo({ ...patientInfo, sex: e.target.value })}
               >
                 <option value="">--</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
+                <option value="male">{t('tools.diagnosisAssistant.male')}</option>
+                <option value="female">{t('tools.diagnosisAssistant.female')}</option>
               </select>
             </div>
           </div>
@@ -150,7 +153,7 @@ const DiagnosisAssistant = () => {
                 fontFamily: 'inherit',
                 resize: 'vertical',
               }}
-              placeholder="e.g., HTN, DM, prior MI..."
+              placeholder={t('tools.diagnosisAssistant.historyPlaceholder')}
               value={patientInfo.history}
               onChange={(e) => setPatientInfo({ ...patientInfo, history: e.target.value })}
             />
@@ -161,7 +164,7 @@ const DiagnosisAssistant = () => {
               style={{
                 flex: 1,
                 padding: '14px 24px',
-                background: 'linear-gradient(135deg, #00ff88, #00ffff)',
+                background: 'linear-gradient(135deg, var(--accent), var(--accent-light))',
                 border: 'none',
                 borderRadius: '10px',
                 color: '#0a0e27',
@@ -173,7 +176,7 @@ const DiagnosisAssistant = () => {
               onClick={handleGenerate}
               disabled={loading}
             >
-              {loading ? 'Generating...' : '🔍 Generate DDx'}
+              {loading ? t('tools.diagnosisAssistant.generating') : t('tools.diagnosisAssistant.generateDDx')}
             </button>
             <button
               style={{
@@ -192,7 +195,7 @@ const DiagnosisAssistant = () => {
                 setError(null);
               }}
             >
-              Clear
+              {t('tools.diagnosisAssistant.clear')}
             </button>
           </div>
         </div>
@@ -200,7 +203,7 @@ const DiagnosisAssistant = () => {
         {/* Results Panel */}
         <div style={{ background: 'var(--panel-bg)', borderRadius: '16px', padding: '24px', border: '1px solid var(--border-color)', maxHeight: '80vh', overflowY: 'auto' }}>
           <h2 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '20px' }}>
-            🎯 Differential Diagnosis
+            🎯 {t('tools.diagnosisAssistant.differentialDiagnosis')}
           </h2>
 
           {loading ? (
@@ -209,11 +212,11 @@ const DiagnosisAssistant = () => {
                 width: '48px',
                 height: '48px',
                 border: '4px solid rgba(0,255,136,0.2)',
-                borderTopColor: '#00ff88',
+                borderTopColor: 'var(--accent)',
                 borderRadius: '50%',
                 animation: 'spin 1s linear infinite',
               }}></div>
-              <p>Analyzing symptoms and generating differential diagnosis...</p>
+              <p>{t('tools.diagnosisAssistant.analyzingSymptoms')}</p>
             </div>
           ) : error ? (
             <div style={{ padding: '20px', background: 'rgba(255,107,107,0.1)', border: '1px solid rgba(255,107,107,0.3)', borderRadius: '12px', color: '#ff6b6b' }}>
@@ -226,7 +229,7 @@ const DiagnosisAssistant = () => {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', textAlign: 'center', color: 'var(--text-secondary)' }}>
               <div style={{ fontSize: '64px', marginBottom: '16px', opacity: 0.3 }}>🔍</div>
-              <p>Enter patient symptoms and click "Generate DDx" to begin</p>
+              <p>{t('tools.diagnosisAssistant.emptyPrompt')}</p>
             </div>
           )}
         </div>

@@ -1,0 +1,149 @@
+/* ============================================
+   Dashboard Responsive Layout
+   Breakpoints: mobile (<640), tablet (640-1024), desktop (>1024)
+   ============================================ */
+
+.dashboard-container {
+  padding: var(--space-6);
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  animation: fadeIn 0.4s var(--ease-smooth);
+}
+
+/* ─── Grid rows ─── */
+.dashboard-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+}
+
+.dashboard-row-2col {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-4);
+}
+
+.dashboard-row-3col {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+}
+
+/* ─── Staggered slide-up ─── */
+.dashboard-row-enter {
+  animation: slideUp 0.4s var(--ease-smooth) both;
+}
+.dashboard-row-enter:nth-child(3) { animation-delay: 0.05s; }
+.dashboard-row-enter:nth-child(4) { animation-delay: 0.10s; }
+.dashboard-row-enter:nth-child(5) { animation-delay: 0.15s; }
+.dashboard-row-enter:nth-child(6) { animation-delay: 0.20s; }
+.dashboard-row-enter:nth-child(7) { animation-delay: 0.25s; }
+
+/* ─── Tablet (≤ 1024px) ─── */
+@media (max-width: 1024px) {
+  .dashboard-container {
+    padding: var(--space-4);
+    gap: var(--space-4);
+  }
+
+  .dashboard-stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .dashboard-row-3col {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Let 3rd item in 3-col row span full width */
+  .dashboard-row-3col > :nth-child(3) {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ─── Mobile (≤ 640px) ─── */
+@media (max-width: 640px) {
+  .dashboard-container {
+    padding: var(--space-3);
+    gap: var(--space-3);
+  }
+
+  .dashboard-stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .dashboard-row-2col,
+  .dashboard-row-3col {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-row-3col > :nth-child(3) {
+    grid-column: auto;
+  }
+}
+
+/* ─── Small mobile (≤ 420px) ─── */
+@media (max-width: 420px) {
+  .dashboard-container {
+    padding: var(--space-2);
+  }
+
+  .dashboard-stats-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─── Shared widget color tokens (override hardcoded hex in widgets) ─── */
+:root {
+  --widget-critical: var(--clinical-error);
+  --widget-critical-bg: var(--clinical-error-light);
+  --widget-warning: var(--clinical-warning);
+  --widget-warning-bg: var(--clinical-warning-light);
+  --widget-success: var(--clinical-success);
+  --widget-success-bg: var(--clinical-success-light);
+  --widget-info: var(--clinical-info);
+  --widget-info-bg: var(--clinical-info-light);
+}
+
+/* ─── Accessibility: focus-visible ring ─── */
+.widget-interactive:focus-visible {
+  outline: 2px solid var(--accent, #3B82F6);
+  outline-offset: 2px;
+  border-radius: var(--radius-md);
+}
+
+/* ─── Screen-reader only utility ─── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ─── Sparkline tooltip ─── */
+.sparkline-tooltip {
+  position: absolute;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-inverse);
+  background: var(--surface-overlay);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(-100%);
+  margin-top: -8px;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.sparkline-tooltip.visible {
+  opacity: 1;
+}

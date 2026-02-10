@@ -4,9 +4,11 @@ import { apiAxios } from '../services/apiClient';
 import './BiometricSetup.css';
 import appConfig from '../config/appConfig';
 import logger from '../utils/logger';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const BiometricSetup = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
@@ -28,7 +30,7 @@ const BiometricSetup = () => {
         setBiometricReady(true);
       } catch (err) {
         logger.error('Biometric plugin not available', { err });
-        setError('Biometric plugin is not available in this build.');
+        setError(t('biometric.pluginNotAvailable'));
         setBiometricAvailable(false);
       }
     };
@@ -83,7 +85,7 @@ const BiometricSetup = () => {
 
   const handleEnrollBiometric = async () => {
     if (!biometricApi?.NativeBiometric) {
-      setError('Biometric plugin is not available.');
+      setError(t('biometric.pluginNotAvailable'));
       return;
     }
     setLoading(true);
@@ -119,11 +121,11 @@ const BiometricSetup = () => {
       setEnrolled(true);
       setError(null);
 
-      alert('Biometric authentication enabled successfully!');
+      alert(t('biometric.enabledSuccess'));
       loadBiometricConfig();
     } catch (err) {
       logger.error('Failed to enroll biometric', { err });
-      setError(err.response?.data?.message || 'Failed to enable biometric authentication');
+      setError(err.response?.data?.message || t('biometric.enableFailed'));
     } finally {
       setLoading(false);
     }
@@ -131,7 +133,7 @@ const BiometricSetup = () => {
 
   const handleTestBiometric = async () => {
     if (!biometricApi?.NativeBiometric) {
-      setError('Biometric plugin is not available.');
+      setError(t('biometric.pluginNotAvailable'));
       return;
     }
     setLoading(true);
@@ -145,10 +147,10 @@ const BiometricSetup = () => {
 
       // Prompt biometric authentication
       const biometricOptions = {
-        reason: 'Authenticate with biometrics',
-        title: 'CareDroid-AI Authentication',
-        subtitle: 'Use your biometric to login',
-        description: 'Place your finger on the sensor',
+        reason: t('biometric.authenticatePrompt'),
+        title: t('biometric.authTitle'),
+        subtitle: t('biometric.authSubtitle'),
+        description: t('biometric.authDescription'),
       };
 
       await biometricApi.NativeBiometric.verifyIdentity(biometricOptions);
@@ -164,10 +166,10 @@ const BiometricSetup = () => {
       });
 
       logger.info('Biometric verification successful', { data: response.data });
-      alert('Biometric authentication test passed!');
+      alert(t('biometric.testPassed'));
     } catch (err) {
       logger.error('Biometric test failed', { err });
-      setError('Biometric authentication failed');
+      setError(t('biometric.testFailed'));
     } finally {
       setLoading(false);
     }
@@ -175,10 +177,10 @@ const BiometricSetup = () => {
 
   const handleDisableBiometric = async () => {
     if (!biometricApi?.NativeBiometric) {
-      setError('Biometric plugin is not available.');
+      setError(t('biometric.pluginNotAvailable'));
       return;
     }
-    if (!confirm('Are you sure you want to disable biometric authentication?')) {
+    if (!confirm(t('biometric.disableConfirm'))) {
       return;
     }
 
@@ -201,11 +203,11 @@ const BiometricSetup = () => {
       setEnrolled(false);
       setError(null);
 
-      alert('Biometric authentication disabled');
+      alert(t('biometric.disabledAlert'));
       loadBiometricConfig();
     } catch (err) {
       logger.error('Failed to disable biometric', { err });
-      setError('Failed to disable biometric authentication');
+      setError(t('biometric.disableFailed'));
     } finally {
       setLoading(false);
     }
@@ -238,10 +240,10 @@ const BiometricSetup = () => {
       <div className="biometric-setup">
         <div className="biometric-container">
           <div className="biometric-unavailable">
-            <h2>🔒 Biometric Disabled</h2>
-            <p>Biometric authentication is disabled by configuration.</p>
+            <h2>🔒 {t('biometric.disabledTitle')}</h2>
+            <p>{t('biometric.disabledByConfig')}</p>
             <button onClick={() => navigate('/settings')} className="btn-secondary">
-              Back to Settings
+              {t('biometric.backToSettings')}
             </button>
           </div>
         </div>
@@ -254,13 +256,13 @@ const BiometricSetup = () => {
       <div className="biometric-setup">
         <div className="biometric-container">
           <div className="biometric-unavailable">
-            <h2>⚠️ Biometric Not Available</h2>
+            <h2>⚠️ {t('biometric.notAvailableTitle')}</h2>
             <p>
-              Your device does not support biometric authentication, or it is not configured.
+              {t('biometric.notAvailableDesc')}
             </p>
-            <p>Please set up fingerprint or face recognition in your device settings.</p>
+            <p>{t('biometric.setupInDevice')}</p>
             <button onClick={() => navigate('/settings')} className="btn-secondary">
-              Back to Settings
+              {t('biometric.backToSettings')}
             </button>
           </div>
         </div>
@@ -272,9 +274,9 @@ const BiometricSetup = () => {
     <div className="biometric-setup">
       <div className="biometric-container">
         <div className="biometric-header">
-          <h1>Biometric Authentication</h1>
+          <h1>{t('biometric.title')}</h1>
           <p>
-            Secure your CareDroid-AI account with {biometricType === 'face' ? 'Face ID' : 'fingerprint'}
+            {biometricType === 'face' ? t('biometric.secureWithFaceId') : t('biometric.secureWithFingerprint')}
           </p>
         </div>
 
@@ -282,47 +284,47 @@ const BiometricSetup = () => {
           {enrolled ? (
             <div className="status-enrolled">
               <div className="status-icon">✓</div>
-              <h3>Biometric Enabled</h3>
-              <p>Your device is enrolled for biometric authentication</p>
+              <h3>{t('biometric.enabledTitle')}</h3>
+              <p>{t('biometric.enrolledDesc')}</p>
             </div>
           ) : (
             <div className="status-not-enrolled">
               <div className="status-icon">🔒</div>
-              <h3>Not Enrolled</h3>
-              <p>Enable biometric authentication for quick and secure login</p>
+              <h3>{t('biometric.notEnrolledTitle')}</h3>
+              <p>{t('biometric.notEnrolledDesc')}</p>
             </div>
           )}
         </div>
 
         {stats && (
           <div className="biometric-stats">
-            <h3>Usage Statistics</h3>
+            <h3>{t('biometric.usageStats')}</h3>
             <div className="stats-grid">
               <div className="stat-item">
                 <div className="stat-value">{stats.totalDevices}</div>
-                <div className="stat-label">Enrolled Devices</div>
+                <div className="stat-label">{t('biometric.enrolledDevices')}</div>
               </div>
               <div className="stat-item">
                 <div className="stat-value">{stats.totalUsages}</div>
-                <div className="stat-label">Total Logins</div>
+                <div className="stat-label">{t('biometric.totalLogins')}</div>
               </div>
               <div className="stat-item">
                 <div className="stat-value">
-                  {stats.lastUsed ? new Date(stats.lastUsed).toLocaleDateString() : 'Never'}
+                  {stats.lastUsed ? new Date(stats.lastUsed).toLocaleDateString() : t('biometric.never')}
                 </div>
-                <div className="stat-label">Last Used</div>
+                <div className="stat-label">{t('biometric.lastUsed')}</div>
               </div>
             </div>
           </div>
         )}
 
         <div className="biometric-info">
-          <h3>How It Works</h3>
+          <h3>{t('biometric.howItWorks')}</h3>
           <ul>
-            <li>🔐 Your biometric data never leaves your device</li>
-            <li>🚀 Quick login without entering password</li>
-            <li>✨ Enhanced security with hardware-backed authentication</li>
-            <li>🔄 Fallback to password if biometric fails</li>
+            <li>🔐 {t('biometric.howItWorks1')}</li>
+            <li>🚀 {t('biometric.howItWorks2')}</li>
+            <li>✨ {t('biometric.howItWorks3')}</li>
+            <li>🔄 {t('biometric.howItWorks4')}</li>
           </ul>
         </div>
 
@@ -336,10 +338,10 @@ const BiometricSetup = () => {
                 className="btn-primary"
                 disabled={loading}
               >
-                {loading ? 'Enrolling...' : 'Enable Biometric Authentication'}
+                {loading ? t('biometric.enrolling') : t('biometric.enableBiometric')}
               </button>
               <button onClick={() => navigate('/settings')} className="btn-secondary">
-                Maybe Later
+                {t('biometric.maybeLater')}
               </button>
             </>
           ) : (
@@ -349,17 +351,17 @@ const BiometricSetup = () => {
                 className="btn-primary"
                 disabled={loading}
               >
-                {loading ? 'Testing...' : 'Test Biometric Login'}
+                {loading ? t('biometric.testing') : t('biometric.testBiometric')}
               </button>
               <button
                 onClick={handleDisableBiometric}
                 className="btn-danger"
                 disabled={loading}
               >
-                {loading ? 'Disabling...' : 'Disable Biometric'}
+                {loading ? t('biometric.disabling') : t('biometric.disableBiometric')}
               </button>
               <button onClick={() => navigate('/settings')} className="btn-secondary">
-                Back to Settings
+                {t('biometric.backToSettings')}
               </button>
             </>
           )}
@@ -367,8 +369,7 @@ const BiometricSetup = () => {
 
         <div className="biometric-notice">
           <p>
-            <strong>Note:</strong> Biometric authentication is a convenience feature.
-            You can always use your password to login.
+            <strong>{t('biometric.noteLabel')}</strong> {t('biometric.noteText')}
           </p>
         </div>
       </div>

@@ -52,7 +52,7 @@
   padding: 16px;
   background: rgba(0,255,136,0.05);
   border-radius: 12px;
-  border: 1px solid rgba(0,255,136,0.2);
+  border: 1px solid var(--accent-20);
 }
 
 .context-group {
@@ -83,7 +83,7 @@
 .context-input:focus,
 .context-select:focus {
   outline: none;
-  border-color: #00ff88;
+  border-color: var(--accent);
   background: rgba(255,255,255,0.08);
 }
 
@@ -102,7 +102,7 @@
 
 .context-textarea:focus {
   outline: none;
-  border-color: #00ff88;
+  border-color: var(--accent);
   background: rgba(255,255,255,0.08);
 }
 
@@ -140,14 +140,14 @@
 
 .lab-input-field:focus {
   outline: none;
-  border-color: #00ff88;
+  border-color: var(--accent);
   background: rgba(255,255,255,0.08);
 }
 
 .lab-add-button {
   align-self: flex-end;
   padding: 10px 20px;
-  background: linear-gradient(135deg, #00ff88, #00ffff);
+  background: linear-gradient(135deg, var(--accent), var(--accent-light));
   border: none;
   border-radius: 8px;
   color: #0a0e27;
@@ -160,7 +160,7 @@
 
 .lab-add-button:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0,255,136,0.3);
+  box-shadow: 0 6px 20px var(--accent-20);
 }
 
 .lab-add-button:disabled {
@@ -189,7 +189,7 @@
 }
 
 .lab-values-list::-webkit-scrollbar-thumb {
-  background: rgba(0,255,136,0.3);
+  background: var(--accent-20);
   border-radius: 3px;
 }
 
@@ -223,7 +223,7 @@
 }
 
 .lab-value-display {
-  color: #00ffff;
+  color: var(--accent-light);
   font-weight: 600;
 }
 
@@ -260,7 +260,7 @@
 .lab-interpret-button {
   flex: 1;
   padding: 14px 24px;
-  background: linear-gradient(135deg, #00ff88, #00ffff);
+  background: linear-gradient(135deg, var(--accent), var(--accent-light));
   border: none;
   border-radius: 10px;
   color: #0a0e27;
@@ -311,7 +311,7 @@
   border-radius: 16px;
   padding: 24px;
   border: 1px solid var(--border-color, rgba(255,255,255,0.1));
-  max-height: calc(100vh - 180px);
+  max-height: calc(100dvh - 180px);
   overflow-y: auto;
 }
 
@@ -325,7 +325,7 @@
 }
 
 .lab-results-panel::-webkit-scrollbar-thumb {
-  background: rgba(0,255,136,0.3);
+  background: var(--accent-20);
   border-radius: 4px;
 }
 
@@ -341,8 +341,8 @@
 .lab-spinner {
   width: 48px;
   height: 48px;
-  border: 4px solid rgba(0,255,136,0.2);
-  border-top-color: #00ff88;
+  border: 4px solid var(--accent-20);
+  border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -418,7 +418,7 @@
 .lab-overall-interpretation {
   padding: 20px;
   background: rgba(0,255,136,0.05);
-  border-left: 4px solid #00ff88;
+  border-left: 4px solid var(--accent);
   border-radius: 10px;
   margin-bottom: 24px;
   color: var(--text-primary, #fff);
@@ -478,8 +478,8 @@
 }
 
 .lab-status-badge.normal {
-  background: rgba(0,255,136,0.15);
-  color: #00ff88;
+  background: var(--accent-15);
+  color: var(--accent);
 }
 
 .lab-status-badge.high,

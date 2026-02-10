@@ -1,11 +1,14 @@
 import React from 'react';
 import { Card } from '../ui/molecules/Card';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 /**
  * ActivityFeed - Recent activity feed component
  * Displays recent clinical activities and updates
  */
 export const ActivityFeed = ({ activities = [], onActivityClick }) => {
+  const { t } = useLanguage();
+
   const getRelativeTime = (timestamp) => {
     const now = new Date();
     const activityTime = new Date(timestamp);
@@ -14,10 +17,10 @@ export const ActivityFeed = ({ activities = [], onActivityClick }) => {
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins} min ago`;
-    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    if (diffMins < 1) return t('widgets.activityFeed.justNow');
+    if (diffMins < 60) return `${diffMins} ${t('widgets.activityFeed.minAgo')}`;
+    if (diffHours < 24) return `${diffHours} ${t('widgets.activityFeed.hourAgo')}`;
+    return `${diffDays} ${t('widgets.activityFeed.dayAgo')}`;
   };
 
   const getActivityIcon = (type) => {
@@ -58,7 +61,7 @@ export const ActivityFeed = ({ activities = [], onActivityClick }) => {
             alignItems: 'center',
             gap: 'var(--space-2)'
           }}>
-            Recent Activity
+            {t('widgets.activityFeed.title')}
             <span style={{
               fontSize: '10px',
               fontWeight: 'var(--font-weight-semibold)',
@@ -80,14 +83,14 @@ export const ActivityFeed = ({ activities = [], onActivityClick }) => {
                 background: '#10b981',
                 animation: 'pulse 2s ease-in-out infinite'
               }} />
-              Live
+              {t('widgets.activityFeed.live')}
             </span>
           </h3>
           <span style={{
             fontSize: 'var(--font-size-sm)',
             color: 'var(--text-tertiary)'
           }}>
-            Last 24 hours
+            {t('widgets.activityFeed.last24Hours')}
           </span>
         </div>
 
@@ -106,7 +109,7 @@ export const ActivityFeed = ({ activities = [], onActivityClick }) => {
               color: 'var(--text-tertiary)'
             }}>
               <div style={{ fontSize: '32px', marginBottom: 'var(--space-2)' }}>📭</div>
-              <p style={{ margin: 0 }}>No recent activity</p>
+              <p style={{ margin: 0 }}>{t('widgets.activityFeed.noRecentActivity')}</p>
             </div>
           ) : (
             activities.map((activity, index) => (
@@ -159,7 +162,7 @@ export const ActivityFeed = ({ activities = [], onActivityClick }) => {
                       color: 'var(--text-secondary)',
                       marginBottom: '2px'
                     }}>
-                      Patient: {activity.patient || activity.patientName}
+                      {t('widgets.activityFeed.patient')}: {activity.patient || activity.patientName}
                     </div>
                   )}
                   <div style={{

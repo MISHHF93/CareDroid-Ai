@@ -1,15 +1,18 @@
 import SearchableToolPage from './SearchableToolPage';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const Protocols = () => {
+  const { t } = useLanguage();
+
   const toolConfig = {
     id: 'protocols',
     icon: '📋',
-    name: 'Clinical Protocols',
+    name: t('tools.protocols.name'),
     path: '/tools/protocols',
     color: '#A8E6CF',
-    description: 'Evidence-based clinical protocols and guidelines',
+    description: t('tools.protocols.description'),
     shortcut: 'Ctrl+4',
-    category: 'Reference'
+    category: t('tools.protocols.category')
   };
 
   const commonProtocols = [
@@ -29,9 +32,9 @@ const Protocols = () => {
     <SearchableToolPage
       toolConfig={toolConfig}
       commonItems={commonProtocols}
-      placeholder="Search for a protocol (e.g., Sepsis, STEMI, DKA)..."
-      searchPrompt="Provide the clinical protocol for"
-      errorMessage="Error loading protocol. Please try again."
+      placeholder={t('tools.protocols.placeholder')}
+      searchPrompt={t('tools.protocols.searchPrompt')}
+      errorMessage={t('tools.protocols.errorMessage')}
     />
   );
 };

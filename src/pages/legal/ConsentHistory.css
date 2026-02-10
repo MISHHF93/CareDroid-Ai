@@ -112,9 +112,9 @@
 }
 
 .consent-record-status-granted {
-  background: rgba(0, 255, 136, 0.15);
+  background: var(--accent-15);
   color: var(--accent-1);
-  border: 1px solid rgba(0, 255, 136, 0.3);
+  border: 1px solid var(--accent-20);
 }
 
 .consent-record-status-revoked {
@@ -255,7 +255,7 @@
 
 .btn-consent-secondary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 255, 136, 0.3);
+  box-shadow: 0 4px 12px var(--accent-20);
 }
 
 .btn-consent-export {

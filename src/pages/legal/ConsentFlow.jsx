@@ -4,6 +4,7 @@ import { Checkbox } from '../../components/forms/Checkbox';
 import { apiFetch } from '../../services/apiClient';
 import './ConsentFlow.css';
 import logger from '../../utils/logger';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 /**
  * ConsentFlow Component
@@ -14,6 +15,7 @@ import logger from '../../utils/logger';
  */
 export const ConsentFlow = ({ onComplete }) => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [consents, setConsents] = useState({
     hipaa: false,
     privacy: false,
@@ -37,13 +39,13 @@ export const ConsentFlow = ({ onComplete }) => {
     
     // Required consents
     if (!consents.hipaa) {
-      newErrors.hipaa = 'HIPAA authorization is required to use CareDroid';
+      newErrors.hipaa = t('legal.consent.hipaaRequired');
     }
     if (!consents.privacy) {
-      newErrors.privacy = 'You must accept the Privacy Policy to continue';
+      newErrors.privacy = t('legal.consent.privacyRequired');
     }
     if (!consents.terms) {
-      newErrors.terms = 'You must accept the Terms of Service to continue';
+      newErrors.terms = t('legal.consent.termsRequired');
     }
 
     setErrors(newErrors);
@@ -98,7 +100,7 @@ export const ConsentFlow = ({ onComplete }) => {
       }
     } catch (error) {
       logger.error('Consent submission error', { error });
-      setErrors({ submit: 'Failed to record your consent. Please try again.' });
+      setErrors({ submit: t('legal.consent.submitError') });
     } finally {
       setIsSubmitting(false);
     }
@@ -108,10 +110,9 @@ export const ConsentFlow = ({ onComplete }) => {
     <div className="consent-flow">
       <div className="consent-container">
         <div className="consent-header">
-          <h1>Privacy & Consent</h1>
+          <h1>{t('legal.consent.title')}</h1>
           <p className="consent-intro">
-            Before you can use CareDroid, we need your consent to collect and process Protected 
-            Health Information (PHI) in compliance with HIPAA regulations.
+            {t('legal.consent.intro')}
           </p>
         </div>
 
@@ -119,8 +120,8 @@ export const ConsentFlow = ({ onComplete }) => {
           {/* HIPAA Authorization */}
           <div className="consent-section consent-section-required">
             <div className="consent-section-header">
-              <h2>1. HIPAA Authorization</h2>
-              <span className="consent-badge consent-badge-required">Required</span>
+              <h2>1. {t('legal.consent.hipaaTitle')}</h2>
+              <span className="consent-badge consent-badge-required">{t('legal.consent.required')}</span>
             </div>
             <div className="consent-content">
               <p>
@@ -164,8 +165,8 @@ export const ConsentFlow = ({ onComplete }) => {
           {/* Privacy Policy */}
           <div className="consent-section consent-section-required">
             <div className="consent-section-header">
-              <h2>2. Privacy Policy</h2>
-              <span className="consent-badge consent-badge-required">Required</span>
+              <h2>2. {t('legal.consent.privacyTitle')}</h2>
+              <span className="consent-badge consent-badge-required">{t('legal.consent.required')}</span>
             </div>
             <div className="consent-content">
               <p>
@@ -187,8 +188,8 @@ export const ConsentFlow = ({ onComplete }) => {
           {/* Terms of Service */}
           <div className="consent-section consent-section-required">
             <div className="consent-section-header">
-              <h2>3. Terms of Service</h2>
-              <span className="consent-badge consent-badge-required">Required</span>
+              <h2>3. {t('legal.consent.termsTitle')}</h2>
+              <span className="consent-badge consent-badge-required">{t('legal.consent.required')}</span>
             </div>
             <div className="consent-content">
               <p>
@@ -216,8 +217,8 @@ export const ConsentFlow = ({ onComplete }) => {
           {/* Data Sharing (Optional) */}
           <div className="consent-section consent-section-optional">
             <div className="consent-section-header">
-              <h2>4. Anonymized Data for Research</h2>
-              <span className="consent-badge consent-badge-optional">Optional</span>
+              <h2>4. {t('legal.consent.dataResearchTitle')}</h2>
+              <span className="consent-badge consent-badge-optional">{t('legal.consent.optional')}</span>
             </div>
             <div className="consent-content">
               <p>
@@ -238,8 +239,8 @@ export const ConsentFlow = ({ onComplete }) => {
           {/* Communications (Optional) */}
           <div className="consent-section consent-section-optional">
             <div className="consent-section-header">
-              <h2>5. Communications</h2>
-              <span className="consent-badge consent-badge-optional">Optional</span>
+              <h2>5. {t('legal.consent.communicationsTitle')}</h2>
+              <span className="consent-badge consent-badge-optional">{t('legal.consent.optional')}</span>
             </div>
             <div className="consent-content">
               <p>
@@ -272,14 +273,14 @@ export const ConsentFlow = ({ onComplete }) => {
               onClick={() => navigate('/auth')}
               disabled={isSubmitting}
             >
-              Cancel
+              {t('legal.consent.cancel')}
             </button>
             <button
               type="submit"
               className="btn-consent-primary"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Recording Consent...' : 'Accept and Continue'}
+              {isSubmitting ? t('legal.consent.recordingConsent') : t('legal.consent.acceptAndContinue')}
             </button>
           </div>
 

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query, UseGuards, Logger } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthorizationGuard } from '../auth/guards/authorization.guard';
 import { RequirePermission } from '../auth/decorators/permissions.decorator';
@@ -33,20 +33,13 @@ interface CrashReportDto {
   environment: 'development' | 'staging' | 'production';
 }
 
-interface AnalyticsMetricsResponse {
-  totalEvents: number;
-  uniqueUsers: number;
-  topEvents: Array<{ event: string; count: number }>;
-  dailyActiveUsers: number;
-  weeklyActiveUsers: number;
-  monthlyActiveUsers: number;
-}
-
-@Controller()
+@Controller('analytics')
 export class AnalyticsController {
+  private readonly logger = new Logger(AnalyticsController.name);
+
   constructor(private readonly analyticsService: AnalyticsService) {}
 
-  @Post('analytics/events')
+  @Post('events')
   async submitAnalyticsEvents(@Body() payload: AnalyticsPayloadDto): Promise<{ status: string; recorded: number }> {
     const events = payload.events || [];
 
@@ -71,45 +64,76 @@ export class AnalyticsController {
     return { status: 'recorded', recorded: normalizedEvents.length };
   }
 
-  @Get('analytics/metrics')
+  @Get('metrics')
   @UseGuards(AuthGuard('jwt'), AuthorizationGuard)
   @RequirePermission(Permission.VIEW_ANALYTICS)
   async getMetrics(
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
     @Query('userId') userId?: string,
-  ): Promise<AnalyticsMetricsResponse> {
+  ) {
     const end = endDate ? new Date(endDate) : new Date();
     const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
     return this.analyticsService.getEventMetrics(start, end, userId);
   }
 
-  @Post('crashes')
-  async submitCrashReport(@Body() report: CrashReportDto): Promise<{ id: string; status: string }> {
-    console.log(`🚨 Crash Report ${report.id}`);
-    console.log(`   Error: ${report.error.name} - ${report.error.message}`);
-    console.log(`   Session: ${report.sessionId}`);
-    console.log(`   Environment: ${report.environment}`);
+  @Get('trends')
+  @UseGuards(AuthGuard('jwt'), AuthorizationGuard)
+  @RequirePermission(Permission.VIEW_ANALYTICS)
+  async getTrends(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('granularity') granularity?: 'hour' | 'day',
+  ) {
+    const end = endDate ? new Date(endDate) : new Date();
+    const start = startDate ? new Date(startDate) : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-    if (report.breadcrumbs.length > 0) {
-      console.log(`   Breadcrumbs:`);
-      report.breadcrumbs.slice(-5).forEach((crumb) => {
-        console.log(`     - ${crumb}`);
-      });
-    }
-
-    return {
-      id: report.id,
-      status: 'submitted',
-    };
+    return this.analyticsService.getTrends(start, end, granularity || 'day');
   }
 
-  @Post('health')
-  async healthCheck(): Promise<{ status: string; timestamp: number }> {
-    return {
-      status: 'healthy',
-      timestamp: Date.now(),
-    };
+  @Get('top-tools')
+  @UseGuards(AuthGuard('jwt'), AuthorizationGuard)
+  @RequirePermission(Permission.VIEW_ANALYTICS)
+  async getTopTools(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const end = endDate ? new Date(endDate) : new Date();
+    const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+    return this.analyticsService.getTopTools(start, end, limit ? parseInt(limit) : 10);
+  }
+
+  @Get('funnel')
+  @UseGuards(AuthGuard('jwt'), AuthorizationGuard)
+  @RequirePermission(Permission.VIEW_ANALYTICS)
+  async getFunnel(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    const end = endDate ? new Date(endDate) : new Date();
+    const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const funnelEvents = ['login', 'tool_access', 'result_viewed', 'data_export'];
+
+    return this.analyticsService.getFunnelAnalytics(funnelEvents, start, end);
+  }
+
+  @Get('retention')
+  @UseGuards(AuthGuard('jwt'), AuthorizationGuard)
+  @RequirePermission(Permission.VIEW_ANALYTICS)
+  async getRetention(
+    @Query('startDate') startDate?: string,
+  ) {
+    const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+    return this.analyticsService.getRetentionMetrics(start);
+  }
+
+  @Post('crashes')
+  async submitCrashReport(@Body() report: CrashReportDto): Promise<{ id: string; status: string }> {
+    this.logger.log(`Crash Report ${report.id}: ${report.error.name} - ${report.error.message}`);
+    return { id: report.id, status: 'submitted' };
   }
 }

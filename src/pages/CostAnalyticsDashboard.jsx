@@ -5,8 +5,10 @@ import analyticsService from '../services/analyticsService';
 import { getExportService } from '../services/export/ExportService';
 import toolRegistry, { toolRegistryById } from '../data/toolRegistry';
 import './CostAnalyticsDashboard.css';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const CostAnalyticsDashboard = () => {
+  const { t } = useLanguage();
   const { user } = useUser();
   const {
     costData,
@@ -46,7 +48,7 @@ const CostAnalyticsDashboard = () => {
   };
 
   const handleResetCosts = () => {
-    if (confirm('Are you sure you want to reset all cost data? This cannot be undone.')) {
+    if (confirm(t('costAnalytics.resetConfirm'))) {
       resetCostData();
       analyticsService.trackEvent({
         eventName: 'cost_data_reset',
@@ -107,7 +109,7 @@ const CostAnalyticsDashboard = () => {
   if (isLoading) {
     return (
       <div className="cost-analytics-dashboard">
-        <div className="loading">Loading cost analytics...</div>
+        <div className="loading">{t('costAnalytics.loading')}</div>
       </div>
     );
   }
@@ -116,31 +118,31 @@ const CostAnalyticsDashboard = () => {
     <div className="cost-analytics-dashboard">
       <header className="cost-header">
         <div>
-          <h1>💰 Cost Analytics</h1>
-          <p>Track tool usage costs and ROI for CareDroid platform.</p>
+          <h1>💰 {t('costAnalytics.title')}</h1>
+          <p>{t('costAnalytics.subtitle')}</p>
         </div>
         <div className="cost-header-actions">
           <button 
             className="btn-ghost" 
             onClick={() => handleExport('csv')}
             style={{ marginRight: '8px' }}
-            title="Export as CSV"
+            title={t('costAnalytics.exportCsv')}
           >
-            📥 CSV
+            📥 {t('costAnalytics.csv')}
           </button>
           <button 
             className="btn-ghost" 
             onClick={() => handleExport('pdf')}
             style={{ marginRight: '12px' }}
-            title="Export as PDF"
+            title={t('costAnalytics.exportPdf')}
           >
-            📄 PDF
+            📄 {t('costAnalytics.pdf')}
           </button>
           <button className="btn-secondary" onClick={() => setShowLimitModal(true)}>
-            {costLimit ? 'Update Limit' : 'Set Budget'}
+            {costLimit ? t('costAnalytics.updateLimit') : t('costAnalytics.setBudget')}
           </button>
           <button className="btn-danger" onClick={handleResetCosts}>
-            Reset Data
+            {t('costAnalytics.resetData')}
           </button>
         </div>
       </header>
@@ -148,13 +150,13 @@ const CostAnalyticsDashboard = () => {
       {/* Cost Limit Warning */}
       {isCostLimitExceeded && (
         <div className="cost-alert cost-alert-danger">
-          <strong>⚠️ Budget Exceeded</strong>
+          <strong>⚠️ {t('costAnalytics.budgetExceeded')}</strong>
           <p>Monthly cost (${costData.monthlyCost.toFixed(2)}) has exceeded your limit of ${costLimit.toFixed(2)}.</p>
         </div>
       )}
       {isCostLimitApproaching && !isCostLimitExceeded && (
         <div className="cost-alert cost-alert-warning">
-          <strong>⚡ Approaching Budget</strong>
+          <strong>⚡ {t('costAnalytics.approachingBudget')}</strong>
           <p>You've used {((costData.monthlyCost / costLimit) * 100).toFixed(0)}% of your ${costLimit.toFixed(2)} monthly budget.</p>
         </div>
       )}
@@ -162,14 +164,14 @@ const CostAnalyticsDashboard = () => {
       {/* Cost Summary Cards */}
       <section className="cost-summary">
         <div className="cost-card">
-          <h3>Total Cost</h3>
+          <h3>{t('costAnalytics.totalCost')}</h3>
           <p className="cost-value">${costData.totalCost.toFixed(2)}</p>
-          <span className="cost-label">All time</span>
+          <span className="cost-label">{t('costAnalytics.allTime')}</span>
         </div>
         <div className="cost-card">
-          <h3>Monthly Cost</h3>
+          <h3>{t('costAnalytics.monthlyCost')}</h3>
           <p className="cost-value">${costData.monthlyCost.toFixed(2)}</p>
-          <span className="cost-label">Last 30 days</span>
+          <span className="cost-label">{t('costAnalytics.last30Days')}</span>
           {costLimit && (
             <div className="cost-progress">
               <div 
@@ -183,58 +185,58 @@ const CostAnalyticsDashboard = () => {
           )}
         </div>
         <div className="cost-card">
-          <h3>Avg Cost/Tool</h3>
+          <h3>{t('costAnalytics.avgCostPerTool')}</h3>
           <p className="cost-value">
             ${costData.executions.length > 0 
               ? (costData.totalCost / costData.executions.length).toFixed(3)
               : '0.00'}
           </p>
-          <span className="cost-label">Per execution</span>
+          <span className="cost-label">{t('costAnalytics.perExecution')}</span>
         </div>
         <div className="cost-card">
-          <h3>Total Executions</h3>
+          <h3>{t('costAnalytics.totalExecutions')}</h3>
           <p className="cost-value">{costData.executions.length}</p>
-          <span className="cost-label">Tool uses</span>
+          <span className="cost-label">{t('costAnalytics.toolUses')}</span>
         </div>
       </section>
 
       {/* ROI Metrics */}
       <section className="cost-panel">
-        <h2>Return on Investment (ROI)</h2>
+        <h2>{t('costAnalytics.roiTitle')}</h2>
         <div className="roi-grid">
           <div className="roi-metric">
-            <span className="roi-label">Time Saved</span>
+            <span className="roi-label">{t('costAnalytics.timeSaved')}</span>
             <strong className="roi-value">{roiMetrics.timeSavedHours} hrs</strong>
           </div>
           <div className="roi-metric">
-            <span className="roi-label">Value Created</span>
+            <span className="roi-label">{t('costAnalytics.valueCreated')}</span>
             <strong className="roi-value">${roiMetrics.valueSaved}</strong>
           </div>
           <div className="roi-metric">
-            <span className="roi-label">Total Cost</span>
+            <span className="roi-label">{t('costAnalytics.totalCostLabel')}</span>
             <strong className="roi-value">${roiMetrics.totalCost}</strong>
           </div>
           <div className="roi-metric">
-            <span className="roi-label">Net Value</span>
+            <span className="roi-label">{t('costAnalytics.netValue')}</span>
             <strong className="roi-value" style={{ color: parseFloat(roiMetrics.netValue) > 0 ? '#10B981' : '#EF4444' }}>
               ${roiMetrics.netValue}
             </strong>
           </div>
           <div className="roi-metric roi-metric-highlight">
-            <span className="roi-label">ROI</span>
+            <span className="roi-label">{t('costAnalytics.roi')}</span>
             <strong className="roi-value roi-value-large">{roiMetrics.roi}%</strong>
           </div>
         </div>
         <p className="roi-note">
-          * Calculation assumes 5 minutes saved per tool use and $75/hr clinician rate
+          {t('costAnalytics.roiNote')}
         </p>
       </section>
 
       {/* Cost by Tool */}
       <section className="cost-panel">
-        <h2>Top Spending Tools</h2>
+        <h2>{t('costAnalytics.topSpendingTools')}</h2>
         {topTools.length === 0 ? (
-          <p className="cost-empty">No tool usage recorded yet.</p>
+          <p className="cost-empty">{t('costAnalytics.noToolUsage')}</p>
         ) : (
           topTools.map((item, index) => {
             const tool = toolRegistryById[item.toolId] || { name: item.toolId, icon: '🧰', color: '#64748B' };
@@ -265,9 +267,9 @@ const CostAnalyticsDashboard = () => {
 
       {/* Cost by Category */}
       <section className="cost-panel">
-        <h2>Cost by Category</h2>
+        <h2>{t('costAnalytics.costByCategory')}</h2>
         {Object.keys(costData.categoryCosts).length === 0 ? (
-          <p className="cost-empty">No category data available yet.</p>
+          <p className="cost-empty">{t('costAnalytics.noCategoryData')}</p>
         ) : (
           Object.entries(costData.categoryCosts)
             .sort(([, a], [, b]) => b - a)
@@ -285,7 +287,7 @@ const CostAnalyticsDashboard = () => {
                       className="cost-row-fill"
                       style={{
                         width: `${percentage}%`,
-                        backgroundColor: '#4F46E5',
+                        backgroundColor: 'var(--accent)',
                       }}
                     />
                   </div>
@@ -298,7 +300,7 @@ const CostAnalyticsDashboard = () => {
 
       {/* Cost Trends Chart */}
       <section className="cost-panel">
-        <h2>30-Day Cost Trend</h2>
+        <h2>{t('costAnalytics.costTrend')}</h2>
         <div className="cost-chart">
           {costTrends.map((day, index) => {
             const maxCost = Math.max(...costTrends.map(d => d.cost), 1);
@@ -326,11 +328,11 @@ const CostAnalyticsDashboard = () => {
       {showLimitModal && (
         <div className="modal-overlay" onClick={() => setShowLimitModal(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h2>Set Monthly Budget</h2>
-            <p>Set a monthly spending limit to track and control costs.</p>
+            <h2>{t('costAnalytics.setMonthlyBudget')}</h2>
+            <p>{t('costAnalytics.budgetDescription')}</p>
             <input
               type="number"
-              placeholder="Enter amount (USD)"
+              placeholder={t('costAnalytics.enterAmount')}
               value={newLimit}
               onChange={(e) => setNewLimit(e.target.value)}
               step="0.01"
@@ -342,10 +344,10 @@ const CostAnalyticsDashboard = () => {
             )}
             <div className="modal-actions">
               <button className="btn-secondary" onClick={() => setShowLimitModal(false)}>
-                Cancel
+                {t('costAnalytics.cancel')}
               </button>
               <button className="btn-primary" onClick={handleSetLimit}>
-                Set Limit
+                {t('costAnalytics.setLimit')}
               </button>
             </div>
           </div>

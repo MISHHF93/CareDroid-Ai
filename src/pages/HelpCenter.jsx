@@ -1,93 +1,95 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function HelpCenter() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [expandedSection, setExpandedSection] = useState(null);
 
   const faqSections = [
     {
-      title: 'Getting Started',
+      title: t('help.faq.gettingStarted.title'),
       items: [
         {
-          q: 'How do I sign up for CareDroid?',
-          a: 'Click "Create Account" on the login page and follow the registration steps. You\'ll need to verify your email and set up a secure password.'
+          q: t('help.faq.gettingStarted.q1'),
+          a: t('help.faq.gettingStarted.a1')
         },
         {
-          q: 'What is careDroid AI?',
-          a: 'CareDroid is a clinical AI assistant that provides evidence-based medical guidance, drug interaction checks, lab value interpretations, and clinical protocols to healthcare professionals.'
+          q: t('help.faq.gettingStarted.q2'),
+          a: t('help.faq.gettingStarted.a2')
         },
         {
-          q: 'Is my data secure?',
-          a: 'Yes. All your medical data is encrypted using industry-standard AES-256 encryption. We comply with HIPAA, GDPR, and other regulations.'
+          q: t('help.faq.gettingStarted.q3'),
+          a: t('help.faq.gettingStarted.a3')
         }
       ]
     },
     {
-      title: 'Using Clinical Tools',
+      title: t('help.faq.clinicalTools.title'),
       items: [
         {
-          q: 'How do I check drug interactions?',
-          a: 'Use the Drug Checker tool in the toolbar. Enter medication names or generic names, and the AI will analyze interactions and contraindications.'
+          q: t('help.faq.clinicalTools.q1'),
+          a: t('help.faq.clinicalTools.a1')
         },
         {
-          q: 'Can I get lab value interpretations?',
-          a: 'Yes, use the Lab Interpreter tool. Enter lab test names and values, and get clinical interpretation with reference ranges.'
+          q: t('help.faq.clinicalTools.q2'),
+          a: t('help.faq.clinicalTools.a2')
         },
         {
-          q: 'Where can I find clinical protocols?',
-          a: 'Access the Protocols tool to view evidence-based clinical guidelines and treatment protocols organized by specialty.'
+          q: t('help.faq.clinicalTools.q3'),
+          a: t('help.faq.clinicalTools.a3')
         }
       ]
     },
     {
-      title: 'Account & Security',
+      title: t('help.faq.accountSecurity.title'),
       items: [
         {
-          q: 'How do I enable two-factor authentication?',
-          a: 'Go to Profile Settings → Security → Two-Factor Authentication. Choose SMS, email, or authenticator app verification.'
+          q: t('help.faq.accountSecurity.q1'),
+          a: t('help.faq.accountSecurity.a1')
         },
         {
-          q: 'Can I delete my account?',
-          a: 'Yes. Go to Profile Settings → Danger Zone → Delete Account. Note: This action is permanent and cannot be undone.'
+          q: t('help.faq.accountSecurity.q2'),
+          a: t('help.faq.accountSecurity.a2')
         },
         {
-          q: 'How do I change my password?',
-          a: 'Visit Profile Settings → Change Password. Enter your current password and your new password.'
+          q: t('help.faq.accountSecurity.q3'),
+          a: t('help.faq.accountSecurity.a3')
         }
       ]
     },
     {
-      title: 'Privacy & Compliance',
+      title: t('help.faq.privacy.title'),
       items: [
         {
-          q: 'Is CareDroid HIPAA compliant?',
-          a: 'Yes. CareDroid is built with HIPAA compliance features and can sign Business Associate Agreements (BAA) for covered entities.'
+          q: t('help.faq.privacy.q1'),
+          a: t('help.faq.privacy.a1')
         },
         {
-          q: 'What personal data do you collect?',
-          a: 'We collect minimal data: email, encrypted password, clinical conversations, and usage analytics. See our Privacy Policy for full details.'
+          q: t('help.faq.privacy.q2'),
+          a: t('help.faq.privacy.a2')
         },
         {
-          q: 'Can I export my conversations?',
-          a: 'Yes. Go to your conversation settings to export chat history in encrypted PDF format for your records.'
+          q: t('help.faq.privacy.q3'),
+          a: t('help.faq.privacy.a3')
         }
       ]
     },
     {
-      title: 'Troubleshooting',
+      title: t('help.faq.troubleshooting.title'),
       items: [
         {
-          q: 'I forgot my password',
-          a: 'Click "Forgot Password" on the login page. You\'ll receive a secure reset link via email.'
+          q: t('help.faq.troubleshooting.q1'),
+          a: t('help.faq.troubleshooting.a1')
         },
         {
-          q: 'The app is loading slowly',
-          a: 'Clear your browser cache and cookies. Ensure you have a stable internet connection. Try a different browser if issues persist.'
+          q: t('help.faq.troubleshooting.q2'),
+          a: t('help.faq.troubleshooting.a2')
         },
         {
-          q: 'I\'m not receiving notifications',
-          a: 'Check your notification preferences in Settings. Ensure your browser has permission to send notifications.'
+          q: t('help.faq.troubleshooting.q3'),
+          a: t('help.faq.troubleshooting.a3')
         }
       ]
     }
@@ -95,7 +97,7 @@ export default function HelpCenter() {
 
   return (
     <div style={{
-      minHeight: '100vh',
+      minHeight: '100dvh',
       width: '100vw',
       background: 'var(--navy-bg)',
       color: 'var(--text-color)',
@@ -116,22 +118,22 @@ export default function HelpCenter() {
               marginBottom: '24px'
             }}
           >
-            ← Back
+            {t('help.back')}
           </button>
           
           <h1 style={{
             fontSize: '32px',
             fontWeight: 700,
             marginBottom: '12px',
-            background: 'linear-gradient(135deg, #00ff88, #00ffff)',
+            background: 'linear-gradient(135deg, var(--accent), var(--accent-light))',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text'
           }}>
-            Help Center
+            {t('help.title')}
           </h1>
           <p style={{ color: 'var(--muted-text)' }}>
-            Find answers to common questions and learn how to use CareDroid
+            {t('help.subtitle')}
           </p>
         </div>
 
@@ -177,7 +179,7 @@ export default function HelpCenter() {
               </button>
 
               {expandedSection === idx && (
-                <div style={{ padding: '20px 24px', background: 'rgba(0, 255, 136, 0.05)' }}>
+                <div style={{ padding: '20px 24px', background: 'var(--accent-10)' }}>
                   <div style={{ display: 'grid', gap: '20px' }}>
                     {section.items.map((item, itemIdx) => (
                       <div key={itemIdx}>
@@ -185,7 +187,7 @@ export default function HelpCenter() {
                           margin: '0 0 8px 0',
                           fontSize: '14px',
                           fontWeight: 600,
-                          color: '#00ff88'
+                          color: 'var(--accent)'
                         }}>
                           Q: {item.q}
                         </h3>
@@ -210,23 +212,23 @@ export default function HelpCenter() {
         <div style={{
           marginTop: '40px',
           padding: '24px',
-          background: 'linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 255, 255, 0.1))',
-          border: '1px solid rgba(0, 255, 136, 0.3)',
+          background: 'var(--accent-10)',
+          border: '1px solid var(--accent-20)',
           borderRadius: '12px',
           textAlign: 'center'
         }}>
-          <h2 style={{ margin: '0 0 12px 0', fontSize: '18px', color: '#00ff88' }}>
-            Need Help?
+          <h2 style={{ margin: '0 0 12px 0', fontSize: '18px', color: 'var(--accent)' }}>
+            {t('help.needHelp')}
           </h2>
           <p style={{ margin: '0 0 16px 0', color: 'var(--muted-text)', fontSize: '14px' }}>
-            Can't find the answer? Contact our support team:
+            {t('help.contactSupport')}
           </p>
           <div style={{ display: 'grid', gap: '12px', fontSize: '14px' }}>
             <div>
-              Email: <a href="mailto:support@caredroid.ai" style={{ color: '#00ff88' }}>support@caredroid.ai</a>
+              {t('help.emailLabel')} <a href="mailto:support@caredroid.ai" style={{ color: 'var(--accent)' }}>support@caredroid.ai</a>
             </div>
             <div>
-              Response time: Within 24 hours
+              {t('help.responseTime')}
             </div>
           </div>
         </div>

@@ -2,48 +2,27 @@ import React from 'react';
 
 const AuthShell = ({ children }) => {
   return (
-    <div style={{
-      minHeight: '100vh',
-      width: '100vw',
-      background: 'var(--navy-bg)',
-      color: 'var(--text-color)',
-      display: 'grid',
-      gridTemplateColumns: 'minmax(280px, 1fr) minmax(320px, 520px)',
-      gap: '32px',
-      padding: '48px'
-    }}>
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        gap: '20px'
-      }}>
-        <div style={{
-          fontSize: '36px',
-          fontWeight: 700,
-          lineHeight: 1.1,
-          background: 'var(--accent-gradient)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent'
-        }}>
+    <div className="auth-shell">
+      <div className="auth-shell-info">
+        <div className="auth-shell-title">
           CareDroid Clinical AI
         </div>
-        <p style={{ fontSize: '16px', color: 'var(--muted-text)', maxWidth: '480px' }}>
+        <p className="auth-shell-subtitle">
           A premium clinical AI workspace for fast, structured guidance. Secure, compliant, and built for teams.
         </p>
-        <div style={{ display: 'grid', gap: '10px', maxWidth: '380px' }}>
-          <div className="card-subtle" style={{ padding: '14px 16px' }}>
+        <div className="auth-shell-features">
+          <div className="card-subtle auth-shell-feature">
             ⚡ Evidence‑based responses and clinical calculators
           </div>
-          <div className="card-subtle" style={{ padding: '14px 16px' }}>
+          <div className="card-subtle auth-shell-feature">
             🔒 HIPAA‑ready workflow with auditability
           </div>
-          <div className="card-subtle" style={{ padding: '14px 16px' }}>
+          <div className="card-subtle auth-shell-feature">
             🧠 Contextual tools surfaced inside chat
           </div>
         </div>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="auth-shell-content">
         {children}
       </div>
     </div>

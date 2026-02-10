@@ -33,8 +33,8 @@ export function WebSocketStatus() {
         gap: '6px',
         padding: '4px 10px',
         borderRadius: '12px',
-        background: 'rgba(0, 255, 136, 0.1)',
-        border: '1px solid rgba(0, 255, 136, 0.3)',
+        background: 'var(--accent-10)',
+        border: '1px solid var(--accent-20)',
         fontSize: '12px',
         fontWeight: 500,
         color: 'var(--accent-green)'

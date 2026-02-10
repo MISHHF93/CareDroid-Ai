@@ -199,12 +199,12 @@ const ChatInterface = ({
             <div style={{
               flex: 1,
               background: message.role === 'user'
-                ? 'rgba(0, 255, 136, 0.1)'
+                ? 'var(--accent-10)'
                 : 'var(--surface-2)',
               padding: '16px 20px',
               borderRadius: '16px',
               border: message.role === 'user'
-                ? '1px solid rgba(0, 255, 136, 0.3)'
+                ? '1px solid var(--accent-20)'
                 : '1px solid var(--panel-border)',
               lineHeight: '1.6',
               boxShadow: 'var(--shadow-1)'

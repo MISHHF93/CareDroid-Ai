@@ -1,0 +1,151 @@
+/* Settings — Next-Level Animations & Responsive */
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInScale {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes toastSlide {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes gradientMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.settings-shimmer {
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.settings-content-fade {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.settings-pulse {
+  animation: pulse 2s infinite;
+}
+
+.settings-toast {
+  animation: toastSlide 0.25s ease-out;
+}
+
+/* ─── Interactive hover effects ─── */
+.settings-section-card:hover {
+  border-color: rgba(255,255,255,0.12) !important;
+}
+
+.settings-link-card:hover {
+  background: rgba(255,255,255,0.06) !important;
+  border-color: rgba(255,255,255,0.14) !important;
+  transform: translateX(2px);
+}
+
+.settings-theme-card:hover {
+  background: rgba(255,255,255,0.06) !important;
+  transform: translateY(-2px);
+}
+
+.settings-tab-btn:hover {
+  background: rgba(255,255,255,0.06) !important;
+}
+
+.settings-action-btn:hover {
+  filter: brightness(1.2);
+}
+
+/* Save button pulse when dirty */
+.settings-save-btn {
+  background-size: 200% 200%;
+  animation: gradientMove 3s ease infinite;
+}
+
+/* ─── Responsive: single-column below 768px ─── */
+@media (max-width: 768px) {
+  .settings-layout {
+    flex-direction: column !important;
+  }
+  .settings-tabs {
+    width: 100% !important;
+  }
+  .settings-tabs > div {
+    display: flex !important;
+    overflow-x: auto !important;
+    position: static !important;
+    flex-wrap: nowrap;
+    gap: 2px;
+  }
+  .settings-tabs button {
+    flex: 0 0 auto !important;
+    white-space: nowrap;
+  }
+}
+
+/* ─── Small screens: stack notification channels ─── */
+@media (max-width: 540px) {
+  .settings-layout {
+    padding: 0 4px !important;
+  }
+}
+
+/* ─── Accessibility: reduced motion ─── */
+@media (prefers-reduced-motion: reduce) {
+  .settings-content-fade,
+  .settings-shimmer,
+  .settings-pulse,
+  .settings-toast,
+  .settings-save-btn,
+  .settings-theme-card,
+  .settings-link-card {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+/* ─── Focus-visible outlines for keyboard navigation ─── */
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ─── Scrollbar styling ─── */
+.settings-layout ::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+.settings-layout ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.settings-layout ::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.14);
+  border-radius: 2px;
+}
+.settings-layout ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.24);
+}

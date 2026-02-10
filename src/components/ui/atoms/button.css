@@ -66,11 +66,11 @@
 .btn-primary {
   background: var(--accent-gradient);
   color: var(--navy-ink);
-  box-shadow: 0 4px 12px rgba(0, 255, 136, 0.25);
+  box-shadow: 0 4px 12px var(--accent-20);
 }
 
 .btn-primary:hover {
-  box-shadow: 0 6px 20px rgba(0, 255, 136, 0.4);
+  box-shadow: 0 6px 20px var(--accent-20);
   transform: translateY(-2px);
 }
 
@@ -96,8 +96,8 @@
 }
 
 .btn-ghost:hover {
-  background: rgba(0, 255, 136, 0.08);
-  border-color: rgba(0, 255, 136, 0.2);
+  background: var(--accent-10);
+  border-color: var(--accent-20);
 }
 
 .btn-danger {
@@ -112,13 +112,13 @@
 }
 
 .btn-success {
-  background: linear-gradient(135deg, #00ff88, #00e676);
+  background: linear-gradient(135deg, var(--accent), #00e676);
   color: var(--navy-ink);
-  box-shadow: 0 4px 12px rgba(0, 255, 136, 0.25);
+  box-shadow: 0 4px 12px var(--accent-20);
 }
 
 .btn-success:hover {
-  box-shadow: 0 6px 20px rgba(0, 255, 136, 0.4);
+  box-shadow: 0 6px 20px var(--accent-20);
   transform: translateY(-2px);
 }
 

@@ -16,8 +16,8 @@ const ConfidenceBadge = ({ confidence }) => {
   if (confidence >= 0.8) {
     level = 'high';
     color = '#00FF88';
-    bgColor = 'rgba(0, 255, 136, 0.1)';
-    borderColor = 'rgba(0, 255, 136, 0.3)';
+    bgColor = 'var(--accent-10)';
+    borderColor = 'var(--accent-20)';
     icon = '✓';
     label = 'High Confidence';
   } else if (confidence >= 0.6) {

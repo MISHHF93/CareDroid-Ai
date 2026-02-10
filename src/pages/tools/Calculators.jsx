@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import ToolPageLayout from './ToolPageLayout';
 import './Calculators.css';
 import { apiFetch } from '../../services/apiClient';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const CALCULATORS = [
   {
@@ -35,6 +36,7 @@ const CALCULATORS = [
 ];
 
 const Calculators = () => {
+  const { t } = useLanguage();
   const toolConfig = {
     id: 'calculators',
     icon: '📊',
@@ -88,7 +90,7 @@ const Calculators = () => {
             color: 'var(--text-secondary)',
           }}>
             <div style={{ fontSize: '64px', marginBottom: '16px', opacity: 0.3 }}>📊</div>
-            <p>Select a calculator above to begin</p>
+            <p>{t('tools.calculators.selectCalculator')}</p>
           </div>
         )}
       </div>
@@ -110,7 +112,7 @@ const CalculatorInterface = ({ calculator, onResultChange }) => {
     case 'chads2vasc':
       return <CHA2DS2VAScCalculator onResultChange={onResultChange} />;
     default:
-      return <div>Calculator not implemented</div>;
+      return <div>{t('tools.calculators.notImplemented')}</div>;
   }
 };
 
@@ -388,17 +390,10 @@ const SOFACalculator = ({ onResultChange }) => {
             onClick={handleCalculate}
             disabled={loading}
           >
-            {loading ? (
-              <>
-                <div className="calc-spinner" style={{ width: '20px', height: '20px', borderWidth: '2px' }}></div>
-                Calculating...
-              </>
-            ) : (
-              <>🧮 Calculate SOFA Score</>
-            )}
+            {loading ? 'Calculating...' : `🧮 ${t('tools.calculators.calculateSofa')}`}
           </button>
           <button className="calc-reset-btn" onClick={handleReset}>
-            Reset
+            {t('tools.calculators.reset')}
           </button>
         </div>
       </div>
@@ -462,7 +457,7 @@ const SOFACalculator = ({ onResultChange }) => {
         ) : (
           <div className="calc-results-empty">
             <div className="calc-results-empty-icon">🏥</div>
-            <p>Enter patient parameters and calculate</p>
+            <p>{t('tools.calculators.enterParamsAndCalculate')}</p>
           </div>
         )}
       </div>
@@ -602,13 +597,13 @@ const GFRCalculator = ({ onResultChange }) => {
             className="calc-calculate-btn"
             onClick={calculateGFR}
           >
-            🧮 Calculate eGFR
+            🧮 {t('tools.calculators.calculateGfr')}
           </button>
           <button
             className="calc-reset-btn"
             onClick={() => { setInputs({ age: '', sex: '', creatinine: '', race: '' }); setResult(null); }}
           >
-            Reset
+            {t('tools.calculators.reset')}
           </button>
         </div>
       </div>

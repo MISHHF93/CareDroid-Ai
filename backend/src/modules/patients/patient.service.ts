@@ -1,7 +1,8 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Patient } from './patient.entity';
+import { CreatePatientDto } from './dto/create-patient.dto';
 
 export interface PatientFilterOptions {
   status?: string;
@@ -49,6 +50,24 @@ export class PatientService implements OnModuleInit {
 
   async getCriticalPatients(limit = 10): Promise<Patient[]> {
     return this.getPatients({ status: 'critical', limit });
+  }
+
+  async getPatientById(id: string): Promise<Patient> {
+    const patient = await this.patientRepository.findOne({ where: { id } });
+    if (!patient) {
+      throw new NotFoundException(`Patient with id "${id}" not found`);
+    }
+    return patient;
+  }
+
+  async createPatient(dto: CreatePatientDto): Promise<Patient> {
+    const patient = this.patientRepository.create({
+      ...dto,
+      status: dto.status || 'stable',
+    });
+    const saved = await this.patientRepository.save(patient);
+    this.logger.log(`Patient created: ${saved.id} (${saved.name})`);
+    return saved;
   }
 
   private async seedPatients() {

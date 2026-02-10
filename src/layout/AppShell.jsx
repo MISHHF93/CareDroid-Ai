@@ -25,15 +25,7 @@ const AppShell = ({
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   return (
-    <div className="app-shell" style={{
-      display: 'flex',
-      height: '100vh',
-      width: '100vw',
-      background: 'var(--navy-bg)',
-      color: 'var(--text-color)',
-      overflow: 'hidden',
-      position: 'relative'
-    }}>
+    <div className={`app-shell ${isSidebarCollapsed ? 'app-shell-collapsed' : ''}`}>
       {/* Sidebar - Fixed Position */}
       <Sidebar
         conversations={conversations}
@@ -48,17 +40,15 @@ const AppShell = ({
         onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
       />
 
+      <button
+        className="app-shell-overlay"
+        onClick={() => setIsSidebarCollapsed(true)}
+        aria-label="Close sidebar"
+        type="button"
+      />
+
       {/* Main Content Area - Pushed by sidebar width */}
-      <div style={{ 
-        flex: 1, 
-        display: 'flex', 
-        flexDirection: 'column',
-        marginLeft: isSidebarCollapsed ? '70px' : '280px',
-        minWidth: 0,
-        height: '100vh',
-        overflow: 'auto',
-        transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-      }}>
+      <div className="app-shell-main">
         {children}
       </div>
     </div>

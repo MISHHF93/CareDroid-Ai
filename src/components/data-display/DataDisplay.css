@@ -26,9 +26,9 @@
 
 /* Badge Variants */
 .badge-success {
-  background: rgba(0, 255, 136, 0.15);
+  background: var(--accent-15);
   color: var(--accent-1);
-  border: 1px solid rgba(0, 255, 136, 0.3);
+  border: 1px solid var(--accent-20);
 }
 
 .badge-error {
@@ -44,9 +44,9 @@
 }
 
 .badge-info {
-  background: rgba(0, 255, 255, 0.15);
+  background: var(--accent-15);
   color: var(--accent-1);
-  border: 1px solid rgba(0, 255, 255, 0.3);
+  border: 1px solid var(--accent-20);
 }
 
 .badge-neutral {
@@ -339,7 +339,7 @@
   top: 0;
   left: 0;
   height: 100%;
-  background: rgba(0, 255, 136, 0.2);
+  background: var(--accent-20);
   transition: width 0.3s ease;
   border-radius: var(--radius-md) 0 0 var(--radius-md);
 }
@@ -364,8 +364,8 @@
 }
 
 .icon-badge-success {
-  background: rgba(0, 255, 136, 0.1);
-  border: 1px solid rgba(0, 255, 136, 0.3);
+  background: var(--accent-10);
+  border: 1px solid var(--accent-20);
 }
 
 .icon-badge-error {

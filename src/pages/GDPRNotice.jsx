@@ -1,12 +1,14 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function GDPRNotice() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   return (
     <div style={{
-      minHeight: '100vh',
+      minHeight: '100dvh',
       width: '100vw',
       background: 'var(--navy-bg)',
       color: 'var(--text-color)',
@@ -27,22 +29,22 @@ export default function GDPRNotice() {
               marginBottom: '24px'
             }}
           >
-            ← Back
+            {t('gdpr.back')}
           </button>
           
           <h1 style={{
             fontSize: '32px',
             fontWeight: 700,
             marginBottom: '12px',
-            background: 'linear-gradient(135deg, #00ff88, #00ffff)',
+            background: 'linear-gradient(135deg, var(--accent), var(--accent-light))',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text'
           }}>
-            GDPR Notice
+            {t('gdpr.title')}
           </h1>
           <p style={{ color: 'var(--muted-text)' }}>
-            General Data Protection Regulation (GDPR) compliance information for EU residents
+            {t('gdpr.subtitle')}
           </p>
         </div>
 
@@ -56,10 +58,10 @@ export default function GDPRNotice() {
         }}>
           <div style={{ marginBottom: '32px' }}>
             <h2 style={{ fontSize: '20px', fontWeight: 600, marginBottom: '12px' }}>
-              1. Data Protection Rights
+              {t('gdpr.dataProtectionRights')}
             </h2>
             <p style={{ color: 'var(--muted-text)', marginBottom: '8px' }}>
-              Under GDPR, you have the right to:
+              {t('gdpr.dataProtectionRightsIntro')}
             </p>
             <ul style={{ color: 'var(--muted-text)', paddingLeft: '20px' }}>
               <li>Access your personal data</li>
@@ -74,46 +76,46 @@ export default function GDPRNotice() {
 
           <div style={{ marginBottom: '32px' }}>
             <h2 style={{ fontSize: '20px', fontWeight: 600, marginBottom: '12px' }}>
-              2. Data Processing
+              {t('gdpr.dataProcessing')}
             </h2>
             <p style={{ color: 'var(--muted-text)' }}>
-              We process personal data only with your explicit consent. Your medical and clinical data is encrypted and stored securely according to GDPR Article 32 requirements.
+              {t('gdpr.dataProcessingText')}
             </p>
           </div>
 
           <div style={{ marginBottom: '32px' }}>
             <h2 style={{ fontSize: '20px', fontWeight: 600, marginBottom: '12px' }}>
-              3. Data Retention
+              {t('gdpr.dataRetention')}
             </h2>
             <p style={{ color: 'var(--muted-text)' }}>
-              Your data is retained only as long as necessary for the purposes stated. You can request deletion at any time, and we will comply within 30 days unless legal obligations require retention.
+              {t('gdpr.dataRetentionText')}
             </p>
           </div>
 
           <div style={{ marginBottom: '32px' }}>
             <h2 style={{ fontSize: '20px', fontWeight: 600, marginBottom: '12px' }}>
-              4. International Transfers
+              {t('gdpr.internationalTransfers')}
             </h2>
             <p style={{ color: 'var(--muted-text)' }}>
-              If your data is transferred outside the EU/EEA, we ensure adequate safeguards are in place as per GDPR Chapter 5.
+              {t('gdpr.internationalTransfersText')}
             </p>
           </div>
 
           <div style={{
-            background: 'rgba(0, 255, 136, 0.1)',
-            border: '1px solid rgba(0, 255, 136, 0.3)',
+            background: 'var(--accent-10)',
+            border: '1px solid var(--accent-20)',
             borderRadius: '8px',
             padding: '16px',
             marginBottom: '32px'
           }}>
-            <h3 style={{ margin: '0 0 8px 0', color: '#00ff88' }}>Contact Our Data Protection Officer</h3>
+            <h3 style={{ margin: '0 0 8px 0', color: 'var(--accent)' }}>{t('gdpr.contactDPO')}</h3>
             <p style={{ margin: '0', color: 'var(--muted-text)', fontSize: '14px' }}>
-              For GDPR-related inquiries: <a href="mailto:dpo@caredroid.ai" style={{ color: '#00ff88' }}>dpo@caredroid.ai</a>
+              {t('gdpr.contactDPOText')} <a href="mailto:dpo@caredroid.ai" style={{ color: 'var(--accent)' }}>dpo@caredroid.ai</a>
             </p>
           </div>
 
           <p style={{ color: 'var(--muted-text)', fontSize: '13px' }}>
-            Last Updated: February 2026 | For full GDPR information, see our Privacy Policy
+            {t('gdpr.lastUpdated')}
           </p>
         </div>
       </div>

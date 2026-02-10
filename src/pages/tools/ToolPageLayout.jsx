@@ -11,6 +11,7 @@ import AnomalyBanner from '../../components/clinical/AnomalyBanner';
 import RiskFactorsList from '../../components/clinical/RiskFactorsList';
 import ClinicalAlertBanner from '../../components/clinical/ClinicalAlertBanner';
 import analyticsService from '../../services/analyticsService';
+import { useLanguage } from '../../contexts/LanguageContext';
 import './ToolPageLayout.css';
 
 const ToolPageLayout = ({ 
@@ -22,6 +23,7 @@ const ToolPageLayout = ({
   const navigate = useNavigate();
   const { addMessage, selectTool } = useConversation();
   const { recordToolAccess } = useToolPreferences();
+  const { t } = useLanguage();
   const [showShareModal, setShowShareModal] = useState(false);
   const [clinicalAlerts, setClinicalAlerts] = useState([]);
   const [dismissedAnomalies, setDismissedAnomalies] = useState(new Set());
@@ -78,9 +80,9 @@ const ToolPageLayout = ({
 
     try {
       await navigator.clipboard.writeText(url);
-      alert('Share link copied to clipboard.');
+      alert(t('tools.layout.shareLinkCopied'));
     } catch (error) {
-      window.prompt('Copy this link to share:', url);
+      window.prompt(t('tools.layout.copyShareLink'), url);
     }
   };
 
@@ -89,11 +91,11 @@ const ToolPageLayout = ({
       {/* Breadcrumb Navigation */}
       <div className="tool-breadcrumb">
         <button onClick={() => navigate('/dashboard')} className="breadcrumb-link">
-          💬 Dashboard
+          💬 {t('tools.layout.dashboard')}
         </button>
         <span className="breadcrumb-separator">›</span>
         <button onClick={() => navigate('/tools')} className="breadcrumb-link">
-          🔧 Tools
+          🔧 {t('tools.layout.tools')}
         </button>
         <span className="breadcrumb-separator">›</span>
         <span className="breadcrumb-current">{tool.name}</span>
@@ -113,7 +115,7 @@ const ToolPageLayout = ({
                 {tool.category}
               </span>
               <span className="tool-shortcut-badge">
-                Shortcut: {tool.shortcut}
+                {t('tools.layout.shortcut')}: {tool.shortcut}
               </span>
             </div>
           </div>
@@ -124,22 +126,22 @@ const ToolPageLayout = ({
             <button
               className="btn-share-tool"
               onClick={() => setShowShareModal(true)}
-              title="Export or share your results"
+              title={t('tools.layout.exportOrShare')}
             >
-              📤 Share Results
+              📤 {t('tools.layout.shareResults')}
             </button>
           )}
           <button
             className="btn-share-tool"
             onClick={handleShareSession}
           >
-            Share Session
+            {t('tools.layout.shareSession')}
           </button>
           <button 
             className="btn-back-to-tools"
             onClick={() => navigate('/tools')}
           >
-            ← All Tools
+            ← {t('tools.layout.allTools')}
           </button>
         </div>
       </div>
@@ -166,7 +168,7 @@ const ToolPageLayout = ({
                 category={riskData.severity}
                 confidence={riskData.confidence}
                 size="medium"
-                label="Overall Patient Risk"
+                label={t('tools.layout.overallPatientRisk')}
               />
             </div>
           )}
@@ -200,7 +202,7 @@ const ToolPageLayout = ({
           {/* Clinical Alerts */}
           {clinicalAlerts.length > 0 && (
             <div className="clinical-alerts-container">
-              <div className="alerts-title">Clinical Alerts ({clinicalAlerts.length})</div>
+              <div className="alerts-title">{t('tools.layout.clinicalAlerts')} ({clinicalAlerts.length})</div>
               {clinicalAlerts.map((alert) => (
                 <ClinicalAlertBanner
                   key={alert.id}
@@ -219,7 +221,7 @@ const ToolPageLayout = ({
           {/* Alert Items */}
           {clinicalInsights && clinicalInsights.alerts.length > 0 && (
             <div className="clinical-insights-block">
-              <div className="clinical-insights-title">Key Findings</div>
+              <div className="clinical-insights-title">{t('tools.layout.keyFindings')}</div>
               <ul className="clinical-insights-list">
                 {clinicalInsights.alerts.map((alert) => (
                   <li key={alert}>{alert}</li>
@@ -231,7 +233,7 @@ const ToolPageLayout = ({
           {/* Recommendations */}
           {clinicalInsights && clinicalInsights.recommendations.length > 0 && (
             <div className="clinical-insights-block">
-              <div className="clinical-insights-title">Recommendations</div>
+              <div className="clinical-insights-title">{t('tools.layout.recommendations')}</div>
               <ul className="clinical-insights-list">
                 {clinicalInsights.recommendations.map((rec) => (
                   <li key={rec}>{rec}</li>
@@ -245,8 +247,8 @@ const ToolPageLayout = ({
       {/* AI Integration Panel */}
       <div className="ai-integration-panel">
         <div className="ai-panel-header">
-          <h3>🤖 AI Integration</h3>
-          <p>This tool can interact with CareDroid AI for enhanced analysis</p>
+          <h3>🤖 {t('tools.layout.aiIntegration')}</h3>
+          <p>{t('tools.layout.aiIntegrationDescription')}</p>
         </div>
         <div className="ai-panel-actions">
           <button 
@@ -257,7 +259,7 @@ const ToolPageLayout = ({
             }}
           >
             <span className="btn-icon">💬</span>
-            <span>Discuss Results with AI</span>
+            <span>{t('tools.layout.discussWithAI')}</span>
           </button>
           <button 
             className="btn-ai-action"
@@ -276,7 +278,7 @@ const ToolPageLayout = ({
         />
       )}
             <span className="btn-icon">⚡</span>
-            <span>Use in Active Conversation</span>
+            <span>{t('tools.layout.useInConversation')}</span>
           </button>
         </div>
         <div className="ai-panel-tip">

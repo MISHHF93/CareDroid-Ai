@@ -45,6 +45,15 @@ export class DashboardStatsDto {
     criticalPatients?: { value: number; direction: 'up' | 'down' | 'neutral' };
     activePatients?: { value: number; direction: 'up' | 'down' | 'neutral' };
   };
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  sparklines?: {
+    criticalPatients?: number[];
+    activePatients?: number[];
+    pendingLabs?: number[];
+    stablePatients?: number[];
+  };
 }
 
 /**
@@ -122,4 +131,214 @@ export class ToolAccessDto {
   @ApiProperty()
   @IsString()
   timestamp: string;
+}
+
+/**
+ * Workload Task DTO
+ */
+export class WorkloadTaskDto {
+  @ApiProperty()
+  @IsString()
+  id: string;
+
+  @ApiProperty()
+  @IsString()
+  label: string;
+
+  @ApiProperty()
+  @IsBoolean()
+  done: boolean;
+
+  @ApiProperty()
+  @IsString()
+  priority: string;
+}
+
+/**
+ * Workload Response DTO
+ */
+export class WorkloadDto {
+  @ApiProperty({ type: [WorkloadTaskDto] })
+  tasks: WorkloadTaskDto[];
+
+  @ApiProperty()
+  @IsString()
+  shiftEnd: string;
+}
+
+/**
+ * MAR Medication DTO
+ */
+export class MARMedicationDto {
+  @ApiProperty()
+  @IsString()
+  id: string;
+
+  @ApiProperty()
+  @IsString()
+  name: string;
+
+  @ApiProperty()
+  @IsString()
+  patient: string;
+
+  @ApiProperty()
+  @IsString()
+  dueAt: string;
+
+  @ApiProperty()
+  @IsString()
+  route: string;
+}
+
+/**
+ * On-Call Roster Entry DTO
+ */
+export class RosterEntryDto {
+  @ApiProperty()
+  @IsString()
+  id: string;
+
+  @ApiProperty()
+  @IsString()
+  name: string;
+
+  @ApiProperty()
+  @IsString()
+  specialty: string;
+
+  @ApiProperty()
+  @IsString()
+  status: string;
+
+  @ApiProperty()
+  @IsString()
+  phone: string;
+}
+
+export enum BedStatus {
+  OCCUPIED = 'occupied',
+  AVAILABLE = 'available',
+  CLEANING = 'cleaning',
+  RESERVED = 'reserved',
+}
+
+/**
+ * Bed DTO
+ */
+export class BedDto {
+  @ApiProperty()
+  @IsString()
+  id: string;
+
+  @ApiProperty()
+  @IsString()
+  room: string;
+
+  @ApiProperty({ enum: BedStatus })
+  @IsEnum(BedStatus)
+  status: BedStatus;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  patient?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  acuity?: string;
+}
+
+/**
+ * Bed Board Response DTO
+ */
+export class BedBoardDto {
+  @ApiProperty()
+  @IsString()
+  unit: string;
+
+  @ApiProperty({ type: [BedDto] })
+  beds: BedDto[];
+}
+
+/**
+ * Lab Timeline Event DTO
+ */
+export class LabEventDto {
+  @ApiProperty()
+  @IsString()
+  id: string;
+
+  @ApiProperty()
+  @IsString()
+  test: string;
+
+  @ApiProperty()
+  @IsString()
+  patient: string;
+
+  @ApiProperty()
+  @IsString()
+  status: string;
+
+  @ApiProperty()
+  @IsString()
+  orderedAt: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  resultedAt?: string;
+
+  @ApiProperty()
+  @IsBoolean()
+  critical: boolean;
+}
+
+/**
+ * CDS Reminder DTO
+ */
+export class CDSReminderDto {
+  @ApiProperty()
+  @IsString()
+  id: string;
+
+  @ApiProperty()
+  @IsString()
+  message: string;
+
+  @ApiProperty()
+  @IsString()
+  icon: string;
+
+  @ApiProperty()
+  @IsString()
+  priority: string;
+}
+
+/**
+ * Toggle Task DTO
+ */
+export class ToggleTaskDto {
+  @ApiProperty()
+  @IsString()
+  taskId: string;
+}
+
+/**
+ * Place Order DTO
+ */
+export class PlaceOrderDto {
+  @ApiProperty()
+  @IsString()
+  patientId: string;
+
+  @ApiProperty()
+  @IsString()
+  orderId: string;
+
+  @ApiProperty()
+  @IsString()
+  label: string;
 }

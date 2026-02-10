@@ -7,11 +7,11 @@
   background: var(--surface-primary);
   border-radius: var(--radius-xl);
   transition: all var(--transition-normal);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .card:focus-visible {
-  outline: 2px solid var(--clinical-primary);
+  outline: 2px solid var(--accent, #3B82F6);
   outline-offset: 2px;
 }
 
@@ -219,7 +219,7 @@
   }
 
   .card-loading-overlay {
-    background: rgba(15, 23, 42, 0.8);
+    background: rgba(0, 0, 0, 0.8);
   }
 }
 

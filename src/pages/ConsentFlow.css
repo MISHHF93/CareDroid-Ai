@@ -1,6 +1,6 @@
 /* Consent Flow Styles */
 .consent-flow {
-  min-height: 100vh;
+  min-height: 100dvh;
   background: linear-gradient(135deg, #0a0b0d 0%, #1a1b1e 100%);
   display: flex;
   align-items: center;

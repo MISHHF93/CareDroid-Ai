@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import { useConversation } from '../contexts/ConversationContext';
 import { useToolPreferences } from '../contexts/ToolPreferencesContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useNotificationActions } from '../hooks/useNotificationActions';
 import AppShell from '../layout/AppShell';
 import toolRegistry from '../data/toolRegistry';
@@ -17,6 +18,7 @@ import { getToolRecommendationsNLU, recordRecommendationFeedback } from '../util
 function Chat() {
   const { signOut } = useUser();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const { error } = useNotificationActions();
   const { recordToolAccess } = useToolPreferences();
   const {
@@ -53,7 +55,7 @@ function Chat() {
         setIsLoading(false);
       }, 800);
     } catch (err) {
-      error('Message failed', 'Failed to send message.');
+      error(t('chat.messageFailed'), t('chat.failedToSendMessage'));
       setIsLoading(false);
     }
   };
@@ -181,13 +183,13 @@ function Chat() {
                 <div style={{ fontSize: '48px' }}>🏥</div>
                 <div style={{ textAlign: 'center', maxWidth: '400px' }}>
                   <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', color: 'var(--text-color)' }}>
-                    Welcome to CareDroid
+                    {t('chat.welcomeTitle')}
                   </div>
                   <div style={{ fontSize: '14px' }}>
-                    Ask me anything about medicine, drugs, lab values, clinical protocols, and more.
+                    {t('chat.welcomeDescription')}
                   </div>
                   <div style={{ fontSize: '13px', marginTop: '12px', color: 'var(--accent-green)' }}>
-                    💡 Select a clinical tool from the sidebar to get started
+                    {t('chat.selectToolHint')}
                   </div>
                 </div>
               </div>
@@ -207,7 +209,7 @@ function Chat() {
                       maxWidth: '60%',
                       padding: '12px 16px',
                       borderRadius: '12px',
-                      background: msg.role === 'user' ? 'linear-gradient(135deg, #00ff88, #00ffff)' : 'var(--surface-1)',
+                      background: msg.role === 'user' ? 'linear-gradient(135deg, var(--accent), var(--accent-light))' : 'var(--surface-1)',
                       color: msg.role === 'user' ? 'var(--navy-ink)' : 'var(--text-color)',
                       border: msg.role === 'user' ? 'none' : '1px solid var(--panel-border)',
                       lineHeight: 1.5
@@ -230,7 +232,7 @@ function Chat() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--muted-text)' }}>
                 <div style={{ fontSize: '20px' }}>🤖</div>
                 <div style={{ animation: 'pulse 1.5s ease-in-out infinite', opacity: 0.7 }}>
-                  Thinking...
+                  {t('chat.thinking')}
                 </div>
               </div>
             )}
@@ -265,7 +267,7 @@ function Chat() {
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px'
                 }}>
-                  Suggested tools
+                  {t('chat.suggestedTools')}
                 </div>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {recommendedTools.map((tool) => (
@@ -310,7 +312,7 @@ function Chat() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-              placeholder="Ask me anything... (e.g., drug interactions, lab values, diagnosis)"
+              placeholder={t('chat.inputPlaceholder')}
               style={{
                 flex: 1,
                 padding: '12px 16px',
@@ -328,7 +330,7 @@ function Chat() {
               disabled={isLoading || !input.trim()}
               style={{
                 padding: '12px 24px',
-                background: 'linear-gradient(135deg, #00ff88, #00ffff)',
+                background: 'linear-gradient(135deg, var(--accent), var(--accent-light))',
                 color: 'var(--navy-ink)',
                 border: 'none',
                 borderRadius: '8px',
@@ -337,7 +339,7 @@ function Chat() {
                 opacity: isLoading || !input.trim() ? 0.5 : 1
               }}
             >
-              Send
+              {t('chat.send')}
             </button>
           </div>
         </div>

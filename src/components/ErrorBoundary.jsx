@@ -70,7 +70,7 @@ class ErrorBoundary extends Component {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          height: '100vh',
+          height: '100dvh',
           backgroundColor: 'var(--navy-bg)',
           color: 'var(--text-color)',
           padding: '20px',

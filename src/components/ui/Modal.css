@@ -133,7 +133,7 @@
 }
 
 .modal-body::-webkit-scrollbar-thumb {
-  background: rgba(0, 255, 136, 0.3);
+  background: var(--accent-20);
   border-radius: 4px;
 }
 

@@ -1,13 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser, Permission } from '../contexts/UserContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import { useToolPreferences } from '../contexts/ToolPreferencesContext';
 import { useWorkspace } from '../contexts/WorkspaceContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import PermissionGate from './PermissionGate';
 import WorkspaceCreationModal from './WorkspaceCreationModal';
 import toolRegistry, { toolRegistryById } from '../data/toolRegistry';
 import './Sidebar.css';
+
+/* ─── role style map ─── */
+const ROLE_AVATAR = {
+  physician: { gradient: 'linear-gradient(135deg,#3B82F6,#2563EB)', border: 'rgba(59,130,246,0.3)' },
+  nurse:     { gradient: 'linear-gradient(135deg,#10B981,#059669)', border: 'rgba(16,185,129,0.3)' },
+  student:   { gradient: 'linear-gradient(135deg,#8B5CF6,#7C3AED)', border: 'rgba(139,92,246,0.3)' },
+  admin:     { gradient: 'linear-gradient(135deg,#F59E0B,#D97706)', border: 'rgba(245,158,11,0.3)' },
+};
+const STATUS_COLORS = { available: '#10B981', busy: '#F59E0B', dnd: '#EF4444', 'in-surgery': '#F59E0B', 'off-shift': '#6B7280' };
+const STATUS_KEYS = { available: 'status.available', busy: 'status.busy', dnd: 'status.doNotDisturb', 'in-surgery': 'status.inSurgery', 'off-shift': 'status.offShift' };
 
 /**
  * CareDroid Professional Sidebar
@@ -43,10 +54,31 @@ const Sidebar = ({
     setActiveWorkspaceId,
     addWorkspace
   } = useWorkspace();
+  const { t } = useLanguage();
   const [showToolsSection, setShowToolsSection] = useState(true);
   const [showWorkspaceModal, setShowWorkspaceModal] = useState(false);
+  const [showProfileFlyout, setShowProfileFlyout] = useState(false);
+  const [userStatus, setUserStatus] = useState('available');
+  const profileFlyoutRef = useRef(null);
   
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  // Close flyout on outside click
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (profileFlyoutRef.current && !profileFlyoutRef.current.contains(e.target)) {
+        setShowProfileFlyout(false);
+      }
+    };
+    if (showProfileFlyout) document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showProfileFlyout]);
+
+  const role = user?.role || 'student';
+  const avatarStyle = ROLE_AVATAR[role] || ROLE_AVATAR.student;
+  const avatarUrl = user?.profile?.avatarUrl || user?.avatarUrl || null;
+  const specialty = user?.profile?.specialty || user?.specialty || null;
+  const statusColor = STATUS_COLORS[userStatus] || STATUS_COLORS.available;
 
   // Medical Tools - Enhanced with navigation
   const medicalTools = toolRegistry;
@@ -65,12 +97,12 @@ const Sidebar = ({
 
   // Navigation Items
   const navItems = [
-    { id: 'chat', icon: '💬', label: 'Dashboard', path: '/dashboard' },
-    { id: 'profile', icon: '👤', label: 'Profile', path: '/profile' },
-    { id: 'team', icon: '👥', label: 'Team', path: '/team', permission: Permission.MANAGE_USERS },
-    { id: 'audit', icon: '📜', label: 'Audit Logs', path: '/audit-logs', permission: Permission.VIEW_AUDIT_LOGS },
-    { id: 'analytics', icon: '📊', label: 'Analytics', path: '/analytics', permission: Permission.VIEW_ANALYTICS },
-    { id: 'settings', icon: '⚙️', label: 'Settings', path: '/settings' }
+    { id: 'chat', icon: '💬', label: t('nav.dashboard'), path: '/dashboard' },
+    { id: 'profile', icon: '👤', label: t('nav.profile'), path: '/profile' },
+    { id: 'team', icon: '👥', label: t('nav.team'), path: '/team', permission: Permission.MANAGE_USERS },
+    { id: 'audit', icon: '📜', label: t('nav.auditLogs'), path: '/audit-logs', permission: Permission.VIEW_AUDIT_LOGS },
+    { id: 'analytics', icon: '📊', label: t('nav.analytics'), path: '/analytics', permission: Permission.VIEW_ANALYTICS },
+    { id: 'settings', icon: '⚙️', label: t('nav.settings'), path: '/settings' }
   ];
 
   const recentConversations = conversations.slice(-5).reverse();
@@ -214,13 +246,13 @@ const Sidebar = ({
           <div className="logo-icon">🏥</div>
           <div className="logo-text">
             <h1>CareDroid</h1>
-            <span className="logo-subtitle">Clinical AI</span>
+            <span className="logo-subtitle">{t('app.subtitle')}</span>
           </div>
         </div>
         <button 
           className={`sidebar-toggle ${isCollapsed ? 'collapsed' : ''}`}
           onClick={onToggleCollapse}
-          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={isCollapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
         >
           <span className="sidebar-toggle-icon" aria-hidden="true">
             {isCollapsed ? '»' : '«'}
@@ -228,21 +260,161 @@ const Sidebar = ({
         </button>
       </div>
 
-      {/* User Profile */}
-      {!isCollapsed && (
-        <div className="sidebar-user">
-          <div className="user-avatar">
-            {user?.name?.charAt(0).toUpperCase() || 'U'}
+      {/* User Profile — interactive with flyout */}
+      <div ref={profileFlyoutRef} style={{ position: 'relative' }}>
+        <div
+          className="sidebar-user"
+          onClick={() => setShowProfileFlyout((v) => !v)}
+          style={{ cursor: 'pointer' }}
+          title={isCollapsed ? `${user?.name || t('status.user')} — ${user?.role || t('status.clinician')}` : undefined}
+        >
+          {/* Role-colored avatar with status dot */}
+          <div className="user-avatar" style={{
+            background: avatarUrl ? `url(${avatarUrl}) center/cover no-repeat` : avatarStyle.gradient,
+            borderColor: avatarStyle.border,
+            position: 'relative',
+          }}>
+            {!avatarUrl && (user?.name?.charAt(0).toUpperCase() || 'U')}
+            <div style={{
+              position: 'absolute', bottom: -1, right: -1,
+              width: 12, height: 12, borderRadius: '50%',
+              background: statusColor,
+              border: '2px solid #0f1724',
+              boxShadow: `0 0 6px ${statusColor}80`,
+            }} />
           </div>
-          <div className="user-info">
-            <div className="user-name">{user?.name || 'User'}</div>
-            <div className="user-role">{user?.role || 'Clinician'}</div>
-          </div>
-          <div className={`health-indicator ${healthStatus}`}>
-            <div className="health-dot"></div>
-          </div>
+          {!isCollapsed && (
+            <>
+              <div className="user-info">
+                <div className="user-name">{user?.name || t('status.user')}</div>
+                <div className="user-role">
+                  {user?.role || t('status.clinician')}
+                  {specialty ? ` · ${specialty}` : ''}
+                </div>
+              </div>
+              <div className={`health-indicator ${healthStatus}`}>
+                <div className="health-dot"></div>
+              </div>
+            </>
+          )}
         </div>
-      )}
+
+        {/* Profile Flyout */}
+        {showProfileFlyout && (
+          <div style={{
+            position: 'absolute',
+            top: isCollapsed ? 0 : '100%',
+            left: isCollapsed ? '70px' : '12px',
+            right: isCollapsed ? 'auto' : '12px',
+            width: isCollapsed ? '260px' : 'auto',
+            zIndex: 9999,
+            background: 'var(--sb-deep-bg)',
+            border: '1px solid var(--sb-layer-4)',
+            borderRadius: '12px',
+            boxShadow: '0 12px 40px var(--sb-shadow)',
+            padding: '16px',
+            animation: 'fadeIn 0.15s ease',
+          }}>
+            {/* Flyout header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px', paddingBottom: '14px', borderBottom: '1px solid var(--sb-divider)' }}>
+              <div style={{
+                width: 48, height: 48, borderRadius: '50%',
+                background: avatarUrl ? `url(${avatarUrl}) center/cover` : avatarStyle.gradient,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: avatarUrl ? 0 : '20px', fontWeight: 700, color: 'var(--sb-text)',
+                border: `2px solid ${avatarStyle.border}`, flexShrink: 0,
+              }}>
+                {!avatarUrl && (user?.name?.charAt(0).toUpperCase() || 'U')}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--sb-text)' }}>{user?.name || t('status.user')}</div>
+                <div style={{ fontSize: '12px', color: 'var(--sb-text-muted)' }}>
+                  {user?.role || t('status.clinician')}
+                  {specialty ? ` · ${specialty}` : ''}
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--sb-text-ghost)', marginTop: '2px' }}>{user?.email || ''}</div>
+              </div>
+            </div>
+
+            {/* Status switcher */}
+            <div style={{ marginBottom: '14px', paddingBottom: '14px', borderBottom: '1px solid var(--sb-divider)' }}>
+              <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--sb-text-ghost)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>{t('status.status')}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                {Object.entries(STATUS_KEYS).map(([key, tKey]) => (
+                  <button
+                    key={key}
+                    onClick={() => setUserStatus(key)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '8px',
+                      padding: '6px 10px', borderRadius: '6px', border: 'none',
+                      background: userStatus === key ? 'var(--sb-layer-3)' : 'transparent',
+                      color: userStatus === key ? 'var(--sb-text)' : 'var(--sb-text-muted)',
+                      cursor: 'pointer', fontSize: '12px', fontWeight: userStatus === key ? 600 : 400,
+                      textAlign: 'left', width: '100%',
+                    }}
+                  >
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: STATUS_COLORS[key], flexShrink: 0 }} />
+                    {t(tKey)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <button
+                onClick={() => { navigate('/profile'); setShowProfileFlyout(false); }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  padding: '8px 10px', borderRadius: '6px', border: 'none',
+                  background: 'transparent', color: 'var(--sb-text-secondary)',
+                  cursor: 'pointer', fontSize: '13px', fontWeight: 500, width: '100%', textAlign: 'left',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--sb-hover)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+              >
+                <span style={{ fontSize: '15px' }}>👤</span> {t('status.viewProfile')}
+              </button>
+              <button
+                onClick={() => { navigate('/profile/settings'); setShowProfileFlyout(false); }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  padding: '8px 10px', borderRadius: '6px', border: 'none',
+                  background: 'transparent', color: 'var(--sb-text-secondary)',
+                  cursor: 'pointer', fontSize: '13px', fontWeight: 500, width: '100%', textAlign: 'left',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--sb-hover)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+              >
+                <span style={{ fontSize: '15px' }}>⚙️</span> {t('nav.settings')}
+              </button>
+              <button
+                onClick={() => { setShowProfileFlyout(false); onSignOut(); }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  padding: '8px 10px', borderRadius: '6px', border: 'none',
+                  background: 'transparent', color: '#F87171',
+                  cursor: 'pointer', fontSize: '13px', fontWeight: 600, width: '100%', textAlign: 'left',
+                  marginTop: '4px',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+              >
+                <span style={{ fontSize: '15px' }}>🚪</span> {t('status.signOut')}
+              </button>
+            </div>
+
+            {/* Connection indicator */}
+            <div style={{
+              marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--sb-divider)',
+              display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--sb-text-ghost)',
+            }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: healthStatus === 'online' ? '#10B981' : '#EF4444' }} />
+              {healthStatus === 'online' ? t('status.connectedLive') : t('status.offline')}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Main Content */}
       <div className="sidebar-content">
@@ -255,13 +427,13 @@ const Sidebar = ({
           }}
         >
           <span className="btn-icon">✨</span>
-          {!isCollapsed && <span>New Conversation</span>}
+          {!isCollapsed && <span>{t('nav.newConversation')}</span>}
         </button>
 
         {/* Navigation */}
         <nav className="sidebar-nav">
           <div className="nav-section-title">
-            {!isCollapsed && 'Navigation'}
+            {!isCollapsed && t('nav.navigation')}
           </div>
           {navItems.map(item => {
             const NavButton = (
@@ -292,7 +464,7 @@ const Sidebar = ({
               onClick={() => setShowToolsSection(!showToolsSection)}
             >
               <span className="section-icon">🔧</span>
-              <span className="section-title">Clinical Tools</span>
+              <span className="section-title">{t('nav.clinicalTools')}</span>
               <span
                 className={`section-toggle-icon ${showToolsSection ? 'open' : ''}`}
                 aria-hidden="true"
@@ -318,7 +490,7 @@ const Sidebar = ({
                 className="tools-workspace-button"
               >
                 <span>+</span>
-                <span>New Workspace</span>
+                <span>{t('nav.newWorkspace')}</span>
               </button>
             </div>
 
@@ -326,7 +498,7 @@ const Sidebar = ({
               <div className="medical-tools-list" style={{ marginTop: '8px' }}>
                 {favoriteTools.length > 0 && (
                   <div className="tools-subsection">
-                    <div className="tools-subsection-header">★ Favorites</div>
+                    <div className="tools-subsection-header">★ {t('nav.favorites')}</div>
                     <div className="tools-subsection-list">
                       {favoriteTools.map(renderToolCard)}
                     </div>
@@ -336,7 +508,7 @@ const Sidebar = ({
                 {recentToolItems.length > 0 && (
                   <div className="tools-subsection">
                     <div className="tools-subsection-header tools-subsection-header-row">
-                      <span>🕓 Recent Tools</span>
+                      <span>🕓 {t('nav.recentTools')}</span>
                       <button
                         className="tools-clear-btn"
                         onClick={(e) => {
@@ -345,7 +517,7 @@ const Sidebar = ({
                         }}
                         type="button"
                       >
-                        Clear
+                        {t('nav.clear')}
                       </button>
                     </div>
                     <div className="recent-tools-list">
@@ -368,7 +540,7 @@ const Sidebar = ({
                 )}
 
                 <div className="tools-subsection">
-                  <div className="tools-subsection-header">All Tools</div>
+                  <div className="tools-subsection-header">{t('nav.allTools')}</div>
                   <div className="tools-subsection-list">
                     {orderedTools.map(renderToolCard)}
                   </div>
@@ -395,8 +567,8 @@ const Sidebar = ({
                     gap: '6px'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--primary-color, #4F46E5)';
-                    e.currentTarget.style.color = 'var(--primary-color, #4F46E5)';
+                    e.currentTarget.style.borderColor = 'var(--accent, #3B82F6)';
+                    e.currentTarget.style.color = 'var(--accent, #3B82F6)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.borderColor = 'var(--panel-border, #e0e0e0)';
@@ -404,7 +576,7 @@ const Sidebar = ({
                   }}
                 >
                   <span>⚡</span>
-                  <span>View All Tools</span>
+                  <span>{t('nav.viewAllTools')}</span>
                 </button>
               </div>
             )}
@@ -416,7 +588,7 @@ const Sidebar = ({
           <div className="sidebar-section">
             <div className="section-header">
               <span className="section-icon">💭</span>
-              <span className="section-title">Recent</span>
+              <span className="section-title">{t('nav.recent')}</span>
             </div>
             <div className="conversations-list">
               {recentConversations.map(conv => (
@@ -456,19 +628,9 @@ const Sidebar = ({
         {!isCollapsed && (
           <div className="hipaa-badge">
             <span className="hipaa-icon">🔒</span>
-            <span className="hipaa-text">HIPAA Compliant</span>
+            <span className="hipaa-text">{t('nav.hipaaCompliant')}</span>
           </div>
         )}
-
-        {/* Sign Out */}
-        <button 
-          className="btn-signout"
-          onClick={onSignOut}
-          title="Sign Out"
-        >
-          <span className="signout-icon">🚪</span>
-          {!isCollapsed && <span>Sign Out</span>}
-        </button>
       </div>
     </aside>
 

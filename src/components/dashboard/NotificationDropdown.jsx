@@ -1,20 +1,6 @@
 import React from 'react';
 import { Card } from '../ui/molecules/Card';
-
-const getRelativeTime = (timestamp) => {
-  if (!timestamp) return 'Just now';
-  const now = new Date();
-  const time = new Date(timestamp);
-  const diffMs = now - time;
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-
-  if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins} min ago`;
-  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-  return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-};
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export const NotificationDropdown = ({
   notifications = [],
@@ -23,6 +9,23 @@ export const NotificationDropdown = ({
   onClearAll,
   onClose,
 }) => {
+  const { t } = useLanguage();
+
+  const getRelativeTime = (timestamp) => {
+    if (!timestamp) return t('widgets.notificationDropdown.justNow');
+    const now = new Date();
+    const time = new Date(timestamp);
+    const diffMs = now - time;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return t('widgets.notificationDropdown.justNow');
+    if (diffMins < 60) return `${diffMins} ${t('widgets.notificationDropdown.minAgo')}`;
+    if (diffHours < 24) return `${diffHours} ${t('widgets.notificationDropdown.hourAgo')}`;
+    return `${diffDays} ${t('widgets.notificationDropdown.dayAgo')}`;
+  };
+
   const unreadCount = notifications.filter((notification) => !notification.read).length;
 
   return (
@@ -61,7 +64,7 @@ export const NotificationDropdown = ({
                 fontWeight: 'var(--font-weight-semibold)',
                 color: 'var(--text-primary)'
               }}>
-                Notifications
+                {t('widgets.notificationDropdown.title')}
               </h4>
               {unreadCount > 0 && (
                 <span style={{
@@ -72,7 +75,7 @@ export const NotificationDropdown = ({
                   background: '#EF4444',
                   borderRadius: '999px'
                 }}>
-                  {unreadCount} new
+                  {unreadCount} {t('widgets.notificationDropdown.new')}
                 </span>
               )}
             </div>
@@ -98,7 +101,7 @@ export const NotificationDropdown = ({
               color: 'var(--text-tertiary)'
             }}>
               <div style={{ fontSize: '28px', marginBottom: 'var(--space-2)' }}>🔕</div>
-              <p style={{ margin: 0 }}>No notifications</p>
+              <p style={{ margin: 0 }}>{t('widgets.notificationDropdown.noNotifications')}</p>
             </div>
           ) : (
             <div style={{
@@ -185,7 +188,7 @@ export const NotificationDropdown = ({
                   cursor: 'pointer'
                 }}
               >
-                Mark all read
+                {t('widgets.notificationDropdown.markAllRead')}
               </button>
               <button
                 type="button"
@@ -200,7 +203,7 @@ export const NotificationDropdown = ({
                   cursor: 'pointer'
                 }}
               >
-                Clear all
+                {t('widgets.notificationDropdown.clearAll')}
               </button>
             </div>
           )}

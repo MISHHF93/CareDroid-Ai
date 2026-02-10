@@ -3,10 +3,12 @@ import { useUser } from '../../contexts/UserContext';
 import analyticsService from '../../services/analyticsService';
 import offlineService from '../../services/offlineService';
 import ToolPageLayout from './ToolPageLayout';
+import { useLanguage } from '../../contexts/LanguageContext';
 import './DrugChecker.css';
 
 const DrugChecker = () => {
   const { user } = useUser();
+  const { t } = useLanguage();
   const [medications, setMedications] = useState(['']);
   const [results, setResults] = useState(null);
   const [isChecking, setIsChecking] = useState(false);
@@ -14,12 +16,12 @@ const DrugChecker = () => {
   const toolConfig = {
     id: 'drug-check',
     icon: '💊',
-    name: 'Drug Checker',
+    name: t('tools.drugChecker.name'),
     path: '/tools/drug-checker',
     color: '#FF6B9D',
-    description: 'Check drug interactions, contraindications, and dosing',
+    description: t('tools.drugChecker.description'),
     shortcut: 'Ctrl+1',
-    category: 'Diagnostic'
+    category: t('tools.drugChecker.category')
   };
 
   const handleAddMedication = () => {
@@ -40,7 +42,7 @@ const DrugChecker = () => {
   const handleCheck = async () => {
     const activeMeds = medications.filter(m => m.trim());
     if (activeMeds.length < 2) {
-      alert('Please enter at least 2 medications to check for interactions');
+      alert(t('tools.drugChecker.minMedications'));
       return;
     }
 
@@ -103,9 +105,9 @@ const DrugChecker = () => {
     <ToolPageLayout tool={toolConfig}>
       <div className="drug-checker">
         <div className="drug-input-section">
-          <h2>Enter Medications</h2>
+          <h2>{t('tools.drugChecker.enterMedications')}</h2>
           <p className="section-subtitle">
-            Add medications to check for interactions, contraindications, and dosing guidelines
+            {t('tools.drugChecker.enterMedicationsDescription')}
           </p>
 
           <div className="medications-list">
@@ -115,7 +117,7 @@ const DrugChecker = () => {
                 <input
                   type="text"
                   className="medication-input"
-                  placeholder="Enter medication name (e.g., Warfarin)"
+                  placeholder={t('tools.drugChecker.medicationPlaceholder')}
                   value={med}
                   onChange={(e) => handleMedicationChange(index, e.target.value)}
                 />
@@ -123,7 +125,7 @@ const DrugChecker = () => {
                   <button
                     className="btn-remove-med"
                     onClick={() => handleRemoveMedication(index)}
-                    title="Remove medication"
+                    title={t('tools.drugChecker.removeMedication')}
                   >
                     ✕
                   </button>
@@ -134,14 +136,14 @@ const DrugChecker = () => {
 
           <div className="input-actions">
             <button className="btn-add-med" onClick={handleAddMedication}>
-              + Add Another Medication
+              {t('tools.drugChecker.addAnother')}
             </button>
             <button 
               className="btn-check-interactions" 
               onClick={handleCheck}
               disabled={isChecking || medications.filter(m => m.trim()).length < 2}
             >
-              {isChecking ? '🔄 Checking...' : '🔍 Check Interactions'}
+              {isChecking ? t('tools.drugChecker.checking') : t('tools.drugChecker.checkInteractions')}
             </button>
           </div>
         </div>
@@ -151,7 +153,7 @@ const DrugChecker = () => {
             {/* Interactions */}
             {results.interactions.length > 0 && (
               <div className="result-card">
-                <h3 className="result-title">⚠️ Drug Interactions Found</h3>
+                <h3 className="result-title">⚠️ {t('tools.drugChecker.interactionsFound')}</h3>
                 {results.interactions.map((interaction, idx) => (
                   <div 
                     key={idx} 
@@ -171,13 +173,13 @@ const DrugChecker = () => {
                     </div>
                     <div className="interaction-body">
                       <p className="interaction-description">
-                        <strong>Effect:</strong> {interaction.description}
+                        <strong>{t('tools.drugChecker.effect')}:</strong> {interaction.description}
                       </p>
                       <p className="interaction-evidence">
-                        <strong>Evidence:</strong> {interaction.evidence}
+                        <strong>{t('tools.drugChecker.evidence')}:</strong> {interaction.evidence}
                       </p>
                       <p className="interaction-management">
-                        <strong>Management:</strong> {interaction.management}
+                        <strong>{t('tools.drugChecker.management')}:</strong> {interaction.management}
                       </p>
                     </div>
                   </div>
@@ -188,13 +190,13 @@ const DrugChecker = () => {
             {/* Warnings */}
             {results.warnings.length > 0 && (
               <div className="result-card">
-                <h3 className="result-title">⚡ Clinical Warnings</h3>
+                <h3 className="result-title">⚡ {t('tools.drugChecker.clinicalWarnings')}</h3>
                 {results.warnings.map((warning, idx) => (
                   <div key={idx} className="warning-item">
                     <div className="warning-drug">{warning.drug}</div>
                     <div className="warning-text">{warning.warning}</div>
                     <div className="warning-recommendation">
-                      <strong>Recommendation:</strong> {warning.recommendation}
+                      <strong>{t('tools.drugChecker.recommendation')}:</strong> {warning.recommendation}
                     </div>
                   </div>
                 ))}
@@ -204,10 +206,10 @@ const DrugChecker = () => {
             {/* No Issues */}
             {results.interactions.length === 0 && results.contraindications.length === 0 && (
               <div className="result-card success-card">
-                <h3 className="result-title">✅ No Major Interactions Detected</h3>
-                <p>The medications checked do not have documented major interactions.</p>
+                <h3 className="result-title">✅ {t('tools.drugChecker.noInteractions')}</h3>
+                <p>{t('tools.drugChecker.noInteractionsDescription')}</p>
                 <p className="disclaimer">
-                  Note: Always consult drug references and clinical judgment for comprehensive assessment.
+                  {t('tools.drugChecker.disclaimer')}
                 </p>
               </div>
             )}
@@ -216,18 +218,18 @@ const DrugChecker = () => {
 
         {/* Quick Reference */}
         <div className="quick-reference">
-          <h3>💡 Quick Reference</h3>
+          <h3>💡 {t('tools.drugChecker.quickReference')}</h3>
           <div className="reference-grid">
             <div className="reference-item">
-              <h4>Severity Levels</h4>
+              <h4>{t('tools.drugChecker.severityLevels')}</h4>
               <ul>
-                <li><span style={{ color: '#EF4444' }}>●</span> Major: Avoid combination</li>
-                <li><span style={{ color: '#F59E0B' }}>●</span> Moderate: Monitor closely</li>
-                <li><span style={{ color: '#10B981' }}>●</span> Minor: Usually safe</li>
+                <li><span style={{ color: '#EF4444' }}>●</span> {t('tools.drugChecker.majorSeverity')}</li>
+                <li><span style={{ color: '#F59E0B' }}>●</span> {t('tools.drugChecker.moderateSeverity')}</li>
+                <li><span style={{ color: '#10B981' }}>●</span> {t('tools.drugChecker.minorSeverity')}</li>
               </ul>
             </div>
             <div className="reference-item">
-              <h4>Common Checks</h4>
+              <h4>{t('tools.drugChecker.commonChecks')}</h4>
               <ul>
                 <li>Drug-drug interactions</li>
                 <li>Contraindications</li>
@@ -236,7 +238,7 @@ const DrugChecker = () => {
               </ul>
             </div>
             <div className="reference-item">
-              <h4>Best Practices</h4>
+              <h4>{t('tools.drugChecker.bestPractices')}</h4>
               <ul>
                 <li>Include all medications (Rx + OTC)</li>
                 <li>Check supplements and herbals</li>

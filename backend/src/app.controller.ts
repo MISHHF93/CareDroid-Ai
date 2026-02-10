@@ -35,14 +35,14 @@ export class AppController {
     };
   }
 
-  @Get()
-  getRoot(@Res() res: Response) {
-    return res.sendFile('/workspaces/CareDroid-Ai/dist/index.html');
-  }
-
-  // Frontend SPA routes (single-port deployment)
-  @Get('*')
-  getSpaRoutes(@Res() res: Response) {
-    return res.sendFile('/workspaces/CareDroid-Ai/dist/index.html');
-  }
+  // SPA catch-all routes disabled in dev — Vite serves frontend on :5173
+  // Enable for single-port production deployment:
+  // @Get()
+  // getRoot(@Res() res: Response) {
+  //   return res.sendFile('/workspaces/CareDroid-Ai/dist/index.html');
+  // }
+  // @Get('*')
+  // getSpaRoutes(@Res() res: Response) {
+  //   return res.sendFile('/workspaces/CareDroid-Ai/dist/index.html');
+  // }
 }

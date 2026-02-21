@@ -8,6 +8,7 @@ import { useNotificationActions } from '../hooks/useNotificationActions';
 import AppShell from '../layout/AppShell';
 import toolRegistry from '../data/toolRegistry';
 import ToolVisualization from '../components/ToolVisualization';
+import { apiFetch } from '../services/apiClient';
 import analyticsService from '../services/analyticsService';
 import { getToolRecommendationsNLU, recordRecommendationFeedback } from '../utils/toolRecommendations';
 import { useWebGLSupport } from '../hooks/useWebGLSupport';
@@ -79,24 +80,221 @@ function Chat() {
 
   const clinicalTools = toolRegistry;
 
+  const shouldUse3DEndpoint = (prompt) => {
+    const lower = prompt.toLowerCase();
+
+    const keywordDriven3D = /(heart|brain|lung|liver|kidney|anatomy|organ|drug|interaction|medication|contraindication|history|timeline|progression|course|lab|cbc|creatinine|lactate|trend|sofa|calculator)/i.test(lower);
+
+    const selectedToolSupports3D = ['drug-check', 'lab-interp', 'calculators'].includes(selectedTool);
+
+    const recommendationSupports3D = recommendedTools.some((tool) => {
+      if (['drug-check', 'lab-interp', 'calculators'].includes(tool.id)) return true;
+      return /(anatomy|organ|drug|interaction|lab|timeline|trend|sofa|3d|holograph)/i.test(
+        `${tool.recommendationReason || ''} ${tool.name || ''}`
+      );
+    });
+
+    return keywordDriven3D || selectedToolSupports3D || recommendationSupports3D;
+  };
+
+  const buildVisualizationsFromPrompt = (prompt) => {
+    const lower = prompt.toLowerCase();
+    const visualizations = [];
+
+    if (/(heart|brain|lung|liver|kidney|anatomy|organ)/.test(lower)) {
+      const organ = lower.includes('heart')
+        ? 'heart'
+        : lower.includes('brain')
+          ? 'brain'
+          : lower.includes('lung')
+            ? 'lungs'
+            : lower.includes('liver')
+              ? 'liver'
+              : lower.includes('kidney')
+                ? 'kidney'
+                : 'general';
+      visualizations.push({
+        type: 'anatomy-3d',
+        data: {
+          organ,
+          vitals: { HR: 88, SpO2: '97%', RR: 18 },
+          markers: [{ id: 'critical-zone', severity: 'moderate', position: [0.25, 0.55, 0.3] }],
+        },
+        metadata: {
+          camera: { position: [0, 1.35, 5], fov: 50 },
+          animation: ['rotate', 'pulse'],
+        },
+      });
+    }
+
+    if (/(drug|interaction|medication|contraindication)/.test(lower)) {
+      visualizations.push({
+        type: 'drug-network-3d',
+        data: {
+          nodes: [
+            { id: 'warfarin', label: 'Warfarin', severity: 'major', position: [-1.1, 0.3, 0] },
+            { id: 'aspirin', label: 'Aspirin', severity: 'moderate', position: [0.95, 0.2, 0] },
+            { id: 'amiodarone', label: 'Amiodarone', severity: 'major', position: [0, -0.85, 0.2] },
+          ],
+          links: [
+            { source: 'warfarin', target: 'aspirin', weight: 0.95 },
+            { source: 'warfarin', target: 'amiodarone', weight: 0.8 },
+          ],
+        },
+      });
+    }
+
+    if (/(lab|cbc|creatinine|lactate|trend)/.test(lower)) {
+      visualizations.push({
+        type: 'lab-chart-3d',
+        data: {
+          items: [
+            { label: 'WBC', value: 11.2, max: 20 },
+            { label: 'Cr', value: 1.8, max: 4 },
+            { label: 'Lactate', value: 2.9, max: 6 },
+            { label: 'CRP', value: 72, max: 120 },
+          ],
+        },
+      });
+    }
+
+    if (/(history|timeline|progression|course)/.test(lower)) {
+      visualizations.push({
+        type: 'timeline-3d',
+        data: {
+          events: [
+            { id: 'h1', title: 'Symptom onset', status: 'resulted', critical: false },
+            { id: 'h2', title: 'Sepsis alert', status: 'resulted', critical: true },
+            { id: 'h3', title: 'Antibiotics administered', status: 'resulted', critical: false },
+          ],
+        },
+      });
+    }
+
+    return visualizations;
+  };
+
   const handleSendMessage = async () => {
     if (!input.trim()) return;
 
+    const userPrompt = input.trim();
+
     // Add user message
-    addMessage(input, 'user');
+    addMessage(userPrompt, 'user');
     setInput('');
     setIsLoading(true);
 
     try {
-      // Simulate API call - with your real backend, use: await apiFetch('/api/chat/message', ...)
-      setTimeout(() => {
-        const selectedToolName = clinicalTools.find((tool) => tool.id === selectedTool)?.name;
-        const aiResponse = `I'm analyzing your request about "${input}". In a real implementation, this would call the medical AI API to provide evidence-based clinical guidance.${selectedToolName ? ` Using ${selectedToolName}...` : ''}`;
-        addMessage(aiResponse, 'assistant');
-        setIsLoading(false);
-      }, 800);
+      const token = localStorage.getItem('caredroid_access_token');
+      const supports3D = shouldUse3DEndpoint(userPrompt);
+
+      const sharedHeaders = {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      };
+
+      let response;
+
+      if (supports3D) {
+        analyticsService.trackEvent({
+          eventName: 'chat_3d_route_attempted',
+          parameters: {
+            conversationId: activeConversationId,
+            selectedTool,
+          },
+        });
+
+        const payload3D = {
+          patientId: String(activeConversationId || 'chat-session'),
+          message: userPrompt,
+          context: {
+            medications: selectedTool === 'drug-check' ? ['Current medication list'] : [],
+            activeProblems: [],
+          },
+        };
+
+        response = await apiFetch('/api/chat/message-3d', {
+          method: 'POST',
+          headers: sharedHeaders,
+          body: JSON.stringify(payload3D),
+        });
+
+        if (!response.ok) {
+          analyticsService.trackEvent({
+            eventName: 'chat_3d_route_fallback',
+            parameters: {
+              conversationId: activeConversationId,
+              statusCode: response.status,
+              selectedTool,
+            },
+          });
+
+          response = await apiFetch('/api/chat/message', {
+            method: 'POST',
+            headers: sharedHeaders,
+            body: JSON.stringify({
+              message: userPrompt,
+              tool: selectedTool || undefined,
+            }),
+          });
+        } else {
+          analyticsService.trackEvent({
+            eventName: 'chat_3d_route_succeeded',
+            parameters: {
+              conversationId: activeConversationId,
+              selectedTool,
+            },
+          });
+        }
+      } else {
+        analyticsService.trackEvent({
+          eventName: 'chat_standard_route_used',
+          parameters: {
+            conversationId: activeConversationId,
+            selectedTool,
+          },
+        });
+
+        response = await apiFetch('/api/chat/message', {
+          method: 'POST',
+          headers: sharedHeaders,
+          body: JSON.stringify({
+            message: userPrompt,
+            tool: selectedTool || undefined,
+          }),
+        });
+      }
+
+      if (!response.ok) {
+        throw new Error(`Chat request failed (${response.status})`);
+      }
+
+      const data = await response.json();
+      const backendVisualizations = Array.isArray(data?.visualizations) ? data.visualizations : [];
+
+      addMessage(data?.response || t('chat.failedToSendMessage'), 'assistant', {
+        visualizations: backendVisualizations.length > 0
+          ? backendVisualizations
+          : buildVisualizationsFromPrompt(userPrompt),
+      });
     } catch (err) {
+      analyticsService.trackEvent({
+        eventName: 'chat_route_failed',
+        parameters: {
+          conversationId: activeConversationId,
+          selectedTool,
+          errorName: err?.name || 'Error',
+        },
+      });
+
+      const selectedToolName = clinicalTools.find((tool) => tool.id === selectedTool)?.name;
+      const fallbackText = `I'm analyzing your request about "${userPrompt}".${selectedToolName ? ` Using ${selectedToolName}...` : ''}`;
+
+      addMessage(fallbackText, 'assistant', {
+        visualizations: buildVisualizationsFromPrompt(userPrompt),
+      });
       error(t('chat.messageFailed'), t('chat.failedToSendMessage'));
+    } finally {
       setIsLoading(false);
     }
   };
@@ -228,7 +426,7 @@ function Chat() {
           <div style={{
             flex: 1,
             overflowY: 'auto',
-            padding: '24px',
+            padding: 'clamp(12px, 4dvw, 24px)',
             display: 'flex',
             flexDirection: 'column',
             gap: '16px'
@@ -269,7 +467,7 @@ function Chat() {
                   {msg.role === 'assistant' && <div style={{ fontSize: '20px' }}>🤖</div>}
                   <div
                     style={{
-                      maxWidth: '60%',
+                      maxWidth: 'min(92dvw, 760px)',
                       padding: '12px 16px',
                       borderRadius: '12px',
                       background: msg.role === 'user' ? 'linear-gradient(135deg, var(--accent), var(--accent-light))' : 'var(--surface-1)',
@@ -310,9 +508,10 @@ function Chat() {
 
           {/* Input */}
           <div style={{
-            padding: '16px 24px',
+            padding: 'clamp(12px, 4dvw, 20px)',
             borderTop: '1px solid var(--panel-border)',
             display: 'flex',
+            flexWrap: 'wrap',
             gap: '12px',
             position: 'relative'
           }}>
@@ -385,6 +584,8 @@ function Chat() {
               placeholder={t('chat.inputPlaceholder')}
               style={{
                 flex: 1,
+                minWidth: '220px',
+                minHeight: '44px',
                 padding: '12px 16px',
                 background: 'var(--surface-1)',
                 border: '1px solid var(--panel-border)',
@@ -400,6 +601,7 @@ function Chat() {
               disabled={isLoading || !input.trim()}
               style={{
                 padding: '12px 24px',
+                minHeight: '44px',
                 background: 'linear-gradient(135deg, var(--accent), var(--accent-light))',
                 color: 'var(--navy-ink)',
                 border: 'none',

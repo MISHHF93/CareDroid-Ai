@@ -521,7 +521,7 @@
     left: 0;
     right: 0;
     width: 100%;
-    max-height: 80vh;
+    max-height: 80dvh;
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   }
 

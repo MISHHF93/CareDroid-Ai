@@ -6,6 +6,25 @@
   "server": {
     "androidScheme": "https"
   },
+  "plugins": {
+    "StatusBar": {
+      "style": "dark"
+    },
+    "SplashScreen": {
+      "launchShowDuration": 1200,
+      "launchAutoHide": true,
+      "fadeOutDuration": 300,
+      "showSpinner": false,
+      "backgroundColor": "#0b1220"
+    },
+    "Keyboard": {
+      "resize": "body",
+      "resizeOnFullScreen": true
+    },
+    "App": {
+      "urlScheme": "caredroid"
+    }
+  },
   "android": {
     "buildOptions": {
       "keystorePath": "keystore.jks",

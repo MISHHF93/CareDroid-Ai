@@ -37,7 +37,7 @@ export const NotificationDropdown = ({
         top: 'calc(100% + 12px)',
         right: 0,
         width: '360px',
-        maxWidth: '80vw',
+        maxWidth: '80dvw',
         zIndex: 40,
       }}
     >

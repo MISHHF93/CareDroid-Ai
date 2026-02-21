@@ -1,14 +1,10 @@
-import { useEffect, useState, Suspense, lazy } from 'react';
+import { useEffect, useState } from 'react';
 import ToolPageLayout from './ToolPageLayout';
 import './Calculators.css';
 import { apiFetch } from '../../services/apiClient';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { useWebGLSupport } from '../../hooks/useWebGLSupport';
-import HolographicLoader from '../../components/3d/HolographicLoader';
-
-// Lazy-load 3D components
-const HolographicCanvas = lazy(() => import('../../components/3d/HolographicCanvas'));
-const OrganSystem = lazy(() => import('../../components/3d/medical/OrganSystem'));
+import { HolographicCanvas, VolumetricLabChart3D } from '../../components/holographic';
+import { useHolographicMode } from '../../hooks/useHolographicMode';
 
 const CALCULATORS = [
   {
@@ -123,61 +119,10 @@ const CalculatorInterface = ({ calculator, onResultChange }) => {
 };
 
 /**
- * 3D SOFA organ system visualization sub-component
- */
-function SOFAOrganVisualization({ result }) {
-  const { supported: webglSupported } = useWebGLSupport();
-  const [show3D, setShow3D] = useState(true);
-  if (!webglSupported || !show3D || !result) return null;
-
-  // Map SOFA breakdown to per-organ scores
-  const breakdown = result.breakdown || {};
-  const scores = {
-    heart: breakdown.cardiovascular ?? 0,
-    brain: breakdown.neurological ?? 0,
-    lungs: breakdown.respiratory ?? 0,
-  };
-
-  return (
-    <div style={{ marginTop: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-        <span style={{ fontSize: 13, color: '#00e5ff', letterSpacing: '0.05em' }}>
-          Organ System Visualization
-        </span>
-        <button
-          onClick={() => setShow3D(false)}
-          aria-label="Hide 3D organ system"
-          style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: 12 }}
-        >
-          Hide
-        </button>
-      </div>
-      <div
-        style={{
-          height: 340,
-          borderRadius: 10,
-          overflow: 'hidden',
-          background: 'rgba(11,18,32,0.7)',
-          border: '1px solid rgba(0,229,255,0.15)',
-        }}
-        aria-label="3D organ system showing SOFA score severity: colour-coded green (normal) to red (critical)"
-      >
-        <Suspense fallback={<HolographicLoader size={36} label="Loading organ system…" />}>
-          <HolographicCanvas cameraPosition={[0, 0, 6]}>
-            <Suspense fallback={null}>
-              <OrganSystem scores={scores} interactive />
-            </Suspense>
-          </HolographicCanvas>
-        </Suspense>
-      </div>
-    </div>
-  );
-}
-
-/**
  * SOFA Score Calculator
  */
 const SOFACalculator = ({ onResultChange }) => {
+  const { reducedMotion } = useHolographicMode();
   const [inputs, setInputs] = useState({
     pao2: '',
     fio2: '',
@@ -471,6 +416,22 @@ const SOFACalculator = ({ onResultChange }) => {
           </div>
         ) : result ? (
           <>
+            {result.breakdown && (
+              <HolographicCanvas
+                ariaLabel="3D SOFA organ severity visualization"
+                reducedMotion={reducedMotion}
+                style={{ minHeight: 250, marginBottom: '14px' }}
+              >
+                <VolumetricLabChart3D
+                  items={Object.entries(result.breakdown).map(([system, score]) => ({
+                    label: system,
+                    value: Number(score),
+                    max: 4,
+                  }))}
+                />
+              </HolographicCanvas>
+            )}
+
             {/* Score Display */}
             <div className={`calc-score-display ${getSeverityLevel(result.totalScore)}`}>
               <div className="calc-score-label">SOFA Score</div>
@@ -511,9 +472,6 @@ const SOFACalculator = ({ onResultChange }) => {
                 <li>Singer M, et al. The Third International Consensus Definitions for Sepsis and Septic Shock (Sepsis-3). JAMA. 2016;315(8):801-810.</li>
               </ul>
             </div>
-
-            {/* 3D Organ System Visualization */}
-            <SOFAOrganVisualization result={result} />
           </>
         ) : (
           <div className="calc-results-empty">

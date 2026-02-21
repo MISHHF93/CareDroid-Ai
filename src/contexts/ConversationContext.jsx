@@ -96,12 +96,13 @@ export const ConversationProvider = ({ children }) => {
   }, [activeConversationId]);
 
   // Add a message to the active conversation
-  const addMessage = useCallback((content, role = 'user') => {
+  const addMessage = useCallback((content, role = 'user', extras = {}) => {
     const message = {
       id: Date.now().toString(),
       role,
       content,
-      timestamp: new Date()
+      timestamp: new Date(),
+      ...extras,
     };
     setMessages((prev) => [...prev, message]);
     logger.debug('Message added', { messageId: message.id, role, conversationId: activeConversationId });

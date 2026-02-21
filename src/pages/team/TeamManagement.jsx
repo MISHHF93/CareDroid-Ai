@@ -714,7 +714,7 @@ const MemberDrawer = ({ member: u, isOnCall, onClose, onRoleChange, onDeactivate
       <div
         ref={drawerRef}
         style={{
-          position: 'fixed', top: 0, right: 0, bottom: 0, width: '440px', maxWidth: '90vw',
+          position: 'fixed', top: 0, right: 0, bottom: 0, width: '440px', maxWidth: '90dvw',
           background: S.panel, borderLeft: `1px solid ${B.default}`,
           zIndex: 1000, overflowY: 'auto', padding: '0',
           animation: 'slideInRight 0.25s ease',
@@ -922,7 +922,7 @@ const InviteModal = ({ onInvite, onClose }) => {
       <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1001 }} />
       <div style={{
         position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-        width: '460px', maxWidth: '92vw', background: S.panel,
+        width: '460px', maxWidth: '92dvw', background: S.panel,
         border: `1px solid ${B.medium}`, borderRadius: '14px',
         zIndex: 1002, animation: 'slideUp 0.25s ease',
       }}>

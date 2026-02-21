@@ -23,52 +23,34 @@ interface ChatMessageDto {
   conversationId?: number;
 }
 
-/** Camera position for 3D visualization */
-interface CameraPosition3D {
-  x: number;
-  y: number;
-  z: number;
-}
-
-/** Animation sequence step for 3D model */
-interface AnimationStep3D {
-  name: string;
-  duration: number;
-  loop?: boolean;
-}
-
-/** 3D visualization metadata returned by the API */
-export interface Visualization3DMetadata {
-  /** Visualization type determines which 3D component to render */
-  type:
-    | 'organ-model'
-    | 'molecular-structure'
-    | 'drug-network'
-    | 'lab-chart'
-    | 'timeline'
-    | 'protocol';
-  /** URL to the GLTF/GLB model asset (optional — uses procedural fallback if absent) */
-  modelUrl?: string;
-  /** Suggested initial camera position */
-  cameraPosition?: CameraPosition3D;
-  /** Optional animation sequence */
-  animations?: AnimationStep3D[];
-  /** Arbitrary structured data for the visualisation component */
-  data?: Record<string, unknown>;
-  /** Label to display above the 3D panel */
-  label?: string;
-}
-
 interface ChatResponse3DDto {
   id: string;
   response: string;
   suggestions?: string[];
-  visualizations?: Visualization3DMetadata[];
+  visualizations?: {
+    type:
+      | 'drug-interaction'
+      | 'calculator'
+      | 'protocol'
+      | 'lab-order'
+      | 'anatomy-3d'
+      | 'drug-network-3d'
+      | 'lab-chart-3d'
+      | 'timeline-3d';
+    data: any;
+    metadata?: {
+      modelUrl?: string;
+      camera?: { position: [number, number, number]; fov: number };
+      animation?: string[];
+      lod?: 'high' | 'medium' | 'low';
+    };
+  }[];
   timestamp: number;
 }
 
 interface ChatResponseDto {
   response: string;
+  visualizations?: ChatResponse3DDto['visualizations'];
   toolResult?: {
     toolName: string;
     toolId?: string;
@@ -82,8 +64,6 @@ interface ChatResponseDto {
     chunksRetrieved: number;
     sourcesFound: number;
   };
-  /** 3D visualization metadata for the frontend to render */
-  visualizations?: Visualization3DMetadata[];
   metadata: {
     toolUsed?: string;
     featureUsed?: string;
@@ -99,67 +79,71 @@ interface ChatResponseDto {
 export class ChatController {
   constructor(private chatService: ChatService) {}
 
+  private enrichVisualizations(message: string, visualizations: any[] = []): ChatResponse3DDto['visualizations'] {
+    const lower = (message || '').toLowerCase();
+    const base = visualizations.map((viz) => ({
+      ...viz,
+      metadata: {
+        camera: viz?.metadata?.camera || { position: [0, 1.2, 5.2], fov: 52 },
+        animation: viz?.metadata?.animation || ['pulse'],
+        lod: viz?.metadata?.lod || 'medium',
+        modelUrl: viz?.metadata?.modelUrl,
+      },
+    }));
+
+    if (/(heart|brain|lung|anatomy|organ)/.test(lower)) {
+      base.push({
+        type: 'anatomy-3d',
+        data: {
+          organ: lower.includes('heart') ? 'heart' : lower.includes('brain') ? 'brain' : lower.includes('lung') ? 'lungs' : 'general',
+          vitals: { HR: 90, SpO2: '96%', RR: 20 },
+        },
+        metadata: {
+          modelUrl: '/models/organs/heart.glb',
+          camera: { position: [0, 1.4, 5], fov: 50 },
+          animation: ['rotate', 'scan'],
+          lod: 'high',
+        },
+      });
+    }
+
+    if (/(drug|interaction|medication)/.test(lower)) {
+      base.push({
+        type: 'drug-network-3d',
+        data: { nodes: [], links: [] },
+        metadata: {
+          camera: { position: [0, 1.1, 5.8], fov: 53 },
+          animation: ['orbit'],
+          lod: 'medium',
+        },
+      });
+    }
+
+    if (/(lab|trend|timeline|history)/.test(lower)) {
+      base.push({
+        type: 'timeline-3d',
+        data: { events: [] },
+        metadata: {
+          camera: { position: [0, 0.8, 6.4], fov: 54 },
+          animation: ['flow'],
+          lod: 'low',
+        },
+      });
+    }
+
+    return base;
+  }
+
   @Post('message-3d')
   @RequirePermission(Permission.READ_PHI)
   async sendMessage3D(@Body() dto: ChatMessage3DDto): Promise<ChatResponse3DDto> {
     const response = await this.chatService.processQuery(dto.patientId, dto.message, dto.context);
 
-    // Build 3D visualization metadata from response + message context
-    const rawVisualizations: Partial<Visualization3DMetadata>[] = response.visualizations ?? [];
-    const visualizations: Visualization3DMetadata[] = rawVisualizations.map((v) => ({
-      type: v.type ?? 'protocol',
-      modelUrl: v.modelUrl,
-      cameraPosition: v.cameraPosition ?? { x: 0, y: 0, z: 5 },
-      animations: v.animations,
-      data: v.data,
-      label: v.label,
-    }));
-
-    // Auto-add organ model hint when message mentions specific anatomy
-    const msgLower = dto.message.toLowerCase();
-    if (!visualizations.some((v) => v.type === 'organ-model')) {
-      if (/\bheart\b|cardiac|coronary/.test(msgLower)) {
-        visualizations.push({
-          type: 'organ-model',
-          data: { organ: 'heart' },
-          cameraPosition: { x: 0, y: 0, z: 3 },
-          label: 'Heart',
-        });
-      } else if (/\bbrain\b|neuro|cerebral|stroke/.test(msgLower)) {
-        visualizations.push({
-          type: 'organ-model',
-          data: { organ: 'brain' },
-          cameraPosition: { x: 0, y: 0, z: 3 },
-          label: 'Brain',
-        });
-      } else if (/\blung|pulmonary|respiratory/.test(msgLower)) {
-        visualizations.push({
-          type: 'organ-model',
-          data: { organ: 'lungs' },
-          cameraPosition: { x: 0, y: 0, z: 3.5 },
-          label: 'Lungs',
-        });
-      }
-    }
-
-    // Add drug-network hint when medications are present
-    if (
-      dto.context?.medications?.length &&
-      !visualizations.some((v) => v.type === 'drug-network')
-    ) {
-      visualizations.push({
-        type: 'drug-network',
-        data: { medications: dto.context.medications },
-        cameraPosition: { x: 0, y: 0, z: 6 },
-        label: 'Drug Interactions',
-      });
-    }
-
     return {
       id: `response-${Date.now()}`,
       response: response.text,
       suggestions: response.suggestions,
-      visualizations,
+      visualizations: this.enrichVisualizations(dto.message, response.visualizations),
       timestamp: Date.now(),
     };
   }
@@ -182,11 +166,11 @@ export class ChatController {
 
     return {
       response: response.text,
+      visualizations: this.enrichVisualizations(dto.message, response.visualizations),
       toolResult: response.toolResult,
       citations: response.citations,
       confidence: response.confidence,
       ragContext: response.ragContext,
-      visualizations: (response as any).visualizations ?? [],
       metadata: {
         toolUsed: dto.tool,
         featureUsed: dto.feature,

@@ -286,12 +286,31 @@ body {
   overflow-x: hidden;
   overflow-y: auto;
   transition: background var(--transition-normal);
+  font-size: max(16px, var(--font-size-base));
 }
 
 #root {
   width: 100%;
   min-height: 100dvh;
   height: 100%;
+}
+
+/* Mobile-first responsive system */
+:root {
+  --responsive-container-max: min(100% - 2rem, 1400px);
+  --responsive-container-pad: clamp(16px, 4dvw, 24px);
+  --responsive-card-pad: clamp(12px, 3dvw, 20px);
+}
+
+.responsive-container {
+  width: 100%;
+  max-width: var(--responsive-container-max);
+  margin-inline: auto;
+  padding-inline: var(--responsive-container-pad);
+}
+
+.responsive-card {
+  padding: var(--responsive-card-pad);
 }
 
 /* ===== APP LAYOUT SHELLS ===== */
@@ -795,6 +814,75 @@ html.theme-light ::-moz-selection {
 /* Smooth Transitions */
 a, button, input, select, textarea {
   transition: all 0.2s var(--ease-smooth);
+}
+
+button,
+a,
+[role="button"],
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+button,
+[role="button"],
+.touch-ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+button:active,
+a:active,
+[role="button"]:active,
+.touch-active:active {
+  transform: scale(0.98);
+}
+
+button::after,
+.touch-ripple::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, rgba(255,255,255,0.22) 10%, transparent 10.01%);
+  transform: scale(10);
+  opacity: 0;
+  transition: transform 0.35s, opacity 0.45s;
+  pointer-events: none;
+}
+
+button:active::after,
+.touch-ripple:active::after {
+  transform: scale(0);
+  opacity: 0.75;
+  transition: 0s;
+}
+
+/* Breakpoints: mobile-first progressive enhancement */
+@media (min-width: 360px) {
+  :root { --bp-current: 360; }
+}
+
+@media (min-width: 375px) {
+  :root { --bp-current: 375; }
+}
+
+@media (min-width: 480px) {
+  :root { --bp-current: 480; }
+}
+
+@media (min-width: 640px) {
+  :root { --bp-current: 640; }
+}
+
+@media (min-width: 768px) {
+  :root { --bp-current: 768; }
+}
+
+@media (min-width: 1024px) {
+  :root { --bp-current: 1024; }
 }
 
 /* Backdrop Blur Utility */

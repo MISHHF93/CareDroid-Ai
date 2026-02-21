@@ -807,7 +807,7 @@
 /* Responsive */
 @media (max-width: 768px) {
   .sidebar {
-    width: min(86vw, 320px);
+    width: min(86dvw, 320px);
     transform: translateX(0);
     box-shadow: 8px 0 24px rgba(0, 0, 0, 0.35);
     transition: transform 0.25s ease;
@@ -815,7 +815,7 @@
 
   .sidebar-collapsed {
     transform: translateX(-100%);
-    width: min(86vw, 320px);
+    width: min(86dvw, 320px);
   }
 
   .sidebar-toggle:hover {

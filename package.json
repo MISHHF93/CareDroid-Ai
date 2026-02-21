@@ -27,10 +27,10 @@
     "format": "prettier --write \"src/**/*.{js,jsx,json,css}\""
   },
   "dependencies": {
+    "@react-three/drei": "^9.117.3",
+    "@react-three/fiber": "^8.17.14",
     "@capacitor/android": "^5.6.0",
     "@capacitor/core": "^5.6.0",
-    "@react-three/drei": "^10.7.7",
-    "@react-three/fiber": "^9.5.0",
     "axios": "^1.7.8",
     "dexie": "^4.3.0",
     "firebase": "^10.12.5",
@@ -38,12 +38,11 @@
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.22.3",
     "recharts": "^2.15.0",
-    "three": "^0.183.1"
+    "three": "^0.181.1"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.0.2",
     "@playwright/test": "^1.58.2",
-    "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",

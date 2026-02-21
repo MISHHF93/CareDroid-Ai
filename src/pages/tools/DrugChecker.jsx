@@ -1,26 +1,40 @@
-import { useState, Suspense, lazy } from 'react';
+import { useMemo, useState } from 'react';
 import { useUser } from '../../contexts/UserContext';
 import analyticsService from '../../services/analyticsService';
 import offlineService from '../../services/offlineService';
 import ToolPageLayout from './ToolPageLayout';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { useWebGLSupport } from '../../hooks/useWebGLSupport';
-import HolographicLoader from '../../components/3d/HolographicLoader';
+import { HolographicCanvas, DrugInteractionNetwork3D, MolecularStructure3D } from '../../components/holographic';
+import { useHolographicMode } from '../../hooks/useHolographicMode';
 import './DrugChecker.css';
-
-// Lazy-load 3D components
-const HolographicCanvas = lazy(() => import('../../components/3d/HolographicCanvas'));
-const NetworkGraph3D = lazy(() => import('../../components/3d/charts/NetworkGraph3D'));
-const MolecularStructure = lazy(() => import('../../components/3d/medical/MolecularStructure'));
 
 const DrugChecker = () => {
   const { user } = useUser();
   const { t } = useLanguage();
-  const { supported: webglSupported } = useWebGLSupport();
   const [medications, setMedications] = useState(['']);
   const [results, setResults] = useState(null);
   const [isChecking, setIsChecking] = useState(false);
-  const [show3D, setShow3D] = useState(true);
+  const { reducedMotion } = useHolographicMode();
+
+  const interactionNodes = useMemo(() => {
+    const active = medications.filter((m) => m.trim());
+    if (active.length === 0) return [];
+    return active.slice(0, 6).map((name, index) => ({
+      id: `${name}-${index}`,
+      label: name,
+      severity: index < 2 ? 'major' : index < 4 ? 'moderate' : 'minor',
+      position: [Math.cos(index) * 1.1, Math.sin(index) * 0.7, (index % 3) * 0.22],
+    }));
+  }, [medications]);
+
+  const interactionLinks = useMemo(() => {
+    if (interactionNodes.length < 2) return [];
+    return interactionNodes.slice(1).map((node, idx) => ({
+      source: interactionNodes[0].id,
+      target: node.id,
+      weight: Math.max(0.35, 0.92 - idx * 0.12),
+    }));
+  }, [interactionNodes]);
 
   const toolConfig = {
     id: 'drug-check',
@@ -159,6 +173,24 @@ const DrugChecker = () => {
 
         {results && (
           <div className="results-section">
+            <div style={{ display: 'grid', gap: '14px', marginBottom: '16px' }}>
+              <HolographicCanvas
+                reducedMotion={reducedMotion}
+                ariaLabel="3D molecular structure"
+                style={{ minHeight: 240 }}
+              >
+                <MolecularStructure3D />
+              </HolographicCanvas>
+
+              <HolographicCanvas
+                reducedMotion={reducedMotion}
+                ariaLabel="3D drug interaction network"
+                style={{ minHeight: 260 }}
+              >
+                <DrugInteractionNetwork3D nodes={interactionNodes} links={interactionLinks} />
+              </HolographicCanvas>
+            </div>
+
             {/* Interactions */}
             {results.interactions.length > 0 && (
               <div className="result-card">
@@ -222,41 +254,6 @@ const DrugChecker = () => {
                 </p>
               </div>
             )}
-          </div>
-        )}
-
-        {/* 3D Drug Interaction Network */}
-        {results && webglSupported && show3D && results.interactions.length > 0 && (
-          <div style={{ marginTop: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span style={{ fontSize: 13, color: '#00e5ff', letterSpacing: '0.05em' }}>
-                3D Interaction Network
-              </span>
-              <button
-                onClick={() => setShow3D(false)}
-                aria-label="Hide 3D visualization"
-                style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: 12 }}
-              >
-                Hide
-              </button>
-            </div>
-            <div style={{ height: 260, borderRadius: 10, overflow: 'hidden', background: 'rgba(11,18,32,0.7)', border: '1px solid rgba(0,229,255,0.15)' }}>
-              <Suspense fallback={<HolographicLoader size={36} label="Loading network…" />}>
-                <HolographicCanvas cameraPosition={[0, 0, 6]}>
-                  <Suspense fallback={null}>
-                    <NetworkGraph3D
-                      title="Drug Interactions"
-                      nodes={medications.filter(Boolean).map((m, i) => ({ id: i, label: m }))}
-                      edges={results.interactions.map((inter, i) => {
-                        const drugA = medications.findIndex((m) => inter.drugs[0]?.toLowerCase().includes(m.toLowerCase()));
-                        const drugB = medications.findIndex((m) => inter.drugs[1]?.toLowerCase().includes(m.toLowerCase()));
-                        return [drugA >= 0 ? drugA : 0, drugB >= 0 ? drugB : 1, { severity: inter.severity }];
-                      })}
-                    />
-                  </Suspense>
-                </HolographicCanvas>
-              </Suspense>
-            </div>
           </div>
         )}
 

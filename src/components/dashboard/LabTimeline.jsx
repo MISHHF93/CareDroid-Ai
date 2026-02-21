@@ -2,6 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { Card } from '../ui/molecules/Card';
 import { Badge } from '../ui/atoms/Badge';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { HolographicCanvas, Timeline3D } from '../holographic';
+import { useHolographicMode } from '../../hooks/useHolographicMode';
 
 const DEFAULT_EVENTS = [
   { id: 'l1', test: 'CBC', patient: 'Smith, J.', status: 'resulted', orderedAt: new Date(Date.now() - 4 * 3600000).toISOString(), resultedAt: new Date(Date.now() - 2 * 3600000).toISOString(), critical: false, value: 'WBC 7.2, Hgb 13.1, Plt 245', refRange: 'WBC 4.5-11.0, Hgb 12-16, Plt 150-400' },
@@ -17,6 +19,7 @@ const DEFAULT_EVENTS = [
  */
 export const LabTimeline = ({ events: propEvents, onViewResult, lastViewedTimestamp }) => {
   const { t } = useLanguage();
+  const { reducedMotion } = useHolographicMode();
   const events = propEvents || DEFAULT_EVENTS;
   const [expandedId, setExpandedId] = useState(null);
   const [filterType, setFilterType] = useState('all');
@@ -77,6 +80,17 @@ export const LabTimeline = ({ events: propEvents, onViewResult, lastViewedTimest
           )}
           <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>{t('widgets.labTimeline.last12h')}</span>
         </div>
+      </div>
+
+      <div style={{ marginTop: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
+        <HolographicCanvas
+          ariaLabel="3D patient lab history timeline"
+          reducedMotion={reducedMotion}
+          style={{ minHeight: 180 }}
+          camera={{ position: [0, 0.6, 6], fov: 54 }}
+        >
+          <Timeline3D events={sorted} />
+        </HolographicCanvas>
       </div>
 
       {/* Timeline */}

@@ -250,37 +250,102 @@ export const UserMenu = ({ user = {} }) => {
  * Integrated into main header for responsive design
  */
 export const MobileNav = ({ navItems, onNavigate }) => {
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
+  const touchStartX = useRef(null);
+
+  const primaryItems = navItems.slice(0, 4);
+  const secondaryItems = navItems.slice(4);
+
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.changedTouches?.[0]?.clientX || null;
+  };
+
+  const handleTouchEnd = (e) => {
+    const endX = e.changedTouches?.[0]?.clientX;
+    if (touchStartX.current == null || endX == null) return;
+    const delta = endX - touchStartX.current;
+
+    if (touchStartX.current < 24 && delta > 60) {
+      setIsOpen(true);
+    }
+
+    if (isOpen && delta < -60) {
+      setIsOpen(false);
+    }
+  };
+
+  useEffect(() => {
+    const onTouchStart = (e) => handleTouchStart(e);
+    const onTouchEnd = (e) => handleTouchEnd(e);
+
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchend', onTouchEnd, { passive: true });
+    return () => {
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [isOpen]);
 
   return (
-    <div className="mobile-nav">
+    <div className="mobile-nav" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       <button
         className="mobile-nav-toggle"
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Toggle navigation menu"
         aria-expanded={isOpen}
+        type="button"
       >
         <span className="mobile-nav-icon">☰</span>
       </button>
 
-      {isOpen && (
-        <nav className="mobile-nav-menu">
-          {navItems.map((item) => (
-            <a
+      <button
+        className="mobile-nav-emergency-fab"
+        onClick={() => onNavigate('/dashboard?emergency=1')}
+        aria-label="Emergency quick action"
+        type="button"
+      >
+        🚨
+      </button>
+
+      <nav className="mobile-nav-tabs" aria-label="Primary mobile navigation">
+        {primaryItems.map((item) => {
+          const isActive = location.pathname.startsWith(item.path);
+          return (
+            <button
               key={item.id}
-              href={item.path}
-              className="mobile-nav-item"
-              onClick={(e) => {
-                e.preventDefault();
-                onNavigate(item.path);
-                setIsOpen(false);
-              }}
+              className={`mobile-nav-tab ${isActive ? 'mobile-nav-tab-active' : ''}`}
+              onClick={() => onNavigate(item.path)}
+              aria-label={item.label}
+              type="button"
             >
               {item.icon && <span className="mobile-nav-item-icon">{item.icon}</span>}
               <span className="mobile-nav-item-label">{item.label}</span>
-            </a>
-          ))}
-        </nav>
+            </button>
+          );
+        })}
+      </nav>
+
+      {isOpen && (
+        <>
+          <button className="mobile-nav-backdrop" onClick={() => setIsOpen(false)} aria-label="Close navigation menu" type="button" />
+          <nav className="mobile-nav-menu" aria-label="Secondary mobile navigation">
+            {[...primaryItems, ...secondaryItems].map((item) => (
+              <button
+                key={item.id}
+                className="mobile-nav-item"
+                onClick={() => {
+                  onNavigate(item.path);
+                  setIsOpen(false);
+                }}
+                type="button"
+              >
+                {item.icon && <span className="mobile-nav-item-icon">{item.icon}</span>}
+                <span className="mobile-nav-item-label">{item.label}</span>
+              </button>
+            ))}
+          </nav>
+        </>
       )}
     </div>
   );

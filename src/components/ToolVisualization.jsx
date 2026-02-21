@@ -1,5 +1,6 @@
 import React from 'react';
 import './ToolVisualization.css';
+import HolographicVisualization from './holographic/HolographicVisualization';
 
 const renderKeyValue = (data) => (
   <div className="viz-grid">
@@ -18,6 +19,11 @@ const ToolVisualization = ({ visualization }) => {
   const { type, data } = visualization;
 
   switch (type) {
+    case 'anatomy-3d':
+    case 'drug-network-3d':
+    case 'lab-chart-3d':
+    case 'timeline-3d':
+      return <HolographicVisualization visualization={visualization} />;
     case 'drug-interaction':
       return (
         <div className="viz-card">

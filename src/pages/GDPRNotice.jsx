@@ -9,7 +9,7 @@ export default function GDPRNotice() {
   return (
     <div style={{
       minHeight: '100dvh',
-      width: '100vw',
+      width: '100dvw',
       background: 'var(--navy-bg)',
       color: 'var(--text-color)',
       padding: '40px 20px'

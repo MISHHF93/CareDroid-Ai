@@ -1,0 +1,66 @@
+.holo-shell {
+  position: relative;
+  width: 100%;
+  min-height: 220px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: radial-gradient(circle at 20% 15%, rgba(34, 211, 238, 0.12), rgba(11, 18, 32, 0.92) 55%);
+  box-shadow: 0 12px 28px rgba(2, 6, 23, 0.55);
+}
+
+.holo-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(120deg, rgba(34, 211, 238, 0.06), rgba(139, 92, 246, 0.05), rgba(16, 185, 129, 0.04)),
+    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255, 255, 255, 0.02) 3px, transparent 4px);
+}
+
+.holo-fallback {
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 220px;
+  text-align: center;
+  padding: 18px;
+}
+
+.holo-floating-card {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  background: rgba(15, 23, 36, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--text-primary);
+  box-shadow: 0 10px 26px rgba(2, 6, 23, 0.45);
+}
+
+.holo-legend {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+}
+
+.holo-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.holo-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .holo-shell {
+    background: rgba(11, 18, 32, 0.96);
+  }
+}

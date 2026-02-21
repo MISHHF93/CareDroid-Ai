@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import ToolPageLayout from './ToolPageLayout';
 import './ToolPageLayout.css';
+import './DiagnosisAssistant.css';
 import { apiFetch } from '../../services/apiClient';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -63,9 +64,9 @@ const DiagnosisAssistant = () => {
 
   return (
     <ToolPageLayout tool={toolConfig} results={results}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
+      <div className="diagnosis-layout">
         {/* Input Panel */}
-        <div style={{ background: 'var(--panel-bg)', borderRadius: '16px', padding: '24px', border: '1px solid var(--border-color)' }}>
+        <div className="diagnosis-panel">
           <h2 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '20px' }}>
             📋 {t('tools.diagnosisAssistant.patientPresentation')}
           </h2>
@@ -93,7 +94,7 @@ const DiagnosisAssistant = () => {
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+          <div className="diagnosis-two-fields">
             <div>
               <label style={{ display: 'block', fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '6px' }}>
                 {t('tools.diagnosisAssistant.ageOptional')}
@@ -159,7 +160,7 @@ const DiagnosisAssistant = () => {
             />
           </div>
 
-          <div style={{ display: 'flex', gap: '12px' }}>
+          <div className="diagnosis-actions">
             <button
               style={{
                 flex: 1,
@@ -201,7 +202,7 @@ const DiagnosisAssistant = () => {
         </div>
 
         {/* Results Panel */}
-        <div style={{ background: 'var(--panel-bg)', borderRadius: '16px', padding: '24px', border: '1px solid var(--border-color)', maxHeight: '80vh', overflowY: 'auto' }}>
+        <div className="diagnosis-panel results">
           <h2 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '20px' }}>
             🎯 {t('tools.diagnosisAssistant.differentialDiagnosis')}
           </h2>

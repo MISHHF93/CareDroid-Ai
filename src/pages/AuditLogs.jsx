@@ -628,7 +628,7 @@ export default function AuditLogs() {
           <>
             <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 999 }} />
             <div ref={drawerRef} className="audit-drawer" style={{
-              position: 'fixed', top: 0, right: 0, bottom: 0, width: '440px', maxWidth: '90vw',
+              position: 'fixed', top: 0, right: 0, bottom: 0, width: '440px', maxWidth: '90dvw',
               background: S.panel, borderLeft: `1px solid ${B.medium}`, zIndex: 1000,
               overflowY: 'auto', padding: '28px',
             }}>

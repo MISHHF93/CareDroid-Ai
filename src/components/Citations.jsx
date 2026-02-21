@@ -119,7 +119,7 @@ export const CitationModal = ({ citation, onClose }) => {
           borderRadius: '16px',
           maxWidth: '600px',
           width: '100%',
-          maxHeight: '80vh',
+          maxHeight: '80dvh',
           overflow: 'auto',
           boxShadow: '0 10px 40px rgba(0, 0, 0, 0.5)',
         }}

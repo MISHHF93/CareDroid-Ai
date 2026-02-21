@@ -1,13 +1,9 @@
-import React, { useState, useCallback, useEffect, useRef, Suspense, lazy } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { VitalsInput, buildVitalsPayload } from '../clinical/VitalsInput';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { HolographicCanvas, ARStyleMarkers } from '../holographic';
+import { useHolographicMode } from '../../hooks/useHolographicMode';
 import './EmergencyModal.css';
-import { useWebGLSupport } from '../../hooks/useWebGLSupport';
-import HolographicLoader from '../3d/HolographicLoader';
-import ARStyleMarkers from '../3d/ARStyleMarkers';
-
-// Lazy-load heavy 3D components
-const HolographicCanvas = lazy(() => import('../3d/HolographicCanvas'));
 
 const SEVERITY_OPTIONS = [
   { value: 'critical', labelKey: 'severityCritical', icon: '🔴' },
@@ -63,7 +59,7 @@ const EMPTY_VITALS = {
  */
 export function EmergencyModal({ isOpen, onClose, patients = [] }) {
   const { t } = useLanguage();
-  const { supported: webglSupported } = useWebGLSupport();
+  const { reducedMotion } = useHolographicMode();
   const [form, setForm] = useState(INITIAL_FORM);
   const [vitals, setVitals] = useState(EMPTY_VITALS);
   const [errors, setErrors] = useState({});
@@ -318,30 +314,27 @@ export function EmergencyModal({ isOpen, onClose, patients = [] }) {
       aria-labelledby="em-title"
     >
       <div className="em-modal em-modal-full">
-        {/* Holographic emergency alert overlay (WebGL) */}
-        {webglSupported && (
-          <div
-            style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 80, pointerEvents: 'none', overflow: 'hidden', borderRadius: '12px 12px 0 0', zIndex: 0 }}
-            aria-hidden="true"
-          >
-            <Suspense fallback={null}>
-              <HolographicCanvas controls={false} cameraPosition={[0, 0, 3]} style={{ width: '100%', height: '100%' }}>
-                <ARStyleMarkers
-                  markers={[
-                    { id: 1, position: [-2.5, 0.3, 0], severity: 'critical', label: '⚠' },
-                    { id: 2, position: [2.5, 0.3, 0], severity: 'critical', label: '⚠' },
-                    { id: 3, position: [0, 0.3, 0], severity: 'critical' },
-                  ]}
-                />
-              </HolographicCanvas>
-            </Suspense>
-          </div>
-        )}
-
         {/* Header */}
-        <div className="em-header em-header-critical" style={{ position: 'relative', zIndex: 1 }}>
+        <div className="em-header em-header-critical">
           <h2 id="em-title" className="em-title">🚨 {t('widgets.emergencyModal.title')}</h2>
           <button className="em-close" onClick={onClose} aria-label="Close" type="button">✕</button>
+        </div>
+
+        <div style={{ padding: '0 18px', marginBottom: '10px' }}>
+          <HolographicCanvas
+            ariaLabel="Emergency holographic alert markers"
+            reducedMotion={reducedMotion}
+            style={{ minHeight: 170 }}
+            camera={{ position: [0, 0.6, 4.8], fov: 56 }}
+          >
+            <ARStyleMarkers
+              markers={[
+                { id: 'severity', severity: form.severity, position: [0, 0.2, 0], scale: 0.21 },
+                { id: 'airway', severity: form.severity === 'critical' ? 'critical' : 'urgent', position: [-1.1, -0.2, 0], scale: 0.13 },
+                { id: 'circulation', severity: form.severity === 'moderate' ? 'moderate' : 'urgent', position: [1.15, -0.1, 0.1], scale: 0.13 },
+              ]}
+            />
+          </HolographicCanvas>
         </div>
 
         {/* Form */}

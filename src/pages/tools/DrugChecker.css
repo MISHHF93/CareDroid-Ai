@@ -1,6 +1,7 @@
 .drug-checker {
-  max-width: 900px;
+  max-width: min(100% - 2rem, 1400px);
   margin: 0 auto;
+  padding: clamp(16px, 4dvw, 24px);
 }
 
 .drug-input-section {
@@ -48,11 +49,12 @@
 
 .medication-input {
   flex: 1;
-  padding: 12px 16px;
+  padding: clamp(12px, 3dvw, 16px);
   border: 2px solid var(--panel-border, #e0e0e0);
   border-radius: 8px;
-  font-size: 15px;
+  font-size: 16px;
   transition: all 0.2s;
+  min-height: 44px;
 }
 
 .medication-input:focus {
@@ -62,8 +64,8 @@
 }
 
 .btn-remove-med {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border: 2px solid #EF4444;
   background: transparent;
   border-radius: 8px;
@@ -77,6 +79,10 @@
 .btn-remove-med:hover {
   background: #EF4444;
   color: white;
+}
+
+.btn-remove-med:active {
+  transform: scale(0.97);
 }
 
 .input-actions {
@@ -93,6 +99,7 @@
   cursor: pointer;
   transition: all 0.2s;
   color: var(--text-secondary);
+  min-height: 44px;
 }
 
 .btn-add-med:hover {
@@ -112,12 +119,17 @@
   font-size: 15px;
   cursor: pointer;
   transition: all 0.2s;
+  min-height: 44px;
 }
 
 .btn-check-interactions:hover:not(:disabled) {
   background: #E6578A;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
+}
+
+.btn-check-interactions:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .btn-check-interactions:disabled {
@@ -133,7 +145,7 @@
   background: var(--panel-background, white);
   border: 1px solid var(--panel-border, #e0e0e0);
   border-radius: 12px;
-  padding: 24px;
+  padding: clamp(12px, 3dvw, 20px);
   margin-bottom: 24px;
 }
 
@@ -236,7 +248,7 @@
 .quick-reference {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  padding: 32px;
+  padding: clamp(16px, 4dvw, 24px);
   border-radius: 12px;
   margin-top: 32px;
 }
@@ -282,6 +294,10 @@
 }
 
 @media (max-width: 768px) {
+  .drug-checker {
+    padding: clamp(12px, 4dvw, 16px);
+  }
+
   .input-actions {
     flex-direction: column;
   }

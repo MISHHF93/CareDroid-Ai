@@ -2,16 +2,16 @@
 
 .lab-interpreter-content {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-  padding: 24px;
-  max-width: 1400px;
+  grid-template-columns: 1fr;
+  gap: clamp(16px, 4dvw, 24px);
+  padding: clamp(16px, 4dvw, 24px);
+  max-width: min(100% - 2rem, 1400px);
   margin: 0 auto;
 }
 
-@media (max-width: 1024px) {
+@media (min-width: 768px) {
   .lab-interpreter-content {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
   }
 }
 
@@ -19,7 +19,7 @@
 .lab-input-panel {
   background: var(--panel-bg, #1a1f35);
   border-radius: 16px;
-  padding: 24px;
+  padding: clamp(12px, 3dvw, 20px);
   border: 1px solid var(--border-color, rgba(255,255,255,0.1));
 }
 
@@ -309,7 +309,7 @@
 .lab-results-panel {
   background: var(--panel-bg, #1a1f35);
   border-radius: 16px;
-  padding: 24px;
+  padding: clamp(12px, 3dvw, 20px);
   border: 1px solid var(--border-color, rgba(255,255,255,0.1));
   max-height: calc(100dvh - 180px);
   overflow-y: auto;

@@ -1,0 +1,49 @@
+.diagnosis-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: clamp(16px, 4dvw, 24px);
+  padding: clamp(16px, 4dvw, 24px);
+  max-width: min(100% - 2rem, 1400px);
+  margin: 0 auto;
+}
+
+.diagnosis-panel {
+  background: var(--panel-bg);
+  border-radius: 16px;
+  padding: clamp(12px, 3dvw, 20px);
+  border: 1px solid var(--border-color);
+}
+
+.diagnosis-panel.results {
+  max-height: 80dvh;
+  overflow-y: auto;
+}
+
+.diagnosis-two-fields {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.diagnosis-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 640px) {
+  .diagnosis-two-fields {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .diagnosis-actions {
+    grid-template-columns: 1fr auto;
+  }
+}
+
+@media (min-width: 768px) {
+  .diagnosis-layout {
+    grid-template-columns: 1fr 1fr;
+  }
+}

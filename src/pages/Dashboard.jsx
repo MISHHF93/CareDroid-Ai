@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, Suspense, lazy } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import { useNotifications } from '../contexts/NotificationContext';
@@ -22,6 +22,12 @@ import { NewPatientModal } from '../components/dashboard/NewPatientModal';
 import { EmergencyModal } from '../components/dashboard/EmergencyModal';
 import '../components/dashboard/Dashboard.css';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useWebGLSupport } from '../hooks/useWebGLSupport';
+import HolographicLoader from '../components/3d/HolographicLoader';
+
+// Lazy-load 3D timeline
+const HolographicCanvas = lazy(() => import('../components/3d/HolographicCanvas'));
+const Timeline3D = lazy(() => import('../components/3d/charts/Timeline3D'));
 
 /**
  * Dashboard Page - Clinical Command Center
@@ -31,6 +37,8 @@ function Dashboard() {
   const { user, signOut } = useUser();
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { supported: webglSupported } = useWebGLSupport();
+  const [show3DTimeline, setShow3DTimeline] = useState(true);
   const {
     notifications,
     markAsRead,
@@ -401,6 +409,46 @@ function Dashboard() {
               onViewResult={handleViewLabResult}
             />
           </WidgetErrorBoundary>
+
+          {/* 3D Patient Timeline */}
+          {webglSupported && show3DTimeline && labTimeline.length > 0 && (
+            <WidgetErrorBoundary widgetName="3D Patient Timeline">
+              <div style={{ marginTop: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, padding: '0 4px' }}>
+                  <span style={{ fontSize: 12, color: '#00e5ff', letterSpacing: '0.05em' }}>
+                    3D Patient Timeline
+                  </span>
+                  <button
+                    onClick={() => setShow3DTimeline(false)}
+                    aria-label="Hide 3D timeline"
+                    style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: 11 }}
+                  >
+                    Hide
+                  </button>
+                </div>
+                <div
+                  style={{ height: 200, borderRadius: 10, overflow: 'hidden', background: 'rgba(11,18,32,0.6)', border: '1px solid rgba(0,229,255,0.12)' }}
+                  aria-label="3D patient timeline visualization"
+                >
+                  <Suspense fallback={<HolographicLoader size={32} label="" />}>
+                    <HolographicCanvas cameraPosition={[0, 0, 5]} controls>
+                      <Suspense fallback={null}>
+                        <Timeline3D
+                          title="Lab Timeline"
+                          events={labTimeline.slice(0, 8).map((e) => ({
+                            id: e.id || e.timestamp,
+                            label: e.test || e.label || 'Event',
+                            date: e.time || e.timestamp || '',
+                            type: e.status === 'critical' ? 'alert' : 'lab',
+                          }))}
+                        />
+                      </Suspense>
+                    </HolographicCanvas>
+                  </Suspense>
+                </div>
+              </div>
+            </WidgetErrorBoundary>
+          )}
           <WidgetErrorBoundary widgetName="Bed Board">
             <BedBoard beds={bedBoard?.beds} unit={bedBoard?.unit} />
           </WidgetErrorBoundary>

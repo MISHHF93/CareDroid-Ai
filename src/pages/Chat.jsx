@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, Suspense, lazy } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import { useConversation } from '../contexts/ConversationContext';
@@ -10,6 +10,45 @@ import toolRegistry from '../data/toolRegistry';
 import ToolVisualization from '../components/ToolVisualization';
 import analyticsService from '../services/analyticsService';
 import { getToolRecommendationsNLU, recordRecommendationFeedback } from '../utils/toolRecommendations';
+import { useWebGLSupport } from '../hooks/useWebGLSupport';
+import HolographicLoader from '../components/3d/HolographicLoader';
+
+// Lazy-load heavy 3D components for code splitting
+const HolographicCanvas = lazy(() => import('../components/3d/HolographicCanvas'));
+const HeartModel = lazy(() => import('../components/3d/medical/HeartModel'));
+const BrainModel = lazy(() => import('../components/3d/medical/BrainModel'));
+const LungsModel = lazy(() => import('../components/3d/medical/LungsModel'));
+
+/** Keywords that trigger anatomy 3D panel */
+const ANATOMY_KEYWORDS = {
+  heart: ['heart', 'cardiac', 'myocardial', 'coronary', 'arrhythmia'],
+  brain: ['brain', 'neuro', 'stroke', 'seizure', 'cerebral', 'cranial'],
+  lungs: ['lung', 'pulmonary', 'respiratory', 'pneumonia', 'breathing', 'copd'],
+};
+
+function detectAnatomyKeyword(text) {
+  const lower = text.toLowerCase();
+  for (const [organ, keywords] of Object.entries(ANATOMY_KEYWORDS)) {
+    if (keywords.some((kw) => lower.includes(kw))) return organ;
+  }
+  return null;
+}
+
+function AnatomyViewer({ organ }) {
+  const ModelComponent = { heart: HeartModel, brain: BrainModel, lungs: LungsModel }[organ];
+  if (!ModelComponent) return null;
+  return (
+    <div style={{ width: '100%', height: 220, borderRadius: 10, overflow: 'hidden', marginTop: 8 }}>
+      <Suspense fallback={<HolographicLoader size={40} label="" />}>
+        <HolographicCanvas cameraPosition={[0, 0, 3]} controls>
+          <Suspense fallback={null}>
+            <ModelComponent interactive rotateOnHover showLabel />
+          </Suspense>
+        </HolographicCanvas>
+      </Suspense>
+    </div>
+  );
+}
 
 /**
  * Chat Page - AI Conversation Interface
@@ -35,6 +74,8 @@ function Chat() {
   } = useConversation();
   const [input, setInput] = useState('');
   const [recommendedTools, setRecommendedTools] = useState([]);
+  const [show3D, setShow3D] = useState(true);
+  const { supported: webglSupported } = useWebGLSupport();
 
   const clinicalTools = toolRegistry;
 
@@ -161,6 +202,28 @@ function Chat() {
           flexDirection: 'column',
           minWidth: 0
         }}>
+          {/* 3D Toggle Button */}
+          {webglSupported && (
+            <div style={{ padding: '8px 24px 0', display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShow3D((v) => !v)}
+                aria-pressed={show3D}
+                aria-label={show3D ? 'Switch to 2D view' : 'Switch to 3D view'}
+                style={{
+                  padding: '4px 12px',
+                  borderRadius: 999,
+                  border: '1px solid rgba(0,229,255,0.4)',
+                  background: show3D ? 'rgba(0,229,255,0.15)' : 'transparent',
+                  color: '#00e5ff',
+                  fontSize: 12,
+                  cursor: 'pointer',
+                  letterSpacing: '0.04em',
+                }}
+              >
+                {show3D ? '3D On' : '3D Off'}
+              </button>
+            </div>
+          )}
           {/* Messages */}
           <div style={{
             flex: 1,
@@ -216,6 +279,13 @@ function Chat() {
                     }}
                   >
                     {msg.content}
+                    {/* 3D Anatomy Viewer — shown for assistant messages with anatomy keywords */}
+                    {msg.role === 'assistant' && webglSupported && show3D && (
+                      (() => {
+                        const organ = detectAnatomyKeyword(msg.content || '');
+                        return organ ? <AnatomyViewer organ={organ} /> : null;
+                      })()
+                    )}
                     {Array.isArray(msg.visualizations) && msg.visualizations.length > 0 && (
                       <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         {msg.visualizations.map((viz, idx) => (

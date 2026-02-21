@@ -7,6 +7,32 @@ afterEach(() => {
   cleanup();
 });
 
+// ─── Mock Three.js / @react-three packages ─────────────────────────────────
+// These packages require WebGL which is unavailable in jsdom. Stub them so
+// that any component importing 3D utilities can still be unit-tested.
+vi.mock('@react-three/fiber', () => ({
+  Canvas: ({ children }) => children,
+  useFrame: vi.fn(),
+  useThree: vi.fn(() => ({ camera: {}, gl: {}, scene: {} })),
+}));
+
+vi.mock('@react-three/drei', () => ({
+  OrbitControls: () => null,
+  Environment: () => null,
+  AdaptiveDpr: () => null,
+  AdaptiveEvents: () => null,
+  Html: ({ children }) => children,
+  Text: ({ children }) => children,
+}));
+
+vi.mock('three', () => ({
+  default: {},
+  Color: vi.fn(() => ({})),
+  Vector3: vi.fn(() => ({ set: vi.fn(), setScalar: vi.fn() })),
+  LOD: vi.fn(() => ({})),
+}));
+// ───────────────────────────────────────────────────────────────────────────
+
 // Mock localStorage
 const localStorageMock = (() => {
   let store = {};

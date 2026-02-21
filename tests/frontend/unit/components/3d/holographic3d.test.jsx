@@ -13,23 +13,8 @@ import React from 'react';
 import { render, screen, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-
-// ─── Mock Three.js canvas components ───────────────────────────────────────
-// @react-three/fiber requires a real WebGL context; stub it for unit tests.
-vi.mock('@react-three/fiber', () => ({
-  Canvas: ({ children }) => <div data-testid="r3f-canvas">{children}</div>,
-  useFrame: vi.fn(),
-  useThree: vi.fn(() => ({ camera: {}, gl: {} })),
-}));
-
-vi.mock('@react-three/drei', () => ({
-  OrbitControls: () => null,
-  Environment: () => null,
-  AdaptiveDpr: () => null,
-  AdaptiveEvents: () => null,
-  Html: ({ children }) => <div>{children}</div>,
-  Text: ({ children }) => <span>{children}</span>,
-}));
+// Note: @react-three/fiber, @react-three/drei, and three are globally mocked
+// in tests/frontend/setup.js for the entire test suite.
 
 // ─── Import components under test ──────────────────────────────────────────
 import HolographicLoader from '@/components/3d/HolographicLoader';

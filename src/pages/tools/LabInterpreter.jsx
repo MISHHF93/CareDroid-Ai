@@ -1,8 +1,14 @@
-import { useState } from 'react';
+import { useState, Suspense, lazy } from 'react';
 import ToolPageLayout from './ToolPageLayout';
 import { useLanguage } from '../../contexts/LanguageContext';
 import './LabInterpreter.css';
 import { apiFetch } from '../../services/apiClient';
+import { useWebGLSupport } from '../../hooks/useWebGLSupport';
+import HolographicLoader from '../../components/3d/HolographicLoader';
+
+// Lazy-load 3D chart
+const HolographicCanvas = lazy(() => import('../../components/3d/HolographicCanvas'));
+const VolumetricBarChart = lazy(() => import('../../components/3d/charts/VolumetricBarChart'));
 
 const LabInterpreter = () => {
   const { t } = useLanguage();
@@ -334,6 +340,49 @@ const LabInterpreter = () => {
 /**
  * Lab Results Display Component
  */
+/**
+ * 3D volumetric bar chart of lab values
+ */
+function LabValues3DChart({ labValues }) {
+  const { supported: webglSupported } = useWebGLSupport();
+  const [show3D, setShow3D] = useState(true);
+  if (!webglSupported || !show3D || !labValues || labValues.length === 0) return null;
+
+  const STATUS_COLORS = { normal: '#10b981', abnormal: '#f59e0b', critical: '#ef4444' };
+  const chartData = labValues.slice(0, 8).map((lv) => ({
+    label: lv.name || lv.test || '?',
+    value: parseFloat(lv.value) || 0,
+    color: STATUS_COLORS[lv.status] || '#00e5ff',
+  }));
+
+  return (
+    <div style={{ marginTop: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <span style={{ fontSize: 13, color: '#00e5ff', letterSpacing: '0.05em' }}>3D Lab Values</span>
+        <button
+          onClick={() => setShow3D(false)}
+          aria-label="Hide 3D lab chart"
+          style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: 12 }}
+        >
+          Hide
+        </button>
+      </div>
+      <div
+        style={{ height: 280, borderRadius: 10, overflow: 'hidden', background: 'rgba(11,18,32,0.7)', border: '1px solid rgba(0,229,255,0.15)' }}
+        aria-label="3D bar chart of lab values"
+      >
+        <Suspense fallback={<HolographicLoader size={36} label="Loading chart…" />}>
+          <HolographicCanvas cameraPosition={[0, 2, 7]}>
+            <Suspense fallback={null}>
+              <VolumetricBarChart data={chartData} title="Lab Results" />
+            </Suspense>
+          </HolographicCanvas>
+        </Suspense>
+      </div>
+    </div>
+  );
+}
+
 const LabResults = ({ results }) => {
   const { summary, criticalValues, interpretation, labValues, groupedByCategory, interpretations } = results;
 
@@ -466,6 +515,9 @@ const LabResults = ({ results }) => {
           </div>
         );
       })}
+
+      {/* 3D Lab Values Chart */}
+      <LabValues3DChart labValues={labValues} />
 
       {/* Disclaimer */}
       <div className="lab-disclaimer">

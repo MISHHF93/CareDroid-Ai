@@ -4,6 +4,7 @@
   background: var(--bg-primary, #0a0b0d);
   color: var(--text-primary, #e8eaed);
   padding: 2rem 1rem;
+  box-sizing: border-box;
 }
 
 .preferences-container {
@@ -314,6 +315,19 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
+  .notification-preferences {
+    padding: calc(var(--safe-area-top) + 60px) 0.75rem calc(1rem + var(--safe-area-bottom));
+  }
+
+  .preferences-header {
+    margin-bottom: 1.25rem;
+  }
+
+  .preferences-header h1,
+  .preferences-header h2 {
+    font-size: 1.5rem;
+  }
+
   .preferences-container {
     padding: 0;
   }
@@ -342,6 +356,11 @@
 
   .action-buttons {
     flex-direction: column;
+  }
+
+  .preferences-footer,
+  .preferences-summary {
+    margin-top: 1rem;
   }
 
   .time-input-group {

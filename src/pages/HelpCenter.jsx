@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
+import './HelpCenter.css';
 
 export default function HelpCenter() {
   const navigate = useNavigate();
@@ -96,142 +97,86 @@ export default function HelpCenter() {
   ];
 
   return (
-    <div style={{
-      minHeight: '100dvh',
-      width: '100dvw',
-      background: 'var(--navy-bg)',
-      color: 'var(--text-color)',
-      padding: '40px 20px'
-    }}>
-      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-        {/* Header */}
-        <div style={{ marginBottom: '40px' }}>
-          <button
-            onClick={() => navigate(-1)}
-            style={{
-              padding: '8px 16px',
-              background: 'transparent',
-              border: '1px solid var(--panel-border)',
-              borderRadius: '6px',
-              color: 'var(--text-color)',
-              cursor: 'pointer',
-              marginBottom: '24px'
-            }}
-          >
-            {t('help.back')}
-          </button>
-          
-          <h1 style={{
-            fontSize: '32px',
-            fontWeight: 700,
-            marginBottom: '12px',
-            background: 'linear-gradient(135deg, var(--accent), var(--accent-light))',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text'
-          }}>
-            {t('help.title')}
-          </h1>
-          <p style={{ color: 'var(--muted-text)' }}>
-            {t('help.subtitle')}
-          </p>
-        </div>
+    <div className="help-center-page">
+      <div className="help-center-container">
+        <section className="help-hero">
+          <div className="help-inline-topnav" aria-label="Help quick navigation">
+            <Link to="/" className="help-inline-brand" aria-label="Go to home">
+              <span aria-hidden="true">⚕️</span>
+            </Link>
 
-        {/* FAQ Sections */}
-        <div style={{ display: 'grid', gap: '16px' }}>
+            <nav className="help-inline-links">
+              <Link to="/help">Help</Link>
+              <Link to="/privacy">Privacy</Link>
+              <Link to="/terms">Terms</Link>
+            </nav>
+          </div>
+
+          <button onClick={() => navigate(-1)} className="help-back-link" aria-label="Go back">
+            <span>{t('help.back')}</span>
+          </button>
+
+          <p className="help-eyebrow">Explore Platform</p>
+          <h1 className="help-title">{t('help.title')}</h1>
+          <p className="help-subtitle">{t('help.subtitle')}</p>
+
+          <div className="help-hero-metrics">
+            <div className="help-metric-card">
+              <strong>Clinical Tools</strong>
+              <span>Workflow guides and feature walkthroughs</span>
+            </div>
+            <div className="help-metric-card">
+              <strong>Security & Privacy</strong>
+              <span>Best practices for safe clinical operation</span>
+            </div>
+            <div className="help-metric-card">
+              <strong>Fast Resolution</strong>
+              <span>Support paths for urgent operational issues</span>
+            </div>
+          </div>
+        </section>
+
+        <section className="help-faq-grid" aria-label="Help topics">
           {faqSections.map((section, idx) => (
-            <div
+            <article
               key={idx}
-              style={{
-                background: 'var(--surface-1)',
-                border: '1px solid var(--panel-border)',
-                borderRadius: '12px',
-                overflow: 'hidden'
-              }}
+              className={`help-faq-card ${expandedSection === idx ? 'is-open' : ''}`}
             >
               <button
                 onClick={() => setExpandedSection(expandedSection === idx ? null : idx)}
-                style={{
-                  width: '100%',
-                  padding: '20px 24px',
-                  background: 'transparent',
-                  border: 'none',
-                  borderBottom: expandedSection === idx ? '1px solid var(--panel-border)' : 'none',
-                  color: 'var(--text-color)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  textAlign: 'left',
-                  transition: 'all 0.2s'
-                }}
+                className="help-faq-toggle"
               >
-                <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>
-                  {section.title}
-                </h2>
-                <span style={{
-                  fontSize: '20px',
-                  transition: 'transform 0.2s',
-                  transform: expandedSection === idx ? 'rotate(180deg)' : 'rotate(0deg)'
-                }}>
-                  ▼
-                </span>
+                <h2>{section.title}</h2>
+                <span className="help-faq-chevron">▼</span>
               </button>
 
               {expandedSection === idx && (
-                <div style={{ padding: '20px 24px', background: 'var(--accent-10)' }}>
-                  <div style={{ display: 'grid', gap: '20px' }}>
-                    {section.items.map((item, itemIdx) => (
-                      <div key={itemIdx}>
-                        <h3 style={{
-                          margin: '0 0 8px 0',
-                          fontSize: '14px',
-                          fontWeight: 600,
-                          color: 'var(--accent)'
-                        }}>
-                          Q: {item.q}
-                        </h3>
-                        <p style={{
-                          margin: 0,
-                          fontSize: '14px',
-                          color: 'var(--muted-text)',
-                          lineHeight: 1.6
-                        }}>
-                          A: {item.a}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
+                <div className="help-faq-content">
+                  {section.items.map((item, itemIdx) => (
+                    <div key={itemIdx} className="help-faq-item">
+                      <h3>Q: {item.q}</h3>
+                      <p>A: {item.a}</p>
+                    </div>
+                  ))}
                 </div>
               )}
-            </div>
+            </article>
           ))}
-        </div>
+        </section>
 
-        {/* Contact Support */}
-        <div style={{
-          marginTop: '40px',
-          padding: '24px',
-          background: 'var(--accent-10)',
-          border: '1px solid var(--accent-20)',
-          borderRadius: '12px',
-          textAlign: 'center'
-        }}>
-          <h2 style={{ margin: '0 0 12px 0', fontSize: '18px', color: 'var(--accent)' }}>
-            {t('help.needHelp')}
-          </h2>
-          <p style={{ margin: '0 0 16px 0', color: 'var(--muted-text)', fontSize: '14px' }}>
-            {t('help.contactSupport')}
-          </p>
-          <div style={{ display: 'grid', gap: '12px', fontSize: '14px' }}>
+        <section className="help-support-panel">
+          <h2>{t('help.needHelp')}</h2>
+          <p>{t('help.contactSupport')}</p>
+          <div className="help-support-meta">
             <div>
-              {t('help.emailLabel')} <a href="mailto:support@caredroid.ai" style={{ color: 'var(--accent)' }}>support@caredroid.ai</a>
+              {t('help.emailLabel')} <a href="mailto:support@caredroid.ai">support@caredroid.ai</a>
             </div>
-            <div>
-              {t('help.responseTime')}
-            </div>
+            <div>{t('help.responseTime')}</div>
           </div>
-        </div>
+          <div className="help-support-actions">
+            <a href="mailto:support@caredroid.ai" className="help-support-btn primary">Contact Support</a>
+          </div>
+        </section>
       </div>
     </div>
   );

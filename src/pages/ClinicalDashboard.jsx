@@ -12,6 +12,19 @@ import { useLanguage } from '../contexts/LanguageContext';
  */
 function ClinicalDashboard() {
   const { t } = useLanguage();
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(max-width: 768px)').matches;
+  });
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    const handleChange = (event) => setIsMobile(event.matches);
+    handleChange(mediaQuery);
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
   // Sample patient data for demonstration
   const [patients] = useState([
     {
@@ -109,23 +122,28 @@ function ClinicalDashboard() {
       healthStatus="online"
     >
       <div style={{
-        padding: 'var(--space-6)',
+        padding: isMobile
+          ? 'calc(var(--safe-area-top) + 60px) var(--space-3) calc(var(--space-4) + var(--safe-area-bottom))'
+          : 'var(--space-6)',
         maxWidth: '1200px',
         margin: '0 auto',
         display: 'flex',
         flexDirection: 'column',
-        gap: 'var(--space-6)'
+        gap: isMobile ? 'var(--space-4)' : 'var(--space-6)',
+        boxSizing: 'border-box'
       }}>
         {/* Header */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center',
+          alignItems: isMobile ? 'stretch' : 'center',
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: isMobile ? 'var(--space-3)' : 0,
           marginBottom: 'var(--space-4)'
         }}>
           <div>
             <h1 style={{
-              fontSize: 'var(--font-size-3xl)',
+              fontSize: isMobile ? 'var(--font-size-2xl)' : 'var(--font-size-3xl)',
               fontWeight: 'var(--font-weight-bold)',
               color: 'var(--text-primary)',
               margin: 0,
@@ -149,7 +167,7 @@ function ClinicalDashboard() {
         {/* Stats Overview */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(auto-fit, minmax(200px, 1fr))',
           gap: 'var(--space-4)',
           marginBottom: 'var(--space-6)'
         }}>
@@ -239,7 +257,7 @@ function ClinicalDashboard() {
 
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(400px, 1fr))',
             gap: 'var(--space-4)'
           }}>
             {patients.map((patient) => (
@@ -267,7 +285,7 @@ function ClinicalDashboard() {
 
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(250px, 1fr))',
             gap: 'var(--space-4)'
           }}>
             <div>

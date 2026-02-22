@@ -322,7 +322,7 @@ const SectionCard = ({ title, icon, badge, children, collapsible, defaultOpen = 
 };
 
 /* ─── Toast Notification ─── */
-const Toast = ({ message, type, onDismiss, action }) => {
+const Toast = ({ message, type, onDismiss, action, isMobile = false }) => {
   useEffect(() => {
     const t = setTimeout(onDismiss, 4000);
     return () => clearTimeout(t);
@@ -334,9 +334,13 @@ const Toast = ({ message, type, onDismiss, action }) => {
 
   return (
     <div className="settings-toast" style={{
-      position: 'fixed', bottom: '24px', right: '24px', zIndex: 9999,
+      position: 'fixed',
+      bottom: isMobile ? 'calc(12px + var(--safe-area-bottom))' : '24px',
+      right: isMobile ? '12px' : '24px',
+      left: isMobile ? '12px' : 'auto',
+      zIndex: 9999,
       padding: '12px 16px', borderRadius: '10px', background: bg, border: `1px solid ${border}`,
-      display: 'flex', alignItems: 'center', gap: '10px', maxWidth: '360px',
+      display: 'flex', alignItems: 'center', gap: '10px', maxWidth: isMobile ? 'none' : '360px',
       boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
     }}>
       <span style={{ fontSize: '16px' }}>{iconMap[type] || '✓'}</span>
@@ -356,11 +360,11 @@ const Toast = ({ message, type, onDismiss, action }) => {
 };
 
 /* ─── Loading Skeleton ─── */
-const SettingsSkeleton = () => (
-  <div style={{ padding: '32px 40px', maxWidth: '960px', margin: '0 auto', width: '100%' }}>
+const SettingsSkeleton = ({ isMobile = false }) => (
+  <div style={{ padding: isMobile ? '16px' : '32px 40px', maxWidth: '960px', margin: '0 auto', width: '100%' }}>
     <div className="settings-shimmer" style={{ height: '32px', width: '200px', borderRadius: '8px', marginBottom: '24px', background: S.layer2 }} />
-    <div style={{ display: 'flex', gap: '24px' }}>
-      <div style={{ width: '200px' }}>
+    <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '24px' }}>
+      <div style={{ width: isMobile ? '100%' : '200px' }}>
         {[1, 2, 3, 4, 5, 6].map((i) => (
           <div key={i} className="settings-shimmer" style={{ height: '44px', borderRadius: '8px', marginBottom: '6px', background: S.layer2 }} />
         ))}
@@ -397,6 +401,10 @@ const Settings = () => {
   const [dirty, setDirty] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(max-width: 768px)').matches;
+  });
 
   // Storage
   const [storageStats, setStorageStats] = useState(MOCK_STORAGE);
@@ -458,6 +466,15 @@ const Settings = () => {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [showSearch]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    const updateMobile = (event) => setIsMobile(event.matches);
+    updateMobile(mediaQuery);
+    mediaQuery.addEventListener('change', updateMobile);
+    return () => mediaQuery.removeEventListener('change', updateMobile);
+  }, []);
 
   /* ─── Fetch on mount ─── */
   useEffect(() => {
@@ -790,7 +807,7 @@ const Settings = () => {
     return (
       <AppShell isAuthed={true} conversations={[]} activeConversation={null}
         onSelectConversation={() => {}} onNewConversation={() => {}} onSignOut={signOut} healthStatus="online">
-        <SettingsSkeleton />
+        <SettingsSkeleton isMobile={isMobile} />
       </AppShell>
     );
   }
@@ -801,12 +818,26 @@ const Settings = () => {
       isAuthed={true} conversations={[]} activeConversation={null}
       onSelectConversation={() => {}} onNewConversation={() => {}} onSignOut={signOut} healthStatus="online"
     >
-      <div style={{ flex: 1, overflowY: 'auto', padding: '28px 24px' }}>
+      <div style={{
+        flex: 1,
+        overflowY: 'auto',
+        padding: isMobile
+          ? 'calc(var(--safe-area-top) + 60px) 12px calc(12px + var(--safe-area-bottom))'
+          : '28px 24px',
+        boxSizing: 'border-box'
+      }}>
         <div style={{ maxWidth: '960px', margin: '0 auto', width: '100%' }}>
 
           {/* ═══ HEADER ═══ */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{
+            display: 'flex',
+            alignItems: isMobile ? 'flex-start' : 'center',
+            flexDirection: isMobile ? 'column' : 'row',
+            justifyContent: 'space-between',
+            gap: isMobile ? '12px' : '0',
+            marginBottom: '20px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: isMobile ? '100%' : 'auto' }}>
               <div style={{
                 width: 40, height: 40, borderRadius: '10px',
                 background: `linear-gradient(135deg, ${alpha.primary(0.2)}, ${alpha.purple(0.2)})`,
@@ -820,7 +851,7 @@ const Settings = () => {
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: isMobile ? 'wrap' : 'nowrap', width: isMobile ? '100%' : 'auto' }}>
               {/* Search toggle */}
               <button
                 onClick={() => { setShowSearch(!showSearch); setTimeout(() => searchInputRef.current?.focus(), 50); }}
@@ -924,7 +955,7 @@ const Settings = () => {
           <div style={{ display: 'flex', gap: '20px' }} className="settings-layout">
 
             {/* ═══ TAB BAR ═══ */}
-            <div style={{ width: '200px', flexShrink: 0 }} className="settings-tabs">
+            <div style={{ width: isMobile ? '100%' : '200px', flexShrink: 0 }} className="settings-tabs">
               <div style={{
                 position: 'sticky', top: '28px',
                 background: S.layer0, borderRadius: '12px', padding: '6px',
@@ -1031,7 +1062,7 @@ const Settings = () => {
               {activeTab === 'appearance' && (
                 <div className="settings-content-fade">
                   <SectionCard title={t('settings.theme.title')} icon="🎨">
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: '10px' }}>
                       {THEME_OPTIONS.map((opt) => (
                         <button
                           key={opt.value}
@@ -1106,7 +1137,7 @@ const Settings = () => {
                   </SectionCard>
 
                   <SectionCard title={t('settings.language')} icon="🌐">
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: '6px' }}>
                       {LANGUAGES.map((lang) => (
                         <button
                           key={lang.value}
@@ -1298,7 +1329,7 @@ const Settings = () => {
               {activeTab === 'notifications' && (
                 <div className="settings-content-fade">
                   <SectionCard title={t('settings.notificationsTab.channels')} icon="📡">
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '12px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: '8px', marginBottom: '12px' }}>
                       {[
                         { label: t('settings.notificationsTab.push'), enabled: notifSummary.push, icon: '🔔', color: colors.primary },
                         { label: t('settings.notificationsTab.email'), enabled: notifSummary.email, icon: '📧', color: colors.success },
@@ -1399,7 +1430,7 @@ const Settings = () => {
                   </SectionCard>
 
                   <SectionCard title={t('settings.data.actions')} icon="⚡">
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '8px' }}>
                       <button onClick={handleExportData} className="settings-action-btn" style={{
                         padding: '14px 12px', borderRadius: '8px', border: `1px solid ${alpha.primary(0.25)}`,
                         background: alpha.primary(0.06), color: colors.primaryLight, fontSize: '12px',
@@ -1462,7 +1493,7 @@ const Settings = () => {
                   </SectionCard>
 
                   <SectionCard title={t('settings.about.quickLinks')} icon="🔗">
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '6px' }}>
                       {[
                         { icon: '📖', label: t('settings.about.documentation'), url: '#' },
                         { icon: '📋', label: t('settings.about.changelog'), url: '#' },
@@ -1541,7 +1572,7 @@ const Settings = () => {
       </div>
 
       {/* Toast */}
-      {toast && <Toast message={toast.message} type={toast.type} action={toast.action} onDismiss={() => setToast(null)} />}
+      {toast && <Toast isMobile={isMobile} message={toast.message} type={toast.type} action={toast.action} onDismiss={() => setToast(null)} />}
     </AppShell>
   );
 };

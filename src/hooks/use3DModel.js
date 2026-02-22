@@ -3,62 +3,97 @@
  * Provides loading state management for 3D models
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { getCachedModel, cacheModel } from '../components/3d/utils/modelLoader';
 
 /**
  * Hook for managing 3D model loading states
- * @param {string|null} modelUrl - URL of the model to track
- * @returns {{ loading: boolean, error: string|null, loaded: boolean }}
+ * @param {string|null} modelUrl - URL of the model to load
+ * @returns {{ scene: any, loading: boolean, error: string|null }}
  */
 export function use3DModel(modelUrl) {
-  const [loading, setLoading] = useState(!!modelUrl);
+  const [scene, setScene] = useState(null);
+  const [loading, setLoading] = useState(Boolean(modelUrl));
   const [error, setError] = useState(null);
-  const [loaded, setLoaded] = useState(() => !!modelUrl && !!getCachedModel(modelUrl));
-  const urlRef = useRef(modelUrl);
 
   useEffect(() => {
-    if (!modelUrl) {
-      setLoading(false);
-      setLoaded(false);
-      setError(null);
-      return;
+    let active = true;
+
+    const createProceduralFallback = async () => {
+      const THREE = await import('three');
+      const group = new THREE.Group();
+      const geometry = new THREE.SphereGeometry(0.65, 28, 28);
+      const material = new THREE.MeshStandardMaterial({
+        color: '#00e5ff',
+        emissive: '#012a35',
+        roughness: 0.6,
+        metalness: 0.25,
+        wireframe: true,
+      });
+      const mesh = new THREE.Mesh(geometry, material);
+      group.add(mesh);
+      return group;
     }
 
-    if (getCachedModel(modelUrl)) {
-      setLoading(false);
-      setLoaded(true);
-      return;
-    }
+    const load = async () => {
+      try {
+        const fallback = await createProceduralFallback();
+        if (!active) return;
+        setScene(fallback);
 
-    setLoading(true);
-    setError(null);
-    setLoaded(false);
-    urlRef.current = modelUrl;
+        if (!modelUrl) {
+          setLoading(false);
+          setError(null);
+          return;
+        }
+
+        const cached = getCachedModel(modelUrl);
+        if (cached) {
+          setScene(cached);
+          setLoading(false);
+          setError(null);
+          return;
+        }
+
+        setLoading(true);
+        setError(null);
+
+        const [{ GLTFLoader }] = await Promise.all([
+          import('three/examples/jsm/loaders/GLTFLoader.js'),
+        ]);
+
+        const loader = new GLTFLoader();
+        loader.load(
+          modelUrl,
+          (gltf) => {
+            if (!active) return;
+            const loadedScene = gltf?.scene || fallback;
+            cacheModel(modelUrl, loadedScene);
+            setScene(loadedScene);
+            setLoading(false);
+            setError(null);
+          },
+          undefined,
+          () => {
+            if (!active) return;
+            setScene(fallback);
+            setLoading(false);
+            setError('Failed to load GLTF model. Using procedural fallback.');
+          }
+        );
+      } catch {
+        if (!active) return;
+        setLoading(false);
+        setError('Failed to initialize model loader.');
+      }
+    };
+
+    load();
+
+    return () => {
+      active = false;
+    };
   }, [modelUrl]);
 
-  /**
-   * Call this when a model has finished loading successfully
-   * @param {any} modelData - The loaded model data
-   */
-  function onModelLoaded(modelData) {
-    if (urlRef.current) {
-      cacheModel(urlRef.current, modelData);
-    }
-    setLoading(false);
-    setLoaded(true);
-    setError(null);
-  }
-
-  /**
-   * Call this when a model fails to load
-   * @param {string} message - Error message
-   */
-  function onModelError(message) {
-    setLoading(false);
-    setLoaded(false);
-    setError(message || 'Failed to load 3D model');
-  }
-
-  return { loading, error, loaded, onModelLoaded, onModelError };
+  return { scene, loading, error };
 }

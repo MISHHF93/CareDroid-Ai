@@ -36,30 +36,54 @@ function severityColor(score) {
  * @param {number}  [props.scores.heart=0]
  * @param {number}  [props.scores.brain=0]
  * @param {number}  [props.scores.lungs=0]
+ * @param {object}  [props.vitals]                - Live vitals for physiological animation sync
  * @param {boolean} [props.interactive=true]
+ * @param {boolean} [props.rotateOnHover=false]
+ * @param {boolean} [props.showLabel=true]
  */
-export default function OrganSystem({ scores = {}, interactive = true }) {
+export default function OrganSystem({
+  scores = {},
+  vitals = {},
+  interactive = true,
+  rotateOnHover = false,
+  showLabel = true,
+}) {
   const { heart = 0, brain = 0, lungs = 0 } = scores;
+  const heartbeat = Number(
+    vitals.heartRate?.value
+      || vitals.heartRate
+      || vitals.HR
+      || 72
+  );
 
   return (
     <group>
       <BrainModel
         position={[0, 1.6, 0]}
         color={severityColor(brain)}
+        severity={brain}
+        heartbeat={heartbeat}
         interactive={interactive}
-        showLabel
+        rotateOnHover={rotateOnHover}
+        showLabel={showLabel}
       />
       <LungsModel
         position={[0, 0, 0]}
         color={severityColor(lungs)}
+        severity={lungs}
+        heartbeat={heartbeat}
         interactive={interactive}
-        showLabel
+        rotateOnHover={rotateOnHover}
+        showLabel={showLabel}
       />
       <HeartModel
         position={[0, -1.6, 0]}
         color={severityColor(heart)}
+        severity={heart}
+        heartbeat={heartbeat}
         interactive={interactive}
-        showLabel
+        rotateOnHover={rotateOnHover}
+        showLabel={showLabel}
       />
     </group>
   );

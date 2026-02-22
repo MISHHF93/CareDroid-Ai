@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card } from '../ui/molecules/Card';
 import { Badge } from '../ui/atoms/Badge';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { HolographicCanvas, Timeline3D } from '../holographic';
+import { HolographicCanvas, Timeline3D, Mobile3DContainer } from '../holographic';
 import { useHolographicMode } from '../../hooks/useHolographicMode';
 
 const DEFAULT_EVENTS = [
@@ -20,6 +20,10 @@ const DEFAULT_EVENTS = [
 export const LabTimeline = ({ events: propEvents, onViewResult, lastViewedTimestamp }) => {
   const { t } = useLanguage();
   const { reducedMotion } = useHolographicMode();
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(max-width: 768px)').matches;
+  });
   const events = propEvents || DEFAULT_EVENTS;
   const [expandedId, setExpandedId] = useState(null);
   const [filterType, setFilterType] = useState('all');
@@ -45,11 +49,20 @@ export const LabTimeline = ({ events: propEvents, onViewResult, lastViewedTimest
 
   const sorted = useMemo(() => [...filteredEvents].sort((a, b) => new Date(b.orderedAt) - new Date(a.orderedAt)), [filteredEvents]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    const handleChange = (event) => setIsMobile(event.matches);
+    handleChange(mediaQuery);
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
+
   return (
-    <Card padding="lg" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <Card padding="lg" style={{ display: 'flex', flexDirection: 'column', height: '100%', minWidth: 0 }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 'var(--space-3)', borderBottom: '1px solid var(--border-subtle)' }}>
-        <h3 style={{ margin: 0, fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+      <div style={{ display: 'flex', alignItems: isMobile ? 'stretch' : 'center', justifyContent: 'space-between', flexDirection: isMobile ? 'column' : 'row', gap: 'var(--space-2)', paddingBottom: 'var(--space-3)', borderBottom: '1px solid var(--border-subtle)', minWidth: 0 }}>
+        <h3 style={{ margin: 0, fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap', minWidth: 0 }}>
           🧪 {t('widgets.labTimeline.title')}
           {criticalCount > 0 && <Badge variant="danger" size="sm">{criticalCount} {t('widgets.labTimeline.critical')}</Badge>}
           {newCount > 0 && (
@@ -58,7 +71,7 @@ export const LabTimeline = ({ events: propEvents, onViewResult, lastViewedTimest
             </span>
           )}
         </h3>
-        <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center', flexWrap: 'wrap', width: isMobile ? '100%' : 'auto' }}>
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
@@ -67,6 +80,8 @@ export const LabTimeline = ({ events: propEvents, onViewResult, lastViewedTimest
               fontSize: '11px', padding: '3px 6px', borderRadius: 'var(--radius-sm)',
               border: '1px solid var(--border-subtle)', background: 'var(--surface-secondary)',
               color: 'var(--text-secondary)', cursor: 'pointer',
+              width: isMobile ? '100%' : 'auto',
+              minWidth: isMobile ? 0 : '160px',
             }}
           >
             {testTypes.map((labType) => (
@@ -78,23 +93,25 @@ export const LabTimeline = ({ events: propEvents, onViewResult, lastViewedTimest
               {pendingCount} {t('widgets.labTimeline.pending')}
             </span>
           )}
-          <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>{t('widgets.labTimeline.last12h')}</span>
+          <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginLeft: isMobile ? 0 : 'auto' }}>{t('widgets.labTimeline.last12h')}</span>
         </div>
       </div>
 
       <div style={{ marginTop: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
-        <HolographicCanvas
-          ariaLabel="3D patient lab history timeline"
-          reducedMotion={reducedMotion}
-          style={{ minHeight: 180 }}
-          camera={{ position: [0, 0.6, 6], fov: 54 }}
-        >
-          <Timeline3D events={sorted} />
-        </HolographicCanvas>
+        <Mobile3DContainer minHeight={180}>
+          <HolographicCanvas
+            ariaLabel="3D patient lab history timeline"
+            reducedMotion={reducedMotion}
+            style={{ minHeight: 180 }}
+            camera={{ position: [0, 0.6, 6], fov: 54 }}
+          >
+            <Timeline3D events={sorted} />
+          </HolographicCanvas>
+        </Mobile3DContainer>
       </div>
 
       {/* Timeline */}
-      <div role="list" aria-label="Lab events timeline" style={{ display: 'flex', flexDirection: 'column', gap: 0, flex: 1, overflowY: 'auto', maxHeight: '260px', paddingTop: 'var(--space-3)' }}>
+      <div role="list" aria-label="Lab events timeline" style={{ display: 'flex', flexDirection: 'column', gap: 0, flex: 1, overflowY: 'auto', maxHeight: '260px', paddingTop: 'var(--space-3)', minWidth: 0 }}>
         {sorted.map((event, idx) => {
           const isLast = idx === sorted.length - 1;
           const dotColor = event.critical ? 'var(--clinical-error)' : event.status === 'pending' ? 'var(--clinical-warning)' : 'var(--clinical-success)';
@@ -118,7 +135,7 @@ export const LabTimeline = ({ events: propEvents, onViewResult, lastViewedTimest
 
               {/* Content */}
               <div
-                style={{ flex: 1, paddingBottom: isLast ? 0 : 'var(--space-3)', cursor: event.status === 'resulted' ? 'pointer' : 'default' }}
+                style={{ flex: 1, minWidth: 0, paddingBottom: isLast ? 0 : 'var(--space-3)', cursor: event.status === 'resulted' ? 'pointer' : 'default' }}
                 onClick={() => {
                   if (event.status === 'resulted') {
                     setExpandedId(isExpanded ? null : event.id);
@@ -126,7 +143,7 @@ export const LabTimeline = ({ events: propEvents, onViewResult, lastViewedTimest
                   }
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap', minWidth: 0 }}>
                   <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{event.test}</span>
                   {event.critical && <Badge variant="danger" size="sm">{t('widgets.labTimeline.criticalBadge')}</Badge>}
                   {isNew && <span style={{ fontSize: '9px', fontWeight: 700, color: '#fff', padding: '1px 5px', borderRadius: '999px', background: 'var(--clinical-primary)' }}>{t('widgets.labTimeline.newBadge')}</span>}
@@ -140,7 +157,7 @@ export const LabTimeline = ({ events: propEvents, onViewResult, lastViewedTimest
                     <span style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginLeft: 'auto' }}>{isExpanded ? '▼' : '▶'}</span>
                   )}
                 </div>
-                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px', overflowWrap: 'anywhere' }}>
                   {event.patient} · {t('widgets.labTimeline.ordered')} {formatTime(event.orderedAt)}
                   {event.resultedAt && ` · ${t('widgets.labTimeline.resulted')} ${formatTime(event.resultedAt)}`}
                 </div>

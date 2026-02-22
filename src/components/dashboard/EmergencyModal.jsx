@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { VitalsInput, buildVitalsPayload } from '../clinical/VitalsInput';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { HolographicCanvas, ARStyleMarkers } from '../holographic';
+import { HolographicCanvas, ARStyleMarkers, Mobile3DContainer } from '../holographic';
 import { useHolographicMode } from '../../hooks/useHolographicMode';
 import './EmergencyModal.css';
 
@@ -321,20 +321,22 @@ export function EmergencyModal({ isOpen, onClose, patients = [] }) {
         </div>
 
         <div style={{ padding: '0 18px', marginBottom: '10px' }}>
-          <HolographicCanvas
-            ariaLabel="Emergency holographic alert markers"
-            reducedMotion={reducedMotion}
-            style={{ minHeight: 170 }}
-            camera={{ position: [0, 0.6, 4.8], fov: 56 }}
-          >
-            <ARStyleMarkers
-              markers={[
-                { id: 'severity', severity: form.severity, position: [0, 0.2, 0], scale: 0.21 },
-                { id: 'airway', severity: form.severity === 'critical' ? 'critical' : 'urgent', position: [-1.1, -0.2, 0], scale: 0.13 },
-                { id: 'circulation', severity: form.severity === 'moderate' ? 'moderate' : 'urgent', position: [1.15, -0.1, 0.1], scale: 0.13 },
-              ]}
-            />
-          </HolographicCanvas>
+          <Mobile3DContainer minHeight={170}>
+            <HolographicCanvas
+              ariaLabel="Emergency holographic alert markers"
+              reducedMotion={reducedMotion}
+              style={{ minHeight: 170 }}
+              camera={{ position: [0, 0.6, 4.8], fov: 56 }}
+            >
+              <ARStyleMarkers
+                markers={[
+                  { id: 'severity', severity: form.severity, position: [0, 0.2, 0], scale: 0.21 },
+                  { id: 'airway', severity: form.severity === 'critical' ? 'critical' : 'urgent', position: [-1.1, -0.2, 0], scale: 0.13 },
+                  { id: 'circulation', severity: form.severity === 'moderate' ? 'moderate' : 'urgent', position: [1.15, -0.1, 0.1], scale: 0.13 },
+                ]}
+              />
+            </HolographicCanvas>
+          </Mobile3DContainer>
         </div>
 
         {/* Form */}

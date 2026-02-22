@@ -4,10 +4,28 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
   background: var(--surface-primary);
   border-radius: var(--radius-xl);
   transition: all var(--transition-normal);
   overflow: visible;
+  isolation: isolate;
+  contain: layout paint;
+}
+
+button.card {
+  appearance: none;
+  -webkit-appearance: none;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+
+button.card::after {
+  content: none !important;
 }
 
 .card:focus-visible {
@@ -155,6 +173,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  min-width: 0;
 }
 
 /* ===== LOADING OVERLAY ===== */

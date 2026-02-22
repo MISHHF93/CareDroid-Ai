@@ -348,6 +348,31 @@ export const useCacheMonitor = () => {
  * Call this once in your app initialization
  */
 export const registerServiceWorker = async () => {
+  const isNativePlatform = Boolean(
+    typeof window !== 'undefined' &&
+      window.Capacitor?.isNativePlatform?.()
+  );
+
+  if (isNativePlatform) {
+    try {
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map((registration) => registration.unregister()));
+      }
+
+      if ('caches' in window) {
+        const cacheKeys = await caches.keys();
+        await Promise.all(cacheKeys.map((key) => caches.delete(key)));
+      }
+
+      logger.info('Service Worker disabled for native platform and old caches cleared');
+    } catch (error) {
+      logger.warn('Failed to clear native service worker caches', { error });
+    }
+
+    return null;
+  }
+
   if ('serviceWorker' in navigator) {
     try {
       const registration = await navigator.serviceWorker.register('/sw.js');

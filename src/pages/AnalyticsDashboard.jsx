@@ -232,6 +232,10 @@ const AnalyticsDashboard = () => {
   const navigate = useNavigate();
   useAppearance(); // re-render on theme/accent change
   const { t } = useLanguage();
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(max-width: 768px)').matches;
+  });
 
   // State
   const [metrics, setMetrics] = useState(null);
@@ -246,6 +250,15 @@ const AnalyticsDashboard = () => {
   const [liveCount, setLiveCount] = useState(0);
   const [liveEvents, setLiveEvents] = useState([]);
   const [selectedTool, setSelectedTool] = useState(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    const updateMobile = (event) => setIsMobile(event.matches);
+    updateMobile(mediaQuery);
+    mediaQuery.addEventListener('change', updateMobile);
+    return () => mediaQuery.removeEventListener('change', updateMobile);
+  }, []);
 
   // Date range from preset
   const dateRange = useMemo(() => {
@@ -303,9 +316,13 @@ const AnalyticsDashboard = () => {
           const data = JSON.parse(e.data);
           setLiveCount(prev => prev + 1);
           setLiveEvents(prev => [{ ...data, _ts: Date.now() }, ...prev].slice(0, 5));
-        } catch {}
+        } catch {
+          // Ignore malformed stream payloads
+        }
       });
-    } catch {}
+    } catch {
+      // Ignore stream connection errors; dashboard stays functional with static data
+    }
     return () => es?.close();
   }, []);
 
@@ -350,31 +367,55 @@ const AnalyticsDashboard = () => {
 
   // Styles
   const s = {
-    page: { padding: 24, display: 'flex', flexDirection: 'column', gap: 20, minHeight: '100dvh' },
+    page: {
+      padding: isMobile
+        ? 'calc(var(--safe-area-top) + 64px) 12px calc(16px + var(--safe-area-bottom))'
+        : 24,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: isMobile ? 14 : 20,
+      minHeight: '100dvh',
+      overflowX: 'hidden'
+    },
     header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 },
-    title: { fontSize: 26, fontWeight: 700, color: T.heading, margin: 0, display: 'flex', alignItems: 'center', gap: 10 },
+    title: { fontSize: isMobile ? 21 : 26, fontWeight: 700, color: T.heading, margin: 0, display: 'flex', alignItems: 'center', gap: 10 },
     subtitle: { color: T.label, fontSize: 14, margin: '4px 0 0' },
     liveBadge: { display: 'inline-flex', alignItems: 'center', gap: 6, background: alpha.success(0.12), color: colors.success, padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700 },
     pulseDot: { width: 8, height: 8, borderRadius: '50%', background: colors.success, animation: 'pulse 2s ease-in-out infinite' },
-    toolbar: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+    toolbar: { display: 'flex', alignItems: isMobile ? 'stretch' : 'center', gap: 8, flexWrap: 'wrap', width: isMobile ? '100%' : 'auto' },
     presetBtn: (active) => ({ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, background: active ? alpha.primary(0.2) : alpha.white(0.05), color: active ? colors.primary : T.label, transition: 'all 0.15s' }),
     viewBtn: (active) => ({ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500, background: active ? alpha.purple(0.15) : 'transparent', color: active ? colors.purpleLight : T.caption, transition: 'all 0.15s' }),
     actionBtn: { padding: '6px 14px', borderRadius: 8, border: `1px solid ${borders.medium}`, background: 'transparent', color: T.label, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 4 },
-    sep: { width: 1, height: 24, background: borders.default },
+    sep: { width: 1, height: 24, background: borders.default, display: isMobile ? 'none' : 'block' },
     statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 12 },
     statCard: (c) => ({ background: S.layer1, border: `1px solid ${borders.subtle}`, borderLeft: `3px solid ${c.color}`, borderRadius: 12, padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 4 }),
     statLabel: { fontSize: 12, color: T.label, display: 'flex', alignItems: 'center', gap: 6 },
     statValue: { fontSize: 28, fontWeight: 700, color: T.heading, lineHeight: 1.1 },
     statTrend: (up, invert) => ({ fontSize: 12, fontWeight: 600, color: (up && !invert) || (!up && invert) ? colors.success : colors.error }),
-    panel: { background: S.layer1, border: `1px solid ${borders.subtle}`, borderRadius: 14, padding: 20 },
+    panel: { background: S.layer1, border: `1px solid ${borders.subtle}`, borderRadius: 14, padding: isMobile ? 14 : 20, minWidth: 0 },
     panelTitle: { fontSize: 16, fontWeight: 600, color: T.heading, margin: '0 0 14px', display: 'flex', alignItems: 'center', gap: 8 },
-    grid2: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 14 },
+    grid2: { display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(320px, 1fr))', gap: 14 },
     toolRow: { display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, cursor: 'pointer', transition: 'background 0.15s' },
     toolBar: (pct, color) => ({ flex: 1, height: 6, borderRadius: 3, background: borders.subtle, overflow: 'hidden', position: 'relative' }),
     toolFill: (pct, color) => ({ width: `${pct}%`, height: '100%', borderRadius: 3, background: color }),
     engRow: { display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: `1px solid ${borders.subtle}`, fontSize: 14 },
     funnelBar: (pct) => ({ height: 36, borderRadius: 8, background: `linear-gradient(90deg, ${alpha.primary(0.25)} 0%, ${alpha.primary(0.08)} ${pct}%, transparent ${pct}%)`, display: 'flex', alignItems: 'center', padding: '0 14px', gap: 10, marginBottom: 6 }),
-    drawer: { position: 'fixed', top: 0, right: 0, width: 420, height: '100dvh', background: S.panel, borderLeft: `1px solid ${borders.default}`, zIndex: 1000, animation: 'slideInRight 0.25s cubic-bezier(0.4,0,0.2,1)', overflowY: 'auto', padding: 24 },
+    drawer: {
+      position: 'fixed',
+      top: 0,
+      right: 0,
+      width: isMobile ? '100dvw' : 420,
+      maxWidth: isMobile ? '100dvw' : '92dvw',
+      height: '100dvh',
+      background: S.panel,
+      borderLeft: isMobile ? 'none' : `1px solid ${borders.default}`,
+      zIndex: 1000,
+      animation: 'slideInRight 0.25s cubic-bezier(0.4,0,0.2,1)',
+      overflowY: 'auto',
+      padding: isMobile
+        ? 'calc(var(--safe-area-top) + 16px) 16px calc(16px + var(--safe-area-bottom))'
+        : 24
+    },
     backdrop: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 999 },
     skeleton: { background: `linear-gradient(90deg, ${S.layer2} 25%, ${S.layer3} 50%, ${S.layer2} 75%)`, backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite', borderRadius: 8 },
     liveBar: { background: alpha.success(0.06), border: `1px solid ${alpha.success(0.15)}`, borderRadius: 10, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10 },
@@ -434,7 +475,7 @@ const AnalyticsDashboard = () => {
         )}
 
         {/* ─── Toolbar ─── */}
-        <div style={{ ...s.toolbar, justifyContent: 'space-between' }}>
+        <div style={{ ...s.toolbar, justifyContent: 'space-between', flexDirection: isMobile ? 'column' : 'row' }}>
           <div style={s.toolbar}>
             {DATE_PRESETS.map(p => (
               <button key={p.label} style={s.presetBtn(datePreset === p.label)} onClick={() => setDatePreset(p.label)}>
@@ -660,7 +701,7 @@ const AnalyticsDashboard = () => {
               </div>
 
               {/* Stats */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10, marginBottom: 20 }}>
                 <div style={{ background: S.layer2, borderRadius: 10, padding: 14 }}>
                   <div style={{ fontSize: 11, color: T.caption, marginBottom: 4 }}>{t('analytics.drawer.totalUsage')}</div>
                   <div style={{ fontSize: 24, fontWeight: 700, color: T.heading }}>{selectedTool.count}</div>
@@ -676,7 +717,7 @@ const AnalyticsDashboard = () => {
               {/* Usage Trend */}
               <div style={{ marginBottom: 20 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: T.label, marginBottom: 8 }}>{t('analytics.drawer.usageTrend')}</div>
-                <Sparkline data={selectedTool.sparkline} color={selectedTool.color} width={370} height={60} />
+                <Sparkline data={selectedTool.sparkline} color={selectedTool.color} width={isMobile ? 280 : 370} height={60} />
               </div>
 
               {/* Avg Response Time */}

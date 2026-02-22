@@ -17,7 +17,7 @@
  */
 
 import React, { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react';
-import translations, { isRTL } from '../i18n/index.js';
+import translations, { isRTL, loadTranslation, SUPPORTED_LANGUAGES } from '../i18n/index.js';
 
 const LanguageContext = createContext(null);
 
@@ -33,7 +33,7 @@ function getStoredLanguage() {
     const raw = localStorage.getItem('caredroid-settings');
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed.language && translations[parsed.language]) return parsed.language;
+      if (parsed.language && SUPPORTED_LANGUAGES.includes(parsed.language)) return parsed.language;
     }
   } catch { /* ignore */ }
   return 'en';
@@ -49,17 +49,38 @@ function applyHtmlAttrs(lang) {
 /* ─── Provider ─── */
 export function LanguageProvider({ children }) {
   const [language, setLanguageState] = useState(getStoredLanguage);
+  const [loadedTranslations, setLoadedTranslations] = useState(translations);
 
   // Current translation bundle (fall back to `en` for missing keys)
-  const bundle = useMemo(() => translations[language] || translations.en, [language]);
-  const fallback = useMemo(() => translations.en, []);
+  const bundle = useMemo(() => loadedTranslations[language] || loadedTranslations.en, [loadedTranslations, language]);
+  const fallback = useMemo(() => loadedTranslations.en, [loadedTranslations]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    if (!loadedTranslations[language]) {
+      loadTranslation(language)
+        .then((localeBundle) => {
+          if (!mounted || !localeBundle) return;
+          setLoadedTranslations((prev) => {
+            if (prev[language]) return prev;
+            return { ...prev, [language]: localeBundle };
+          });
+        })
+        .catch(() => null);
+    }
+
+    return () => {
+      mounted = false;
+    };
+  }, [language, loadedTranslations]);
 
   // Apply HTML attrs on mount + language change
   useEffect(() => { applyHtmlAttrs(language); }, [language]);
 
   // Public setter — also persists into localStorage settings object
   const setLanguage = useCallback((lang) => {
-    if (!translations[lang]) return;
+    if (!SUPPORTED_LANGUAGES.includes(lang)) return;
     setLanguageState(lang);
     applyHtmlAttrs(lang);
     try {
@@ -85,7 +106,7 @@ export function LanguageProvider({ children }) {
       if (e.key === 'caredroid-settings') {
         try {
           const parsed = JSON.parse(e.newValue);
-          if (parsed.language && translations[parsed.language]) {
+          if (parsed.language && SUPPORTED_LANGUAGES.includes(parsed.language)) {
             setLanguageState(parsed.language);
           }
         } catch { /* ignore */ }
@@ -98,7 +119,7 @@ export function LanguageProvider({ children }) {
   // Custom event listener so same-tab Settings changes sync immediately
   useEffect(() => {
     const handler = (e) => {
-      if (e.detail?.language && translations[e.detail.language]) {
+      if (e.detail?.language && SUPPORTED_LANGUAGES.includes(e.detail.language)) {
         setLanguageState(e.detail.language);
       }
     };

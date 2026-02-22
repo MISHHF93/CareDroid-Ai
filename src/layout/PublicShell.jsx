@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './PublicShell.css';
 import appConfig from '../config/appConfig';
 
@@ -12,6 +12,13 @@ import appConfig from '../config/appConfig';
  */
 export const PublicShell = ({ children }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isLandingPage = location.pathname === '/';
+  const isHelpPage = location.pathname === '/help';
+  const isPrivacyPage = location.pathname === '/privacy';
+  const isTermsPage = location.pathname === '/terms';
+  const showHeader = !isLandingPage && !isHelpPage && !isPrivacyPage && !isTermsPage;
+  const showFooter = !isLandingPage && !isHelpPage;
   const appName = appConfig.app.name;
   const appVersion = appConfig.app.version;
   const buildDate = appConfig.app.buildDate;
@@ -21,102 +28,106 @@ export const PublicShell = ({ children }) => {
   const hipaaUrl = appConfig.legal.hipaaBaaUrl;
 
   return (
-    <div className="public-shell">
-      <header className="public-header">
-        <div className="public-header-content">
-          <Link to="/" className="public-logo">
-            <span className="logo-icon">⚕️</span>
-            <span className="logo-text">{appName}</span>
-          </Link>
+    <div className={`public-shell ${isHelpPage ? 'public-shell-help' : ''} ${isPrivacyPage ? 'public-shell-privacy' : ''} ${isTermsPage ? 'public-shell-terms' : ''}`}>
+      {showHeader && (
+        <header className="public-header">
+          <div className="public-header-content">
+            <Link to="/" className="public-logo">
+              <span className="logo-icon">⚕️</span>
+              <span className="logo-text">{appName}</span>
+            </Link>
 
-          <nav className="public-nav">
-            <Link to="/help" className="public-nav-link">Help</Link>
-            <Link to="/privacy" className="public-nav-link">Privacy</Link>
-            <Link to="/terms" className="public-nav-link">Terms</Link>
-            <button 
-              onClick={() => navigate('/auth')} 
-              className="btn-public-primary"
-            >
-              Sign In
-            </button>
-          </nav>
-        </div>
-      </header>
+            <nav className="public-nav">
+              <Link to="/help" className="public-nav-link">Help</Link>
+              <Link to="/privacy" className="public-nav-link">Privacy</Link>
+              <Link to="/terms" className="public-nav-link">Terms</Link>
+              <button 
+                onClick={() => navigate('/auth')} 
+                className="btn-public-primary"
+              >
+                Sign In
+              </button>
+            </nav>
+          </div>
+        </header>
+      )}
 
-      <main className="public-main" id="main-content">
+      <main className={`public-main ${isLandingPage ? 'public-main-landing' : ''} ${isHelpPage ? 'public-main-help' : ''}`} id="main-content">
         {children}
       </main>
 
-      <footer className="public-footer">
-        <div className="public-footer-content">
-          <div className="footer-section">
-            <h4>{appName}</h4>
-            <p>Evidence-based clinical decision support powered by AI</p>
-            <div className="footer-badges">
-              <span className="badge-hipaa">🔒 HIPAA Compliant</span>
-              <span className="badge-version">v{appVersion}</span>
-              {buildDate ? <span className="badge-version">Build {buildDate}</span> : null}
+      {showFooter && (
+        <footer className="public-footer">
+          <div className="public-footer-content">
+            <div className="footer-section">
+              <h4>{appName}</h4>
+              <p>Evidence-based clinical decision support powered by AI</p>
+              <div className="footer-badges">
+                <span className="badge-hipaa">🔒 HIPAA Compliant</span>
+                <span className="badge-version">v{appVersion}</span>
+                {buildDate ? <span className="badge-version">Build {buildDate}</span> : null}
+              </div>
+            </div>
+
+            <div className="footer-section">
+              <h4>Legal</h4>
+              <ul className="footer-links">
+                <li>
+                  {privacyUrl ? (
+                    <a href={privacyUrl} target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+                  ) : (
+                    <Link to="/privacy">Privacy Policy</Link>
+                  )}
+                </li>
+                <li>
+                  {termsUrl ? (
+                    <a href={termsUrl} target="_blank" rel="noopener noreferrer">Terms of Service</a>
+                  ) : (
+                    <Link to="/terms">Terms of Service</Link>
+                  )}
+                </li>
+              </ul>
+            </div>
+
+            <div className="footer-section">
+              <h4>Resources</h4>
+              <ul className="footer-links">
+                <li><Link to="/help">Help Center</Link></li>
+                <li><a href="https://github.com/caredroid" target="_blank" rel="noopener noreferrer">Documentation</a></li>
+                <li>
+                  {supportUrl ? (
+                    <a href={supportUrl} target="_blank" rel="noopener noreferrer">Contact Support</a>
+                  ) : (
+                    <a href="mailto:support@caredroid.ai">Contact Support</a>
+                  )}
+                </li>
+              </ul>
+            </div>
+
+            <div className="footer-section">
+              <h4>Compliance</h4>
+              <ul className="footer-links">
+                <li>
+                  {hipaaUrl ? (
+                    <a href={hipaaUrl} target="_blank" rel="noopener noreferrer">HIPAA Compliance</a>
+                  ) : (
+                    <a href="#hipaa">HIPAA Compliance</a>
+                  )}
+                </li>
+                <li><a href="#security">Security Practices</a></li>
+                <li><a href="#audit">Audit Logs</a></li>
+              </ul>
             </div>
           </div>
 
-          <div className="footer-section">
-            <h4>Legal</h4>
-            <ul className="footer-links">
-              <li>
-                {privacyUrl ? (
-                  <a href={privacyUrl} target="_blank" rel="noopener noreferrer">Privacy Policy</a>
-                ) : (
-                  <Link to="/privacy">Privacy Policy</Link>
-                )}
-              </li>
-              <li>
-                {termsUrl ? (
-                  <a href={termsUrl} target="_blank" rel="noopener noreferrer">Terms of Service</a>
-                ) : (
-                  <Link to="/terms">Terms of Service</Link>
-                )}
-              </li>
-            </ul>
+          <div className="footer-bottom">
+            <p>&copy; {new Date().getFullYear()} CareDroid. All rights reserved.</p>
+            <p className="footer-disclaimer">
+              CareDroid is a clinical decision support tool. Always use clinical judgment and follow your facility's protocols.
+            </p>
           </div>
-
-          <div className="footer-section">
-            <h4>Resources</h4>
-            <ul className="footer-links">
-              <li><Link to="/help">Help Center</Link></li>
-              <li><a href="https://github.com/caredroid" target="_blank" rel="noopener noreferrer">Documentation</a></li>
-              <li>
-                {supportUrl ? (
-                  <a href={supportUrl} target="_blank" rel="noopener noreferrer">Contact Support</a>
-                ) : (
-                  <a href="mailto:support@caredroid.ai">Contact Support</a>
-                )}
-              </li>
-            </ul>
-          </div>
-
-          <div className="footer-section">
-            <h4>Compliance</h4>
-            <ul className="footer-links">
-              <li>
-                {hipaaUrl ? (
-                  <a href={hipaaUrl} target="_blank" rel="noopener noreferrer">HIPAA Compliance</a>
-                ) : (
-                  <a href="#hipaa">HIPAA Compliance</a>
-                )}
-              </li>
-              <li><a href="#security">Security Practices</a></li>
-              <li><a href="#audit">Audit Logs</a></li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="footer-bottom">
-          <p>&copy; {new Date().getFullYear()} CareDroid. All rights reserved.</p>
-          <p className="footer-disclaimer">
-            CareDroid is a clinical decision support tool. Always use clinical judgment and follow your facility's protocols.
-          </p>
-        </div>
-      </footer>
+        </footer>
+      )}
     </div>
   );
 };

@@ -193,7 +193,7 @@ export const CostTrackingProvider = ({ children }) => {
     // Aggregate costs by day
     costData.executions.forEach(exec => {
       const dateKey = exec.timestamp.split('T')[0];
-      if (trends.hasOwnProperty(dateKey)) {
+      if (Object.hasOwn(trends, dateKey)) {
         trends[dateKey] += exec.cost;
       }
     });

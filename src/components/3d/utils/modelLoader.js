@@ -11,7 +11,7 @@ const modelCache = new Map();
  * @returns {string} Base URL for models
  */
 export function getModelBaseURL() {
-  return import.meta.env.VITE_MODELS_URL || '/assets/models';
+  return '/assets/models';
 }
 
 /**

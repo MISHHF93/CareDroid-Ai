@@ -61,7 +61,7 @@ test.describe('Dashboard Page', () => {
 });
 
 test.describe('Code Splitting Verification', () => {
-  test('production build creates separate vendor-react chunk', async ({}) => {
+  test('production build creates separate vendor-react chunk', async () => {
     // Code splitting is validated in the production build output.
     // Vite dev server serves unbundled ESM modules, so chunk names
     // like vendor-react only exist after `vite build`.

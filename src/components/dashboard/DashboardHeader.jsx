@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '../ui/atoms/Button';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -22,6 +22,19 @@ export const DashboardHeader = ({
   connectionState = 'disconnected'
 }) => {
   const { t } = useLanguage();
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(max-width: 768px)').matches;
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    const handleChange = (event) => setIsMobile(event.matches);
+    handleChange(mediaQuery);
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -47,22 +60,23 @@ export const DashboardHeader = ({
 
   return (
     <header style={{
-      padding: 'var(--space-6) 0',
+      padding: isMobile ? 'var(--space-4) 0' : 'var(--space-6) 0',
       borderBottom: '1px solid var(--border-subtle)',
       marginBottom: 'var(--space-6)'
     }}>
       <div style={{
         display: 'flex',
-        alignItems: 'center',
+        alignItems: isMobile ? 'stretch' : 'center',
         justifyContent: 'space-between',
         gap: 'var(--space-4)',
-        flexWrap: 'wrap'
+        flexWrap: 'wrap',
+        flexDirection: isMobile ? 'column' : 'row'
       }}>
         {/* Left: Greeting */}
-        <div style={{ flex: '1 1 300px' }}>
+        <div style={{ flex: '1 1 300px', width: isMobile ? '100%' : 'auto' }}>
           <h1 style={{
             margin: 0,
-            fontSize: 'var(--font-size-3xl)',
+            fontSize: isMobile ? 'var(--font-size-2xl)' : 'var(--font-size-3xl)',
             fontWeight: 'var(--font-weight-bold)',
             color: 'var(--text-primary)',
             marginBottom: 'var(--space-1)'
@@ -84,15 +98,19 @@ export const DashboardHeader = ({
         {/* Right: Actions and Notifications */}
         <div style={{
           display: 'flex',
-          alignItems: 'center',
+          alignItems: isMobile ? 'stretch' : 'center',
           gap: 'var(--space-3)',
-          flex: '0 0 auto'
+          flex: '0 0 auto',
+          flexWrap: 'wrap',
+          flexDirection: isMobile ? 'column' : 'row',
+          width: isMobile ? '100%' : 'auto'
         }}>
           {onSearchChange && (
             <div style={{
               position: 'relative',
               display: 'flex',
-              alignItems: 'center'
+              alignItems: 'center',
+              width: isMobile ? '100%' : 'auto'
             }}>
               <input
                 type="search"
@@ -106,7 +124,7 @@ export const DashboardHeader = ({
                 placeholder={t('dashboard.searchPatients')}
                 aria-label={t('dashboard.searchPatients')}
                 style={{
-                  width: '220px',
+                  width: isMobile ? '100%' : '220px',
                   padding: '8px 12px',
                   fontSize: 'var(--font-size-sm)',
                   borderRadius: '999px',
@@ -120,6 +138,7 @@ export const DashboardHeader = ({
           <Button
             variant="primary"
             size="md"
+            fullWidth={isMobile}
             onClick={onNewPatient}
           >
             <span style={{ marginRight: '6px' }}>+</span>
@@ -129,6 +148,7 @@ export const DashboardHeader = ({
           <Button
             variant="danger"
             size="md"
+            fullWidth={isMobile}
             onClick={onEmergency}
           >
             <span style={{ marginRight: '6px' }}>🚨</span>
@@ -140,6 +160,7 @@ export const DashboardHeader = ({
             style={{
               display: 'flex',
               alignItems: 'center',
+              justifyContent: isMobile ? 'center' : 'flex-start',
               gap: '6px',
               padding: '6px 12px',
               fontSize: 'var(--font-size-xs)',
@@ -154,7 +175,9 @@ export const DashboardHeader = ({
               background: connectionState === 'connected' ? 'rgba(16, 185, 129, 0.08)'
                         : connectionState === 'connecting' ? 'rgba(245, 158, 11, 0.08)'
                         : 'transparent',
-              transition: 'all 0.3s ease'
+              transition: 'all 0.3s ease',
+              width: isMobile ? '100%' : 'auto',
+              boxSizing: 'border-box'
             }}
             title={connectionState === 'connected'
               ? t('dashboard.realtimeActive')

@@ -2,21 +2,54 @@
  * i18n — Translation loader and registry
  * ════════════════════════════════════════
  *
- * Statically imports all language JSON files.
- * Each key matches the language code used in Settings.jsx LANGUAGES array.
+ * Keeps English eager-loaded and loads other locale JSON files on demand.
  */
 
 import en from './en.json';
-import es from './es.json';
-import fr from './fr.json';
-import de from './de.json';
-import pt from './pt.json';
-import zh from './zh.json';
-import ja from './ja.json';
-import ar from './ar.json';
-import he from './he.json';
 
-const translations = { en, es, fr, de, pt, zh, ja, ar, he };
+export const SUPPORTED_LANGUAGES = ['en', 'es', 'fr', 'de', 'pt', 'zh', 'ja', 'ar', 'he'];
+
+const translationCache = { en };
+
+export async function loadTranslation(lang) {
+	if (!SUPPORTED_LANGUAGES.includes(lang)) return translationCache.en;
+	if (translationCache[lang]) return translationCache[lang];
+
+	let module;
+	switch (lang) {
+		case 'es':
+			module = await import('./es.json');
+			break;
+		case 'fr':
+			module = await import('./fr.json');
+			break;
+		case 'de':
+			module = await import('./de.json');
+			break;
+		case 'pt':
+			module = await import('./pt.json');
+			break;
+		case 'zh':
+			module = await import('./zh.json');
+			break;
+		case 'ja':
+			module = await import('./ja.json');
+			break;
+		case 'ar':
+			module = await import('./ar.json');
+			break;
+		case 'he':
+			module = await import('./he.json');
+			break;
+		default:
+			return translationCache.en;
+	}
+
+	translationCache[lang] = module.default;
+	return translationCache[lang];
+}
+
+const translations = translationCache;
 
 /** RTL language codes */
 export const RTL_LANGUAGES = ['ar', 'he'];

@@ -13,6 +13,25 @@
   border-bottom: 1px solid var(--panel-border);
 }
 
+.legal-back-link {
+  display: inline-flex;
+  align-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--font-14);
+  font-weight: 600;
+  cursor: pointer;
+  margin: 0 0 var(--space-4) 0;
+  padding: 0;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.legal-back-link:hover {
+  color: var(--text-color);
+  transform: translateX(-2px);
+}
+
 .legal-header h1 {
   font-size: var(--font-36);
   font-weight: 700;

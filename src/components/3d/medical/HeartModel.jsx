@@ -9,61 +9,38 @@
 
 import React, { useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { useGLTF, Sphere } from '@react-three/drei';
-import { use3DModel } from '../../../hooks/use3DModel';
-import { getModelURL } from '../utils/modelLoader';
 import HolographicText from '../HolographicText';
-
-const MODEL_URL = getModelURL('heart.glb');
+import { useWebGLSupport } from '../../../hooks/useWebGLSupport';
+import MedicalMarchingLODOrgan from '../advanced/MedicalMarchingLODOrgan';
+import { VascularFlowParticles } from '../advanced/PhysiologyParticleSystems';
+import ThermalOverlay from '../advanced/ThermalOverlay';
+import PressurePointOverlay from '../advanced/PressurePointOverlay';
+import { useSensoryFeedback } from '../sensory/MultiSensoryEngine';
 
 /**
  * Procedural placeholder heart — two overlapping spheres give a rough heart silhouette.
  */
-function HeartPlaceholder({ color, hovered }) {
+function HeartPlaceholder({ color, hovered, severity = 0, tier = 'medium', heartbeat = 72 }) {
   const groupRef = useRef();
 
   useFrame(({ clock }) => {
     if (!groupRef.current) return;
     // Heartbeat pulse
-    const beat = 1 + Math.sin(clock.getElapsedTime() * 4) * 0.04;
+    const beat = 1 + Math.sin(clock.getElapsedTime() * (heartbeat / 60) * Math.PI * 2) * 0.035;
     groupRef.current.scale.setScalar(beat);
   });
 
   return (
     <group ref={groupRef}>
-      {/* Main body */}
-      <mesh position={[0, 0, 0]}>
-        <sphereGeometry args={[0.55, 32, 32]} />
-        <meshStandardMaterial
-          color={hovered ? '#ff6b6b' : color}
-          emissive={hovered ? '#ff0000' : '#8b0000'}
-          emissiveIntensity={hovered ? 0.5 : 0.2}
-          roughness={0.6}
-          metalness={0.1}
-        />
-      </mesh>
-      {/* Left lobe */}
-      <mesh position={[-0.35, 0.25, 0.1]}>
-        <sphereGeometry args={[0.32, 24, 24]} />
-        <meshStandardMaterial
-          color={hovered ? '#ff6b6b' : color}
-          emissive={hovered ? '#ff0000' : '#8b0000'}
-          emissiveIntensity={hovered ? 0.5 : 0.2}
-          roughness={0.6}
-          metalness={0.1}
-        />
-      </mesh>
-      {/* Right lobe */}
-      <mesh position={[0.35, 0.25, 0.1]}>
-        <sphereGeometry args={[0.32, 24, 24]} />
-        <meshStandardMaterial
-          color={hovered ? '#ff6b6b' : color}
-          emissive={hovered ? '#ff0000' : '#8b0000'}
-          emissiveIntensity={hovered ? 0.5 : 0.2}
-          roughness={0.6}
-          metalness={0.1}
-        />
-      </mesh>
+      <MedicalMarchingLODOrgan
+        organType="heart"
+        color={hovered ? '#ff6b6b' : color}
+        severity={severity}
+        heartbeat={heartbeat}
+        tier={tier}
+        mode={0}
+      />
+      <VascularFlowParticles tier={tier} heartbeat={heartbeat} />
     </group>
   );
 }
@@ -76,6 +53,8 @@ function HeartPlaceholder({ color, hovered }) {
  * @param {boolean} [props.rotateOnHover=false] - Rotate on hover
  * @param {boolean} [props.showLabel=true]      - Show 'Heart' text label
  * @param {string}  [props.color='#e53e3e']     - Base colour
+ * @param {number}  [props.severity=0]          - Severity score for shader state
+ * @param {number}  [props.heartbeat=72]        - Heart rate BPM for pulse/flow sync
  * @param {[number,number,number]} [props.position=[0,0,0]]
  */
 export default function HeartModel({
@@ -83,11 +62,16 @@ export default function HeartModel({
   rotateOnHover = false,
   showLabel = true,
   color = '#e53e3e',
+  severity = 0,
+  heartbeat = 72,
+  temperatureHotspots = [],
+  painPoints = [],
   position = [0, 0, 0],
 }) {
   const [hovered, setHovered] = useState(false);
   const groupRef = useRef();
-  const { loaded } = use3DModel(null); // placeholder — no remote asset yet
+  const { tier } = useWebGLSupport();
+  const { triggerOrganFeedback, setFocusedOrgan } = useSensoryFeedback();
 
   useFrame(() => {
     if (!groupRef.current) return;
@@ -100,10 +84,22 @@ export default function HeartModel({
     <group
       ref={groupRef}
       position={position}
-      onPointerOver={interactive ? () => setHovered(true) : undefined}
+      onPointerOver={interactive ? () => {
+        setHovered(true);
+        setFocusedOrgan('heart');
+      } : undefined}
       onPointerOut={interactive ? () => setHovered(false) : undefined}
+      onPointerDown={interactive ? () => triggerOrganFeedback('heart', severity) : undefined}
     >
-      <HeartPlaceholder color={color} hovered={hovered && interactive} />
+      <HeartPlaceholder
+        color={color}
+        hovered={hovered && interactive}
+        severity={severity}
+        tier={tier}
+        heartbeat={heartbeat}
+      />
+      <ThermalOverlay severity={severity} hotspots={temperatureHotspots} />
+      <PressurePointOverlay points={painPoints} severity={severity} />
       {showLabel && (
         <HolographicText position={[0, -1, 0]} fontSize={0.22} color={hovered ? '#ff6b6b' : '#00e5ff'}>
           Heart

@@ -1,5 +1,5 @@
-import React, { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React, { lazy, Suspense, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, Link } from 'react-router-dom';
 import { UserProvider } from './contexts/UserContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { ConversationProvider } from './contexts/ConversationContext';
@@ -16,13 +16,14 @@ import logger from './utils/logger';
 import Auth from './pages/Auth';
 import AuthCallback from './pages/AuthCallback';
 import Onboarding from './pages/Onboarding';
-
-// Main App (keep eager — most visited)
 import Dashboard from './pages/Dashboard';
-import Chat from './pages/Chat';
+import Profile from './pages/Profile';
+import AuditLogs from './pages/AuditLogs';
+
+// Main App routes — lazy-loaded to reduce initial bundle
+const Chat = lazy(() => import('./pages/Chat'));
 
 // User Pages — lazy-loaded
-const Profile = lazy(() => import('./pages/Profile'));
 const ProfileSettings = lazy(() => import('./pages/ProfileSettings'));
 const Settings = lazy(() => import('./pages/Settings'));
 const NotificationPreferences = lazy(() => import('./pages/NotificationPreferences'));
@@ -32,7 +33,6 @@ const BiometricSetup = lazy(() => import('./pages/BiometricSetup'));
 // Analytics & Monitoring — lazy-loaded
 const AnalyticsDashboard = lazy(() => import('./pages/AnalyticsDashboard'));
 const CostAnalyticsDashboard = lazy(() => import('./pages/CostAnalyticsDashboard'));
-const AuditLogs = lazy(() => import('./pages/AuditLogs'));
 const ClinicalAlertsPage = lazy(() => import('./pages/ClinicalAlertsPage'));
 const ClinicalDashboard = lazy(() => import('./pages/ClinicalDashboard'));
 
@@ -68,9 +68,8 @@ import { PublicShell } from './layout/PublicShell';
 
 // Loading component
 const PageLoader = () => {
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  let label = 'Loading...';
-  try { const { t } = useLanguage(); label = t('app.loading'); } catch { /* fallback */ }
+  const { t } = useLanguage();
+  const label = t('app.loading');
   return (
   <div style={{
     display: 'flex',
@@ -99,45 +98,87 @@ const PageLoader = () => {
 // Welcome page
 function WelcomePage() {
   const { t } = useLanguage();
+  const navigate = useNavigate();
+  const valuePillars = [
+    {
+      title: 'Rapid Clinical Reasoning',
+      detail: 'Triage-focused support built for urgent decisions.',
+    },
+    {
+      title: 'Evidence-Aligned Guidance',
+      detail: 'Actionable recommendations with structured context.',
+    },
+    {
+      title: 'Secure Team Workflow',
+      detail: 'Designed for healthcare collaboration and compliance.',
+    },
+  ];
+
   return (
-    <div style={{
-      minHeight: '100dvh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '40px',
-      background: '#000000',
-      color: '#f8fafc',
-      fontFamily: 'system-ui, sans-serif'
-    }}>
-      <div style={{ textAlign: 'center', maxWidth: '600px' }}>
-        <h1 style={{ fontSize: '48px', marginBottom: '24px' }}>🏥 {t('app.name')}</h1>
-        <p style={{ fontSize: '18px', marginBottom: '40px', color: 'rgba(248,250,252,0.7)' }}>
-          {t('app.tagline')}
-        </p>
-        <button
-          onClick={() => window.location.href = '/auth'}
-          style={{
-            padding: '14px 32px',
-            fontSize: '16px',
-            fontWeight: 600,
-            background: 'var(--accent, #3B82F6)',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer'
-          }}
-        >
-          {t('app.signIn')}
-        </button>
+    <section className="welcome-hero" aria-labelledby="welcome-title">
+      <div className="welcome-surface">
+        <div className="welcome-brand-mark" aria-hidden="true">⚕️</div>
+
+        <div className="welcome-content">
+          <p className="welcome-eyebrow">Clinical Intelligence Platform</p>
+          <h1 id="welcome-title" className="welcome-title">{t('app.name')}</h1>
+          <p className="welcome-tagline">{t('app.tagline')}</p>
+
+          <div className="welcome-pillars" aria-label="Core platform strengths">
+            {valuePillars.map((item) => (
+              <article key={item.title} className="welcome-pillar">
+                <h2 className="welcome-pillar-title">{item.title}</h2>
+                <p className="welcome-pillar-detail">{item.detail}</p>
+              </article>
+            ))}
+          </div>
+
+          <div className="welcome-actions">
+            <button
+              onClick={() => navigate('/auth')}
+              className="welcome-cta"
+            >
+              {t('app.signIn')}
+            </button>
+          </div>
+
+          <div className="welcome-utility-links" aria-label="Landing quick navigation">
+            <Link to="/help" className="welcome-utility-link">Help</Link>
+            <Link to="/privacy" className="welcome-utility-link">Privacy</Link>
+            <Link to="/terms" className="welcome-utility-link">Terms</Link>
+          </div>
+
+          <div className="welcome-meta-strip" aria-label="Trust and compliance indicators">
+            <span className="welcome-meta-chip">🔒 HIPAA Compliant</span>
+            <span className="welcome-meta-chip">Clinical-grade Security</span>
+            <span className="welcome-meta-chip">24/7 Care Workflow Ready</span>
+          </div>
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
 
 // ==================== APP ====================
 function App() {
   logger.info('App loaded - Starting up');
+
+  useEffect(() => {
+    const prefetchRoutes = () => {
+      void import('./pages/Chat');
+      void import('./pages/Settings');
+      void import('./pages/tools/ToolsOverview');
+      void import('./pages/AnalyticsDashboard');
+    };
+
+    if ('requestIdleCallback' in window) {
+      const idleId = window.requestIdleCallback(prefetchRoutes, { timeout: 2000 });
+      return () => window.cancelIdleCallback(idleId);
+    }
+
+    const timeoutId = window.setTimeout(prefetchRoutes, 1200);
+    return () => window.clearTimeout(timeoutId);
+  }, []);
 
   return (
     <ErrorBoundary>

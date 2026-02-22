@@ -1,5 +1,6 @@
 import React from 'react';
 import HolographicCanvas from './HolographicCanvas';
+import Mobile3DContainer from './Mobile3DContainer';
 import {
   AnatomyModel3D,
   DrugInteractionNetwork3D,
@@ -29,60 +30,68 @@ export default function HolographicVisualization({ visualization, height = 260 }
 
   if (type === 'anatomy-3d') {
     return (
-      <HolographicCanvas
-        style={style}
-        ariaLabel="3D anatomy hologram"
-        reducedMotion={reducedMotion}
-        fallback={fallbackMessage('Anatomy Overview')}
-        camera={metadata.camera || { position: [0, 1.4, 5.2], fov: 50 }}
-      >
-        <AnatomyModel3D
-          modelUrl={data.modelUrl}
-          organType={data.organ || 'general'}
-          vitals={data.vitals || { HR: '88', SpO2: '97%', RR: '18' }}
-          markers={data.markers || []}
-        />
-      </HolographicCanvas>
+      <Mobile3DContainer minHeight={height}>
+        <HolographicCanvas
+          style={style}
+          ariaLabel="3D anatomy hologram"
+          reducedMotion={reducedMotion}
+          fallback={fallbackMessage('Anatomy Overview')}
+          camera={metadata.camera || { position: [0, 1.4, 5.2], fov: 50 }}
+        >
+          <AnatomyModel3D
+            modelUrl={data.modelUrl}
+            organType={data.organ || 'general'}
+            vitals={data.vitals || { HR: '88', SpO2: '97%', RR: '18' }}
+            markers={data.markers || []}
+          />
+        </HolographicCanvas>
+      </Mobile3DContainer>
     );
   }
 
   if (type === 'drug-network-3d') {
     return (
-      <HolographicCanvas
-        style={style}
-        ariaLabel="3D drug interaction network"
-        reducedMotion={reducedMotion}
-        fallback={fallbackMessage('Drug Interaction Network')}
-      >
-        <DrugInteractionNetwork3D nodes={data.nodes || []} links={data.links || []} />
-      </HolographicCanvas>
+      <Mobile3DContainer minHeight={height}>
+        <HolographicCanvas
+          style={style}
+          ariaLabel="3D drug interaction network"
+          reducedMotion={reducedMotion}
+          fallback={fallbackMessage('Drug Interaction Network')}
+        >
+          <DrugInteractionNetwork3D nodes={data.nodes || []} links={data.links || []} />
+        </HolographicCanvas>
+      </Mobile3DContainer>
     );
   }
 
   if (type === 'lab-chart-3d') {
     return (
-      <HolographicCanvas
-        style={style}
-        ariaLabel="3D volumetric lab chart"
-        reducedMotion={reducedMotion}
-        fallback={fallbackMessage('Lab Results Overview')}
-      >
-        <VolumetricLabChart3D items={data.items || []} />
-      </HolographicCanvas>
+      <Mobile3DContainer minHeight={height}>
+        <HolographicCanvas
+          style={style}
+          ariaLabel="3D volumetric lab chart"
+          reducedMotion={reducedMotion}
+          fallback={fallbackMessage('Lab Results Overview')}
+        >
+          <VolumetricLabChart3D items={data.items || []} />
+        </HolographicCanvas>
+      </Mobile3DContainer>
     );
   }
 
   if (type === 'timeline-3d') {
     return (
-      <HolographicCanvas
-        style={style}
-        ariaLabel="3D patient timeline"
-        reducedMotion={reducedMotion}
-        fallback={fallbackMessage('Patient Timeline')}
-        camera={metadata.camera || { position: [0, 0.8, 6.2], fov: 53 }}
-      >
-        <Timeline3D events={data.events || []} />
-      </HolographicCanvas>
+      <Mobile3DContainer minHeight={height}>
+        <HolographicCanvas
+          style={style}
+          ariaLabel="3D patient timeline"
+          reducedMotion={reducedMotion}
+          fallback={fallbackMessage('Patient Timeline')}
+          camera={metadata.camera || { position: [0, 0.8, 6.2], fov: 53 }}
+        >
+          <Timeline3D events={data.events || []} />
+        </HolographicCanvas>
+      </Mobile3DContainer>
     );
   }
 

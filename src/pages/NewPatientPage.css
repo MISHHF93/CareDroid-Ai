@@ -232,7 +232,12 @@
 /* ─── Responsive ─── */
 @media (max-width: 600px) {
   .npp-container {
-    padding: var(--space-4, 16px);
+    padding: calc(var(--safe-area-top) + 60px) var(--space-4, 16px) calc(var(--space-4, 16px) + var(--safe-area-bottom));
+  }
+
+  .npp-page-header-left {
+    flex-wrap: wrap;
+    gap: var(--space-2, 8px);
   }
 
   .npp-row-2,

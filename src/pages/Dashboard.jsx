@@ -38,6 +38,10 @@ function Dashboard() {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { supported: webglSupported } = useWebGLSupport();
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(max-width: 768px)').matches;
+  });
   const [show3DTimeline, setShow3DTimeline] = useState(true);
   const {
     notifications,
@@ -76,6 +80,33 @@ function Dashboard() {
   const [expandedPatients, setExpandedPatients] = useState(new Set());
   const [showNewPatient, setShowNewPatient] = useState(false);
   const [showEmergency, setShowEmergency] = useState(false);
+
+  useEffect(() => {
+    const prefetchLandingRoutes = () => {
+      void import('./Settings');
+      void import('./AnalyticsDashboard');
+      void import('./team/TeamManagement');
+      void import('./tools/ToolsOverview');
+      void import('./Chat');
+    };
+
+    if ('requestIdleCallback' in window) {
+      const idleId = window.requestIdleCallback(prefetchLandingRoutes, { timeout: 2500 });
+      return () => window.cancelIdleCallback(idleId);
+    }
+
+    const timeoutId = window.setTimeout(prefetchLandingRoutes, 1000);
+    return () => window.clearTimeout(timeoutId);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    const handleChange = (event) => setIsMobile(event.matches);
+    handleChange(mediaQuery);
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
 
   useEffect(() => {
     const handle = setTimeout(() => {
@@ -468,15 +499,18 @@ function Dashboard() {
           }}>
             <div style={{
               display: 'flex',
-              alignItems: 'center',
+              alignItems: isMobile ? 'stretch' : 'center',
               justifyContent: 'space-between',
               gap: 'var(--space-3)',
-              flexWrap: 'wrap'
+              flexWrap: 'wrap',
+              flexDirection: isMobile ? 'column' : 'row'
             }}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 'var(--space-3)'
+                gap: 'var(--space-3)',
+                justifyContent: isMobile ? 'space-between' : 'flex-start',
+                width: isMobile ? '100%' : 'auto'
               }}>
                 <h2 style={{
                   margin: 0,
@@ -500,7 +534,9 @@ function Dashboard() {
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 'var(--space-2)'
+                gap: 'var(--space-2)',
+                width: isMobile ? '100%' : 'auto',
+                justifyContent: isMobile ? 'flex-end' : 'flex-start'
               }}>
                 <button
                   onClick={() => {
@@ -527,14 +563,16 @@ function Dashboard() {
 
             <div style={{
               display: 'flex',
-              alignItems: 'center',
+              alignItems: isMobile ? 'stretch' : 'center',
               gap: 'var(--space-3)',
-              flexWrap: 'wrap'
+              flexWrap: 'wrap',
+              flexDirection: isMobile ? 'column' : 'row'
             }}>
               <div style={{
                 display: 'flex',
                 gap: 'var(--space-2)',
-                flexWrap: 'wrap'
+                flexWrap: 'wrap',
+                width: isMobile ? '100%' : 'auto'
               }}>
                 {statusOptions.map((option) => (
                   <button
@@ -562,9 +600,10 @@ function Dashboard() {
                 ))}
               </div>
               <div style={{
-                marginLeft: 'auto',
-                flex: '1 1 240px',
-                maxWidth: '320px'
+                marginLeft: isMobile ? 0 : 'auto',
+                flex: isMobile ? '1 1 100%' : '1 1 240px',
+                maxWidth: isMobile ? '100%' : '320px',
+                width: isMobile ? '100%' : 'auto'
               }}>
                 <input
                   type="search"

@@ -78,6 +78,10 @@ export const TeamManagement = () => {
   const navigate = useNavigate();
   useAppearance(); // re-render on theme/accent change
   const { t } = useLanguage();
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(max-width: 768px)').matches;
+  });
 
   // State
   const [users, setUsers] = useState([]);
@@ -90,6 +94,15 @@ export const TeamManagement = () => {
   const [selectedUser, setSelectedUser] = useState(null); // drawer
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [activityFeed, setActivityFeed] = useState([]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    const updateMobile = (event) => setIsMobile(event.matches);
+    updateMobile(mediaQuery);
+    mediaQuery.addEventListener('change', updateMobile);
+    return () => mediaQuery.removeEventListener('change', updateMobile);
+  }, []);
 
   // SSE presence
   useEffect(() => {
@@ -238,12 +251,12 @@ export const TeamManagement = () => {
       onSignOut={signOut}
       healthStatus="online"
     >
-      <div style={{ padding: '32px', maxWidth: '1400px', margin: '0 auto' }}>
+      <div className="team-management" style={{ padding: isMobile ? '16px' : '32px', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
 
         {/* ═══ HEADER ═══ */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '28px', flexWrap: 'wrap', gap: '16px' }}>
           <div>
-            <h1 style={{ margin: 0, fontSize: '28px', fontWeight: 700, color: T.primary }}>{t('team.title')}</h1>
+            <h1 style={{ margin: 0, fontSize: isMobile ? '24px' : '28px', fontWeight: 700, color: T.primary }}>{t('team.title')}</h1>
             <p style={{ margin: '6px 0 0', fontSize: '14px', color: T.tertiary }}>
               {t('team.subtitle')}
             </p>
@@ -288,7 +301,7 @@ export const TeamManagement = () => {
           display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', flexWrap: 'wrap',
         }}>
           {/* Search */}
-          <div style={{ flex: 1, minWidth: '200px', position: 'relative' }}>
+          <div style={{ flex: '1 1 220px', minWidth: isMobile ? '100%' : '200px', position: 'relative' }}>
             <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '14px', opacity: 0.4 }}>🔍</span>
             <input
               type="text"
@@ -544,6 +557,7 @@ export const TeamManagement = () => {
       {selectedUser && (
         <MemberDrawer
           member={selectedUser}
+          isMobile={isMobile}
           isOnCall={ON_CALL_IDS.has(selectedUser.id)}
           onClose={() => setSelectedUser(null)}
           onRoleChange={handleRoleChange}
@@ -556,6 +570,7 @@ export const TeamManagement = () => {
       {showInviteModal && (
         <InviteModal
           onInvite={handleInvite}
+          isMobile={isMobile}
           onClose={() => setShowInviteModal(false)}
         />
       )}
@@ -673,7 +688,7 @@ const MemberCard = ({ member: u, isOnCall, onSelect }) => {
 // ═══════════════════════════════════════════════════
 // MEMBER DETAIL DRAWER
 // ═══════════════════════════════════════════════════
-const MemberDrawer = ({ member: u, isOnCall, onClose, onRoleChange, onDeactivate, onReactivate }) => {
+const MemberDrawer = ({ member: u, isMobile = false, isOnCall, onClose, onRoleChange, onDeactivate, onReactivate }) => {
   const { t } = useLanguage();
   const drawerRef = useRef(null);
   const rs = ROLE_STYLES[u.role] || ROLE_STYLES.student;
@@ -714,15 +729,21 @@ const MemberDrawer = ({ member: u, isOnCall, onClose, onRoleChange, onDeactivate
       <div
         ref={drawerRef}
         style={{
-          position: 'fixed', top: 0, right: 0, bottom: 0, width: '440px', maxWidth: '90dvw',
-          background: S.panel, borderLeft: `1px solid ${B.default}`,
+          position: 'fixed', top: 0, right: 0, bottom: 0,
+          width: isMobile ? '100dvw' : '440px',
+          maxWidth: isMobile ? '100dvw' : '90dvw',
+          background: S.panel,
+          borderLeft: isMobile ? 'none' : `1px solid ${B.default}`,
           zIndex: 1000, overflowY: 'auto', padding: '0',
           animation: 'slideInRight 0.25s ease',
         }}
       >
         {/* Header */}
         <div style={{
-          padding: '24px', borderBottom: `1px solid ${B.default}`,
+          padding: isMobile
+            ? 'calc(var(--safe-area-top) + 16px) 16px 16px'
+            : '24px',
+          borderBottom: `1px solid ${B.default}`,
           background: `linear-gradient(135deg, ${rs.color}08, transparent)`,
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
@@ -734,7 +755,7 @@ const MemberDrawer = ({ member: u, isOnCall, onClose, onRoleChange, onDeactivate
             }}>✕</button>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '12px' : '16px' }}>
             <div style={{
               width: '72px', height: '72px', borderRadius: '50%',
               background: u.profile?.avatarUrl ? `url(${u.profile.avatarUrl}) center/cover` : rs.gradient,
@@ -779,7 +800,7 @@ const MemberDrawer = ({ member: u, isOnCall, onClose, onRoleChange, onDeactivate
         </div>
 
         {/* Sections */}
-        <div style={{ padding: '20px 24px' }}>
+        <div style={{ padding: isMobile ? '16px' : '20px 24px', paddingBottom: isMobile ? 'calc(20px + var(--safe-area-bottom))' : '20px' }}>
 
           {/* Professional Details */}
           <div style={{ marginBottom: '24px' }}>
@@ -861,7 +882,10 @@ const MemberDrawer = ({ member: u, isOnCall, onClose, onRoleChange, onDeactivate
 
           {/* Admin Actions */}
           <div style={{
-            display: 'flex', gap: '10px', paddingTop: '16px',
+            display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: '10px',
+            paddingTop: '16px',
             borderTop: `1px solid ${B.subtle}`,
           }}>
             <button
@@ -901,7 +925,7 @@ const MemberDrawer = ({ member: u, isOnCall, onClose, onRoleChange, onDeactivate
 // ═══════════════════════════════════════════════════
 // INVITE MODAL
 // ═══════════════════════════════════════════════════
-const InviteModal = ({ onInvite, onClose }) => {
+const InviteModal = ({ onInvite, isMobile = false, onClose }) => {
   const { t } = useLanguage();
   const [emails, setEmails] = useState('');
   const [role, setRole] = useState('student');
@@ -921,19 +945,37 @@ const InviteModal = ({ onInvite, onClose }) => {
     <>
       <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1001 }} />
       <div style={{
-        position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-        width: '460px', maxWidth: '92dvw', background: S.panel,
-        border: `1px solid ${B.medium}`, borderRadius: '14px',
+        position: 'fixed',
+        top: isMobile ? 'auto' : '50%',
+        left: isMobile ? 0 : '50%',
+        right: isMobile ? 0 : 'auto',
+        bottom: isMobile ? 0 : 'auto',
+        transform: isMobile ? 'none' : 'translate(-50%, -50%)',
+        width: isMobile ? '100dvw' : '460px',
+        maxWidth: isMobile ? '100dvw' : '92dvw',
+        maxHeight: isMobile ? '88dvh' : 'none',
+        overflowY: isMobile ? 'auto' : 'visible',
+        background: S.panel,
+        border: `1px solid ${B.medium}`,
+        borderRadius: isMobile ? '14px 14px 0 0' : '14px',
         zIndex: 1002, animation: 'slideUp 0.25s ease',
       }}>
         {/* Header */}
-        <div style={{ padding: '20px 24px', borderBottom: `1px solid ${B.default}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{
+          padding: isMobile
+            ? '16px 16px 14px'
+            : '20px 24px',
+          borderBottom: `1px solid ${B.default}`,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
           <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: T.primary }}>{t('team.invite.title')}</h2>
           <button onClick={onClose} style={{ width: '28px', height: '28px', borderRadius: '6px', border: 'none', background: S.hover, color: T.primary, cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
         </div>
 
         {/* Body */}
-        <div style={{ padding: '24px' }}>
+        <div style={{ padding: isMobile ? '16px' : '24px', paddingBottom: isMobile ? 'calc(16px + var(--safe-area-bottom))' : '24px' }}>
           <p style={{ fontSize: '13px', color: T.tertiary, margin: '0 0 20px' }}>
             {t('team.invite.description')}
           </p>

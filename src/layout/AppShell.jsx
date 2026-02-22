@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '../contexts/NotificationContext';
 import { useUser } from '../contexts/UserContext';
@@ -22,7 +22,22 @@ const AppShell = ({
   const { notifications } = useNotifications();
   const { user } = useUser();
   const navigate = useNavigate();
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(max-width: 768px)').matches;
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia('(max-width: 768px)');
+    const syncSidebarState = (event) => {
+      setIsSidebarCollapsed(event.matches);
+    };
+
+    syncSidebarState(mq);
+    mq.addEventListener('change', syncSidebarState);
+    return () => mq.removeEventListener('change', syncSidebarState);
+  }, []);
 
   return (
     <div className={`app-shell ${isSidebarCollapsed ? 'app-shell-collapsed' : ''}`}>
@@ -46,6 +61,17 @@ const AppShell = ({
         aria-label="Close sidebar"
         type="button"
       />
+
+      {isSidebarCollapsed && (
+        <button
+          className="app-shell-mobile-menu"
+          onClick={() => setIsSidebarCollapsed(false)}
+          aria-label="Open sidebar"
+          type="button"
+        >
+          ☰
+        </button>
+      )}
 
       {/* Main Content Area - Pushed by sidebar width */}
       <div className="app-shell-main">

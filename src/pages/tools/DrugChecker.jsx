@@ -4,7 +4,7 @@ import analyticsService from '../../services/analyticsService';
 import offlineService from '../../services/offlineService';
 import ToolPageLayout from './ToolPageLayout';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { HolographicCanvas, DrugInteractionNetwork3D, MolecularStructure3D } from '../../components/holographic';
+import { HolographicCanvas, DrugInteractionNetwork3D, MolecularStructure3D, Mobile3DContainer } from '../../components/holographic';
 import { useHolographicMode } from '../../hooks/useHolographicMode';
 import './DrugChecker.css';
 
@@ -174,21 +174,25 @@ const DrugChecker = () => {
         {results && (
           <div className="results-section">
             <div style={{ display: 'grid', gap: '14px', marginBottom: '16px' }}>
-              <HolographicCanvas
-                reducedMotion={reducedMotion}
-                ariaLabel="3D molecular structure"
-                style={{ minHeight: 240 }}
-              >
-                <MolecularStructure3D />
-              </HolographicCanvas>
+              <Mobile3DContainer minHeight={240}>
+                <HolographicCanvas
+                  reducedMotion={reducedMotion}
+                  ariaLabel="3D molecular structure"
+                  style={{ minHeight: 240 }}
+                >
+                  <MolecularStructure3D />
+                </HolographicCanvas>
+              </Mobile3DContainer>
 
-              <HolographicCanvas
-                reducedMotion={reducedMotion}
-                ariaLabel="3D drug interaction network"
-                style={{ minHeight: 260 }}
-              >
-                <DrugInteractionNetwork3D nodes={interactionNodes} links={interactionLinks} />
-              </HolographicCanvas>
+              <Mobile3DContainer minHeight={260}>
+                <HolographicCanvas
+                  reducedMotion={reducedMotion}
+                  ariaLabel="3D drug interaction network"
+                  style={{ minHeight: 260 }}
+                >
+                  <DrugInteractionNetwork3D nodes={interactionNodes} links={interactionLinks} />
+                </HolographicCanvas>
+              </Mobile3DContainer>
             </div>
 
             {/* Interactions */}

@@ -3,7 +3,7 @@ import ToolPageLayout from './ToolPageLayout';
 import './Calculators.css';
 import { apiFetch } from '../../services/apiClient';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { HolographicCanvas, VolumetricLabChart3D } from '../../components/holographic';
+import { HolographicCanvas, VolumetricLabChart3D, Mobile3DContainer } from '../../components/holographic';
 import { useHolographicMode } from '../../hooks/useHolographicMode';
 
 const CALCULATORS = [
@@ -417,19 +417,21 @@ const SOFACalculator = ({ onResultChange }) => {
         ) : result ? (
           <>
             {result.breakdown && (
-              <HolographicCanvas
-                ariaLabel="3D SOFA organ severity visualization"
-                reducedMotion={reducedMotion}
-                style={{ minHeight: 250, marginBottom: '14px' }}
-              >
-                <VolumetricLabChart3D
-                  items={Object.entries(result.breakdown).map(([system, score]) => ({
-                    label: system,
-                    value: Number(score),
-                    max: 4,
-                  }))}
-                />
-              </HolographicCanvas>
+              <Mobile3DContainer minHeight={250} style={{ marginBottom: '14px' }}>
+                <HolographicCanvas
+                  ariaLabel="3D SOFA organ severity visualization"
+                  reducedMotion={reducedMotion}
+                  style={{ minHeight: 250 }}
+                >
+                  <VolumetricLabChart3D
+                    items={Object.entries(result.breakdown).map(([system, score]) => ({
+                      label: system,
+                      value: Number(score),
+                      max: 4,
+                    }))}
+                  />
+                </HolographicCanvas>
+              </Mobile3DContainer>
             )}
 
             {/* Score Display */}

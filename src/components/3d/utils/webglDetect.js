@@ -54,14 +54,32 @@ export function isMobileDevice() {
   );
 }
 
+export function detectWebGLTier() {
+  if (typeof window === 'undefined') return 'none';
+  try {
+    const canvas = document.createElement('canvas');
+    const webgl2 = canvas.getContext('webgl2');
+    if (webgl2) {
+      return isMobileDevice() ? 'medium' : 'high';
+    }
+    const webgl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    if (webgl) {
+      return 'medium';
+    }
+    return 'none';
+  } catch {
+    return 'none';
+  }
+}
+
 /**
  * Get recommended rendering tier based on device capabilities
  * @returns {'high'|'medium'|'low'} Rendering quality tier
  */
 export function getRenderingTier() {
-  if (!isWebGLSupported()) return 'none';
-  if (isMobileDevice()) return 'low';
+  const tier = detectWebGLTier();
+  if (tier === 'none') return 'none';
   if (prefersReducedMotion()) return 'low';
-  if (isWebGL2Supported()) return 'high';
-  return 'medium';
+  if (tier === 'high') return 'high';
+  return isMobileDevice() ? 'low' : 'medium';
 }

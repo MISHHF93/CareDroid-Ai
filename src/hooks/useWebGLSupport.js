@@ -4,23 +4,30 @@
  */
 
 import { useState, useEffect } from 'react';
-import {
-  isWebGLSupported,
-  prefersReducedMotion,
-  isMobileDevice,
-  getRenderingTier,
-} from '../components/3d/utils/webglDetect';
+import { detectWebGLTier } from '../components/3d/utils/webglDetect';
 
 /**
  * Hook to detect WebGL support and device capabilities
- * @returns {{ supported: boolean, tier: string, mobile: boolean, reducedMotion: boolean }}
+ * @returns {{ supported: boolean, tier: 'high'|'medium'|'low', reducedMotion: boolean }}
  */
 export function useWebGLSupport() {
+  const getTierFromConcurrency = () => {
+    if (typeof navigator === 'undefined') return 'low';
+    const cores = Number(navigator.hardwareConcurrency || 2);
+    if (cores >= 8) return 'high';
+    if (cores >= 4) return 'medium';
+    return 'low';
+  };
+
+  const getReducedMotion = () => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  };
+
   const [state, setState] = useState(() => ({
-    supported: isWebGLSupported(),
-    tier: getRenderingTier(),
-    mobile: isMobileDevice(),
-    reducedMotion: prefersReducedMotion(),
+    supported: detectWebGLTier() !== 'none',
+    tier: getTierFromConcurrency(),
+    reducedMotion: getReducedMotion(),
   }));
 
   useEffect(() => {
@@ -32,7 +39,8 @@ export function useWebGLSupport() {
       setState((prev) => ({
         ...prev,
         reducedMotion: mediaQuery.matches,
-        tier: getRenderingTier(),
+        tier: getTierFromConcurrency(),
+        supported: detectWebGLTier() !== 'none',
       }));
     };
 

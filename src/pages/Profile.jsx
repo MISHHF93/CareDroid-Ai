@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser, Permission } from '../contexts/UserContext';
 import { useToolPreferences } from '../contexts/ToolPreferencesContext';
@@ -65,6 +65,19 @@ const Profile = () => {
   const { recentTools } = useToolPreferences();
   useAppearance(); // re-render on theme/accent change
   const { t } = useLanguage();
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(max-width: 768px)').matches;
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia('(max-width: 768px)');
+    const update = (event) => setIsMobile(event.matches);
+    update(mq);
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
 
   const role = user?.role || 'student';
   const rs = ROLE_STYLES[role] || ROLE_STYLES.student;
@@ -126,10 +139,28 @@ const Profile = () => {
       onSignOut={signOut}
       healthStatus="online"
     >
-      <div style={{ flex: 1, overflowY: 'auto', padding: '32px 40px', maxWidth: '960px', margin: '0 auto', width: '100%' }}>
+      <div style={{
+        flex: 1,
+        overflowY: 'auto',
+        padding: isMobile
+          ? 'calc(var(--safe-area-top) + 60px) 16px calc(16px + var(--safe-area-bottom))'
+          : '32px 40px',
+        maxWidth: '960px',
+        margin: '0 auto',
+        width: '100%',
+        boxSizing: 'border-box'
+      }}>
 
         {/* ═══ PROFILE HEADER ═══ */}
-        <div style={{ ...cardInner, display: 'flex', alignItems: 'center', gap: '24px', marginBottom: '24px', padding: '28px' }}>
+        <div style={{
+          ...cardInner,
+          display: 'flex',
+          alignItems: isMobile ? 'flex-start' : 'center',
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: isMobile ? '16px' : '24px',
+          marginBottom: '24px',
+          padding: isMobile ? '18px' : '28px'
+        }}>
           {/* Avatar */}
           <div style={{
             width: '88px', height: '88px', borderRadius: '50%',
@@ -183,7 +214,14 @@ const Profile = () => {
           </div>
 
           {/* Completeness Ring + Edit Button */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: isMobile ? 'flex-start' : 'center',
+            gap: '12px',
+            flexShrink: 0,
+            width: isMobile ? '100%' : 'auto'
+          }}>
             {/* SVG ring */}
             <div style={{ position: 'relative', width: '72px', height: '72px' }}>
               <svg width="72" height="72" viewBox="0 0 72 72">
@@ -212,7 +250,8 @@ const Profile = () => {
               style={{
                 padding: '10px 20px', borderRadius: '8px', fontSize: '13px', fontWeight: 600,
                 background: rs.bg, color: rs.color, border: `1px solid ${rs.color}40`,
-                cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s',
+                cursor: 'pointer', whiteSpace: isMobile ? 'normal' : 'nowrap', transition: 'all 0.15s',
+                width: isMobile ? '100%' : 'auto',
               }}
             >
               ✏️ {t('profile.editProfile')}
@@ -223,17 +262,17 @@ const Profile = () => {
         {/* Completeness nudge banner */}
         {completenessPercent < 100 && (
           <div style={{
-            display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 20px',
+            display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', gap: '12px', padding: '14px 20px',
             borderRadius: '10px', marginBottom: '20px',
             background: `linear-gradient(135deg, ${rs.color}12, ${rs.color}06)`,
             border: `1px solid ${rs.color}25`,
           }}>
             <span style={{ fontSize: '20px' }}>💡</span>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
               <span style={{ fontSize: '13px', fontWeight: 600, color: rs.color }}>
                 {t('profile.completeYourProfile')} ({completedCount}/{completenessFields.length})
               </span>
-              <span style={{ fontSize: '12px', color: T.muted, marginLeft: '8px' }}>
+              <span style={{ fontSize: '12px', color: T.muted, marginLeft: isMobile ? 0 : '8px', display: 'block', marginTop: isMobile ? '4px' : 0 }}>
                 {t('profile.missing')}: {completenessFields.filter((f) => !f.done).map((f) => f.label).join(', ')}
               </span>
             </div>
@@ -242,6 +281,7 @@ const Profile = () => {
               style={{
                 padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 600,
                 background: rs.color, color: S.panel, border: 'none', cursor: 'pointer',
+                width: isMobile ? '100%' : 'auto',
               }}
             >
               {t('profile.completeNow')}
@@ -250,7 +290,12 @@ const Profile = () => {
         )}
 
         {/* ═══ TWO-COLUMN CARDS ═══ */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+          gap: '20px',
+          marginBottom: '20px'
+        }}>
 
           {/* Professional Details */}
           <div style={cardInner}>
@@ -316,7 +361,11 @@ const Profile = () => {
         </div>
 
         {/* ═══ SECOND ROW ═══ */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+          gap: '20px'
+        }}>
 
           {/* Activity Summary */}
           <div style={cardInner}>
@@ -366,7 +415,7 @@ const Profile = () => {
                           fontSize: '10px', fontWeight: 600, padding: '2px 8px', borderRadius: '999px',
                           background: has ? alpha.success(0.12) : alpha.error(0.08),
                           color: has ? colors.success : alpha.error(0.5),
-                          whiteSpace: 'nowrap',
+                          whiteSpace: isMobile ? 'normal' : 'nowrap',
                         }}>
                           {has ? '✓' : '✗'} {formatPermission(perm)}
                         </span>

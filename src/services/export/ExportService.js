@@ -303,14 +303,18 @@ class ExportService {
         nextRun.setDate(nextRun.getDate() + 1);
         break;
       case 'weekly':
+      {
         const daysUntilDay =
           ((schedule.dayOfWeek || 0) - nextRun.getDay() + 7) % 7;
         nextRun.setDate(nextRun.getDate() + (daysUntilDay || 7));
         break;
+      }
       case 'monthly':
+      {
         nextRun.setMonth(nextRun.getMonth() + 1);
         nextRun.setDate(schedule.dayOfMonth || 1);
         break;
+      }
     }
 
     const [hours, minutes] = (schedule.time || '09:00').split(':');

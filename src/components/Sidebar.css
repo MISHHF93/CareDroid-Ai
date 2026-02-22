@@ -40,10 +40,12 @@
   z-index: 1000;
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
 }
 
 .sidebar-collapsed {
   width: 70px;
+  overflow: hidden;
 }
 
 .sidebar-collapsed .logo-icon {
@@ -809,6 +811,8 @@
   .sidebar {
     width: min(86dvw, 320px);
     transform: translateX(0);
+    visibility: visible;
+    pointer-events: auto;
     box-shadow: 8px 0 24px rgba(0, 0, 0, 0.35);
     transition: transform 0.25s ease;
   }
@@ -816,6 +820,8 @@
   .sidebar-collapsed {
     transform: translateX(-100%);
     width: min(86dvw, 320px);
+    visibility: hidden;
+    pointer-events: none;
   }
 
   .sidebar-toggle:hover {

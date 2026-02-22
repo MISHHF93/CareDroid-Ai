@@ -5,8 +5,10 @@
 
 .dashboard-container {
   padding: clamp(16px, 4dvw, 24px);
-  max-width: min(100% - 2rem, 1400px);
+  max-width: 1400px;
+  width: 100%;
   margin: 0 auto;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
@@ -30,6 +32,12 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--space-4);
+}
+
+.dashboard-stats-row > *,
+.dashboard-row-2col > *,
+.dashboard-row-3col > * {
+  min-width: 0;
 }
 
 /* ─── Staggered slide-up ─── */
@@ -92,11 +100,21 @@
 /* ─── Small mobile (≤ 420px) ─── */
 @media (max-width: 420px) {
   .dashboard-container {
-    padding: var(--space-2);
+    padding: calc(var(--safe-area-top) + 56px + var(--space-2)) var(--space-2) var(--space-2);
+    max-width: 100%;
+    overflow-x: hidden;
   }
 
   .dashboard-stats-row {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 421px) and (max-width: 768px) {
+  .dashboard-container {
+    padding: calc(var(--safe-area-top) + 56px + var(--space-3)) var(--space-4) var(--space-4);
+    max-width: 100%;
+    overflow-x: hidden;
   }
 }
 

@@ -48,6 +48,15 @@ export default defineConfig({
             if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
               return 'vendor-react';
             }
+            // 3D stack
+            if (
+              id.includes('three') ||
+              id.includes('@react-three/fiber') ||
+              id.includes('@react-three/drei') ||
+              id.includes('@react-three/postprocessing')
+            ) {
+              return 'vendor-3d';
+            }
             // Charts library
             if (id.includes('recharts')) {
               return 'vendor-charts';
@@ -55,7 +64,7 @@ export default defineConfig({
             // Other vendors
             return 'vendor';
           }
-          
+
           // Analytics pages
           if (id.includes('AnalyticsDashboard') || id.includes('CostAnalyticsDashboard')) {
             return 'analytics';

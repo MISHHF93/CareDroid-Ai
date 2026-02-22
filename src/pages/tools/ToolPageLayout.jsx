@@ -30,6 +30,7 @@ const ToolPageLayout = ({
 
   const clinicalInsights = results ? buildClinicalInsights(tool, results) : null;
   const riskData = results ? computeRiskScore(tool.id, results) : null;
+  const panelSeverity = riskData?.severity || clinicalInsights?.severity || 'unknown';
 
   // Generate clinical alerts based on risk data
   useEffect(() => {
@@ -152,11 +153,11 @@ const ToolPageLayout = ({
       </div>
 
       {(clinicalInsights || riskData) && (
-        <div className={`clinical-insights-panel severity-${(riskData?.severity || clinicalInsights?.severity)}`}>
+        <div className={`clinical-insights-panel severity-${panelSeverity}`}>
           <div className="clinical-insights-header">
             <h3>Clinical Intelligence</h3>
-            <span className={`clinical-insights-badge ${riskData?.severity || clinicalInsights?.severity}`}>
-              {(riskData?.severity || clinicalInsights?.severity).toUpperCase()}
+            <span className={`clinical-insights-badge ${panelSeverity}`}>
+              {panelSeverity.toUpperCase()}
             </span>
           </div>
 

@@ -1,4 +1,5 @@
 import './LegalPage.css';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 /**
@@ -8,11 +9,20 @@ import { useLanguage } from '../../contexts/LanguageContext';
  * REQUIRED for app store submission
  */
 export const TermsOfService = () => {
+  const navigate = useNavigate();
   const { t } = useLanguage();
 
   return (
     <div className="legal-page">
       <div className="legal-header">
+        <button
+          type="button"
+          className="legal-back-link"
+          onClick={() => navigate('/')}
+          aria-label="Back to home"
+        >
+          ← Back
+        </button>
         <h1>{t('legal.terms.title')}</h1>
         <p className="legal-meta">{t('legal.terms.lastUpdated')}</p>
         <p className="legal-intro">

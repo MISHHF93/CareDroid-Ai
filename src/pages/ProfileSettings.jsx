@@ -48,6 +48,10 @@ const ProfileSettings = ({ authToken }) => {
   const { success, error: showError } = useNotificationActions();
   const [activeTab, setActiveTab] = useState('personal');
   const [saving, setSaving] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(max-width: 768px)').matches;
+  });
 
   const token = authToken || ctxToken;
 
@@ -99,6 +103,15 @@ const ProfileSettings = ({ authToken }) => {
     setConsentDataProcessing(p.consentDataProcessing ?? false);
     setConsentThirdParty(p.consentThirdPartySharing ?? false);
   }, [user]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    const updateMobile = (event) => setIsMobile(event.matches);
+    updateMobile(mediaQuery);
+    mediaQuery.addEventListener('change', updateMobile);
+    return () => mediaQuery.removeEventListener('change', updateMobile);
+  }, []);
 
   const handleSavePersonal = useCallback(async () => {
     setSaving(true);
@@ -215,10 +228,24 @@ const ProfileSettings = ({ authToken }) => {
       onSignOut={signOut}
       healthStatus="online"
     >
-      <div style={{ flex: 1, overflowY: 'auto', padding: '32px 40px', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
+      <div style={{
+        flex: 1,
+        overflowY: 'auto',
+        padding: isMobile ? '16px' : '32px 40px',
+        maxWidth: '800px',
+        margin: '0 auto',
+        width: '100%'
+      }}>
 
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+        <div style={{
+          display: 'flex',
+          alignItems: isMobile ? 'flex-start' : 'center',
+          justifyContent: 'space-between',
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: isMobile ? '12px' : '0',
+          marginBottom: '24px'
+        }}>
           <div>
             <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 700, color: '#fff' }}>{t('profileSettings.title')}</h1>
             <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'rgba(255,255,255,0.45)' }}>
@@ -238,7 +265,15 @@ const ProfileSettings = ({ authToken }) => {
         </div>
 
         {/* Tab Bar */}
-        <div style={{ display: 'flex', gap: '4px', marginBottom: '24px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', padding: '4px' }}>
+        <div style={{
+          display: 'flex',
+          gap: '4px',
+          marginBottom: '24px',
+          background: 'rgba(255,255,255,0.03)',
+          borderRadius: '10px',
+          padding: '4px',
+          overflowX: isMobile ? 'auto' : 'visible'
+        }}>
           {TABS.map((tab) => (
             <button
               key={tab.id}
@@ -261,7 +296,7 @@ const ProfileSettings = ({ authToken }) => {
           <div>
             <div style={cardInner}>
               <h3 style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: 600, color: '#fff' }}>{t('profileSettings.identity')}</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
                 <div style={fieldGroup}>
                   <label style={labelStyle}>{t('profileSettings.firstName')}</label>
                   <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder={t('profileSettings.firstNamePlaceholder')} />
@@ -306,7 +341,7 @@ const ProfileSettings = ({ authToken }) => {
 
             <div style={cardInner}>
               <h3 style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: 600, color: '#fff' }}>{t('profileSettings.locale')}</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
                 <div style={fieldGroup}>
                   <label style={labelStyle}>{t('profileSettings.country')}</label>
                   <Input value={country} onChange={(e) => setCountry(e.target.value)} placeholder={t('profileSettings.countryPlaceholder')} />
@@ -347,7 +382,7 @@ const ProfileSettings = ({ authToken }) => {
                 <label style={labelStyle}>{t('profileSettings.currentPassword')}</label>
                 <Input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder={t('profileSettings.currentPasswordPlaceholder')} />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
                 <div style={fieldGroup}>
                   <label style={labelStyle}>{t('profileSettings.newPassword')}</label>
                   <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder={t('profileSettings.newPasswordPlaceholder')} />

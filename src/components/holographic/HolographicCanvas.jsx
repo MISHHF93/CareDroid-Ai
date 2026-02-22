@@ -6,21 +6,40 @@ import HolographicLoader from './HolographicLoader';
 import GestureControls from './GestureControls';
 import './Holographic.css';
 
+const supportsWebGL = () => {
+  if (typeof window === 'undefined') return false;
+  try {
+    const canvas = document.createElement('canvas');
+    return !!(
+      window.WebGLRenderingContext &&
+      (canvas.getContext('webgl') || canvas.getContext('experimental-webgl'))
+    );
+  } catch {
+    return false;
+  }
+};
+
 const isLowPerformanceDevice = () => {
   if (typeof navigator === 'undefined') return false;
   const mem = navigator.deviceMemory || 8;
   const cores = navigator.hardwareConcurrency || 8;
-  return mem <= 4 || cores <= 4;
+  return mem <= 3 || cores <= 4;
 };
 
-function FrameRateController({ targetFps = 60 }) {
+function FrameRateController({ targetFps = 60, disabled = false }) {
   const { invalidate } = useThree();
 
   useEffect(() => {
+    if (disabled) return undefined;
+
     const step = Math.max(16, Math.round(1000 / targetFps));
-    const timer = setInterval(() => invalidate(), step);
+    const tick = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+      invalidate();
+    };
+    const timer = setInterval(tick, step);
     return () => clearInterval(timer);
-  }, [invalidate, targetFps]);
+  }, [disabled, invalidate, targetFps]);
 
   return null;
 }
@@ -42,15 +61,21 @@ export default function HolographicCanvas({
   targetFps = 60,
 }) {
   const [mounted, setMounted] = useState(false);
+  const [webglAvailable, setWebglAvailable] = useState(true);
 
   useEffect(() => {
     setMounted(true);
+    setWebglAvailable(supportsWebGL());
   }, []);
 
   const lowPerf = useMemo(() => isLowPerformanceDevice(), []);
   const dpr = useMemo(() => (lowPerf ? [1, 1.25] : [1, 1.75]), [lowPerf]);
+  const effectiveFps = useMemo(() => {
+    const clamped = Math.max(24, Math.min(60, targetFps));
+    return lowPerf ? Math.min(clamped, 36) : clamped;
+  }, [lowPerf, targetFps]);
 
-  if (!mounted || reducedMotion || lowPerf) {
+  if (!mounted || reducedMotion || !webglAvailable) {
     return (
       <div className="holo-shell" style={style}>
         {fallback || <Fallback2D ariaLabel={ariaLabel} />}
@@ -65,7 +90,7 @@ export default function HolographicCanvas({
         dpr={dpr}
         camera={camera}
         frameloop="demand"
-        gl={{ antialias: !lowPerf, alpha: true, powerPreference: 'high-performance' }}
+        gl={{ antialias: !lowPerf, alpha: true, powerPreference: lowPerf ? 'low-power' : 'high-performance' }}
       >
         <color attach="background" args={[surfaces.app || '#0b1220']} />
         <fog attach="fog" args={[surfaces.app || '#0b1220', 9, 24]} />
@@ -75,7 +100,7 @@ export default function HolographicCanvas({
         <pointLight position={[-4, 2, 3]} intensity={1.4} color={colors.success} />
         <pointLight position={[2, -2, 2]} intensity={0.9} color={colors.cyan} />
 
-        <Stars radius={35} depth={20} count={1200} factor={2} saturation={0} fade speed={0.4} />
+        <Stars radius={35} depth={20} count={lowPerf ? 420 : 1200} factor={2} saturation={0} fade speed={0.4} />
 
         <Suspense fallback={<HolographicLoader compact />}>
           {children}
@@ -83,8 +108,8 @@ export default function HolographicCanvas({
 
         <AdaptiveDpr pixelated />
         <AdaptiveEvents />
-        <FrameRateController targetFps={targetFps} />
-        {enableControls ? <GestureControls reducedMotion={reducedMotion} /> : null}
+        <FrameRateController targetFps={effectiveFps} />
+        {enableControls ? <GestureControls reducedMotion={reducedMotion || lowPerf} /> : null}
       </Canvas>
       <div className="holo-overlay" />
     </div>

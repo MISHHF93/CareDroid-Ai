@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef } from 'react';
 
 /**
  * SparklineChart — Tiny inline SVG sparkline for StatCards
@@ -38,7 +38,7 @@ export const SparklineChart = ({
   // Calculate hit zones for each point (wider than dots for easy hovering)
   const hitWidth = innerW / (values.length - 1);
 
-  const handleMouseMove = useCallback((e) => {
+  const handleMouseMove = (e) => {
     const svg = svgRef.current;
     if (!svg) return;
     const rect = svg.getBoundingClientRect();
@@ -46,9 +46,9 @@ export const SparklineChart = ({
     const idx = Math.round(((relX - pad) / innerW) * (values.length - 1));
     const clamped = Math.max(0, Math.min(values.length - 1, idx));
     setHoveredIdx(clamped);
-  }, [innerW, values.length]);
+  };
 
-  const handleMouseLeave = useCallback(() => setHoveredIdx(null), []);
+  const handleMouseLeave = () => setHoveredIdx(null);
 
   const defaultLabels = values.map((_, i) => `Day ${i + 1}`);
   const pointLabels = labels || defaultLabels;

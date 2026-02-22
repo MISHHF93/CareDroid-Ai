@@ -197,6 +197,67 @@
     }
   },
   "chat": {
+    "anatomyViewer": {
+      "actions": {
+        "singleView": "Single View",
+        "comparativeView": "Comparative View",
+        "showStatus": "Show Status",
+        "hideStatus": "Hide Status",
+        "resetDefaults": "Reset Defaults",
+        "savePreset": "Save Preset",
+        "loadPreset": "Load Preset"
+      },
+      "aria": {
+        "switchSingle": "Switch to single 3D view",
+        "switchComparative": "Switch to comparative view",
+        "hideStatusPanel": "Hide integration status panel",
+        "showStatusPanel": "Show integration status panel",
+        "resetDefaults": "Reset anatomy viewer defaults",
+        "savePreset": "Save anatomy viewer preset",
+        "loadPreset": "Load anatomy viewer preset",
+        "integrationStatus": "Integration status"
+      },
+      "labels": {
+        "beforeBaseline": "Before / Baseline",
+        "currentPredicted": "Current / Predicted",
+        "modeActive": "3D MODE ACTIVE",
+        "webglRequired": "3D viewer unavailable: WebGL support is required."
+      },
+      "notice": {
+        "reset": "Viewer preferences reset",
+        "comparativeEnabled": "Comparative view enabled",
+        "singleEnabled": "Single view enabled",
+        "statusShown": "Status panel shown",
+        "statusHidden": "Status panel hidden",
+        "presetSaved": "Viewer preset saved",
+        "presetSaveFailed": "Unable to save preset",
+        "noPreset": "No saved preset found",
+        "presetLoaded": "Viewer preset loaded",
+        "presetLoadFailed": "Unable to load preset"
+      },
+      "status": {
+        "modeSingle": "mode:single3d",
+        "modeComparative": "mode:comparative"
+      },
+      "features": {
+        "cinematic": "Cinematic",
+        "liveVitals": "Live Vitals",
+        "collaboration": "Collaboration",
+        "xr": "XR",
+        "voice": "Voice",
+        "pathology": "Pathology",
+        "clinicalWorkflow": "Clinical Workflow",
+        "radiation": "Radiation",
+        "flyThrough": "Fly-through",
+        "dicom": "DICOM",
+        "adaptiveQuality": "Adaptive Quality",
+        "telemetry": "Telemetry"
+      },
+      "common": {
+        "enabled": "enabled",
+        "disabled": "disabled"
+      }
+    },
     "emptyState": {
       "title": "Welcome to CareDroid",
       "subtitle": "Ask me anything about medicine, drugs, lab values, clinical protocols, and more.",

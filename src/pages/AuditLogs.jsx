@@ -118,6 +118,10 @@ export default function AuditLogs() {
   const navigate = useNavigate();
   useAppearance(); // re-render on theme/accent change
   const { t } = useLanguage();
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(max-width: 768px)').matches;
+  });
 
   const tTimeAgo = (iso) => {
     if (!iso) return t('audit.time.never');
@@ -145,6 +149,15 @@ export default function AuditLogs() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [liveEvents, setLiveEvents] = useState([]);
   const drawerRef = useRef(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    const updateMobile = (event) => setIsMobile(event.matches);
+    updateMobile(mediaQuery);
+    mediaQuery.addEventListener('change', updateMobile);
+    return () => mediaQuery.removeEventListener('change', updateMobile);
+  }, []);
 
   // ── Fetch logs ──
   const fetchLogs = useCallback(async (cursor = null) => {
@@ -310,19 +323,19 @@ export default function AuditLogs() {
 
   return (
     <AppShell isAuthed={!!user} onSignOut={signOut}>
-      <div style={{ padding: '28px 32px', maxWidth: 1400, margin: '0 auto', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }} className="audit-page">
+      <div style={{ padding: isMobile ? '72px 16px 16px' : '28px 32px', maxWidth: 1400, margin: '0 auto', width: '100%', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }} className="audit-page">
 
         {/* ── HEADER ── */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
           <div>
-            <h1 style={{ margin: 0, fontSize: '28px', fontWeight: 700, color: T.heading, display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <h1 style={{ margin: 0, fontSize: isMobile ? '24px' : '28px', fontWeight: 700, color: T.heading, display: 'flex', alignItems: 'center', gap: '10px' }}>
               📜 {t('audit.title')}
             </h1>
             <p style={{ margin: '6px 0 0', fontSize: '14px', color: T.tertiary }}>
               {t('audit.subtitle')}
             </p>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', width: isMobile ? '100%' : 'auto' }}>
             {/* Integrity badge */}
             <div style={{
               display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px',
@@ -339,6 +352,7 @@ export default function AuditLogs() {
               padding: '8px 16px', borderRadius: '10px', border: `1px solid ${B.strong}`,
               background: S.layer2, color: T.heading, fontSize: '13px', fontWeight: 600,
               cursor: verifying ? 'not-allowed' : 'pointer', opacity: verifying ? 0.5 : 1,
+              width: isMobile ? '100%' : 'auto',
             }}>
               {verifying ? `⟳ ${t('audit.verifying')}` : `⟳ ${t('audit.verify')}`}
             </button>
@@ -346,7 +360,7 @@ export default function AuditLogs() {
             <button onClick={() => handleExport('csv')} style={{
               padding: '8px 16px', borderRadius: '10px', border: `1px solid ${B.strong}`,
               background: S.layer2, color: T.heading, fontSize: '13px', fontWeight: 600,
-              cursor: 'pointer',
+              cursor: 'pointer', width: isMobile ? '100%' : 'auto',
             }}>
               📥 {t('audit.exportCsv')}
             </button>
@@ -357,6 +371,7 @@ export default function AuditLogs() {
               background: phiOnly ? alpha.warning(0.15) : S.layer2,
               color: phiOnly ? colors.warning : T.heading,
               border: `1px solid ${phiOnly ? alpha.warning(0.3) : B.strong}`,
+              width: isMobile ? '100%' : 'auto',
             }}>
               🏥 {t('audit.phiOnly')} {phiOnly ? '✓' : ''}
             </button>
@@ -413,7 +428,7 @@ export default function AuditLogs() {
           marginBottom: '24px', flexWrap: 'wrap',
         }}>
           {/* Search */}
-          <div style={{ position: 'relative', flex: '1 1 200px', minWidth: '180px' }}>
+          <div style={{ position: 'relative', flex: '1 1 220px', minWidth: isMobile ? '100%' : '180px' }}>
             <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '14px', opacity: 0.4 }}>🔍</span>
             <input
               type="text"
@@ -431,6 +446,7 @@ export default function AuditLogs() {
           <select value={actionFilter} onChange={e => setActionFilter(e.target.value)} style={{
             padding: '10px 12px', borderRadius: '8px', border: `1px solid ${B.medium}`,
             background: S.panel, color: T.heading, fontSize: '13px', cursor: 'pointer',
+            width: isMobile ? '100%' : 'auto',
           }}>
             <option value="all">{t('audit.allActions')}</option>
             {Object.entries(ACTION_MAP).map(([k, v]) => (
@@ -441,6 +457,7 @@ export default function AuditLogs() {
           <select value={severityFilter} onChange={e => setSeverityFilter(e.target.value)} style={{
             padding: '10px 12px', borderRadius: '8px', border: `1px solid ${B.medium}`,
             background: S.panel, color: T.heading, fontSize: '13px', cursor: 'pointer',
+            width: isMobile ? '100%' : 'auto',
           }}>
             <option value="all">{t('audit.allSeverities')}</option>
             {Object.entries(SEVERITY).map(([k, v]) => (
@@ -448,13 +465,14 @@ export default function AuditLogs() {
             ))}
           </select>
           {/* View toggle */}
-          <div style={{ display: 'flex', gap: '4px', marginLeft: 'auto' }}>
+          <div style={{ display: 'flex', gap: '4px', marginLeft: isMobile ? 0 : 'auto', width: isMobile ? '100%' : 'auto' }}>
             {['timeline', 'table'].map(m => (
               <button key={m} onClick={() => setViewMode(m)} style={{
                 padding: '8px 14px', borderRadius: '8px', border: 'none',
                 background: viewMode === m ? alpha.neonGreen(0.15) : S.layer2,
                 color: viewMode === m ? colors.neonGreen : T.tertiary,
                 fontSize: '12px', fontWeight: 600, cursor: 'pointer', textTransform: 'capitalize',
+                flex: isMobile ? 1 : '0 0 auto',
               }}>
                 {m === 'timeline' ? '📋' : '📊'} {t(`audit.views.${m}`)}
               </button>
@@ -498,14 +516,15 @@ export default function AuditLogs() {
                   className="audit-timeline-row"
                   style={{
                     ...cardStyle, padding: '16px 20px', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', gap: '16px',
+                    display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', gap: '12px',
+                    flexWrap: isMobile ? 'wrap' : 'nowrap',
                     transition: 'all 0.2s ease',
                     borderColor: selectedLog?.id === log.id ? sev.color : B.default,
                     ...(log._live ? { animation: 'fadeIn 0.5s ease' } : {}),
                   }}
                 >
                   {/* Time */}
-                  <div style={{ width: '70px', flexShrink: 0, textAlign: 'right' }}>
+                  <div style={{ width: isMobile ? '100%' : '70px', flexShrink: 0, textAlign: isMobile ? 'left' : 'right', order: isMobile ? 0 : 0 }}>
                     <div style={{ fontSize: '12px', fontWeight: 600, color: T.secondary, fontFamily: 'monospace' }}>
                       {new Date(log.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
                     </div>
@@ -519,7 +538,7 @@ export default function AuditLogs() {
                   }} />
 
                   {/* User */}
-                  <div style={{ width: '160px', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div style={{ width: isMobile ? 'calc(100% - 28px)' : '160px', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     <span style={{ fontSize: '13px', fontWeight: 500, color: T.heading }}>
                       {log.userName || (log.userId ? log.userId.substring(0, 8) + '...' : 'System')}
                     </span>
@@ -535,7 +554,7 @@ export default function AuditLogs() {
 
                   {/* Resource */}
                   <div style={{
-                    flex: 1, fontSize: '12px', color: T.tertiary,
+                    flex: 1, minWidth: isMobile ? '100%' : 0, fontSize: '12px', color: T.tertiary,
                     fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>
                     {log.resource}
@@ -556,7 +575,7 @@ export default function AuditLogs() {
                   </div>
 
                   {/* IP */}
-                  <div style={{ width: '110px', flexShrink: 0, fontSize: '11px', color: T.muted, fontFamily: 'monospace', textAlign: 'right' }}>
+                  <div style={{ width: isMobile ? '100%' : '110px', flexShrink: 0, fontSize: '11px', color: T.muted, fontFamily: 'monospace', textAlign: isMobile ? 'left' : 'right' }}>
                     {log.ipAddress}
                   </div>
                 </div>

@@ -36,9 +36,8 @@ export default function HolographicText({
       anchorX={anchorX}
       anchorY={anchorY}
       maxWidth={maxWidth}
-      // Glow approximation via outline
-      outlineColor={color}
-      outlineOpacity={0.3}
+      outlineColor="#000000"
+      outlineOpacity={0.85}
       outlineWidth={0.004}
       billboard={billboard}
     >

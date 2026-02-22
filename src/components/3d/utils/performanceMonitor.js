@@ -3,64 +3,48 @@
  * Monitors frame rate and adjusts rendering quality accordingly
  */
 
-/**
- * Create a frame-rate monitor that tracks FPS and adjusts quality
- * @param {Function} onQualityChange - Callback when quality level changes
- * @returns {{ start: Function, stop: Function, getFPS: Function }}
- */
-export function createPerformanceMonitor(onQualityChange) {
-  let frameCount = 0;
-  let lastTime = performance.now();
-  let fps = 60;
-  let rafId = null;
-  let qualityLevel = 'high';
-
-  function tick() {
-    frameCount++;
-    const now = performance.now();
-    const elapsed = now - lastTime;
-
-    if (elapsed >= 1000) {
-      fps = Math.round((frameCount * 1000) / elapsed);
-      frameCount = 0;
-      lastTime = now;
-
-      // Adjust quality based on FPS
-      let newQuality = qualityLevel;
-      if (fps < 25 && qualityLevel !== 'low') {
-        newQuality = 'low';
-      } else if (fps >= 25 && fps < 45 && qualityLevel === 'high') {
-        newQuality = 'medium';
-      } else if (fps >= 50 && qualityLevel !== 'high') {
-        newQuality = 'high';
-      }
-
-      if (newQuality !== qualityLevel) {
-        qualityLevel = newQuality;
-        if (onQualityChange) onQualityChange(qualityLevel);
-      }
-    }
-
-    rafId = requestAnimationFrame(tick);
+export class PerformanceMonitor {
+  constructor() {
+    this.fps = 60;
+    this.lastTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    this.frameCount = 0;
+    this.rafId = null;
   }
 
-  return {
-    start() {
-      if (!rafId) rafId = requestAnimationFrame(tick);
-    },
-    stop() {
-      if (rafId) {
-        cancelAnimationFrame(rafId);
-        rafId = null;
-      }
-    },
-    getFPS() {
-      return fps;
-    },
-    getQuality() {
-      return qualityLevel;
-    },
+  tick = () => {
+    this.frameCount += 1;
+    const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    const elapsed = now - this.lastTime;
+
+    if (elapsed >= 1000) {
+      this.fps = Math.round((this.frameCount * 1000) / elapsed);
+      this.frameCount = 0;
+      this.lastTime = now;
+    }
+
+    this.rafId = requestAnimationFrame(this.tick);
   };
+
+  start() {
+    if (!this.rafId) {
+      this.rafId = requestAnimationFrame(this.tick);
+    }
+  }
+
+  stop() {
+    if (this.rafId) {
+      cancelAnimationFrame(this.rafId);
+      this.rafId = null;
+    }
+  }
+
+  getFPS() {
+    return this.fps;
+  }
+}
+
+export function createPerformanceMonitor() {
+  return new PerformanceMonitor();
 }
 
 /**

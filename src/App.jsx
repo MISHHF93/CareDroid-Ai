@@ -52,6 +52,10 @@ const SharedToolSession = lazy(() => import('./pages/tools/SharedToolSession'));
 // Team Management — lazy-loaded
 const TeamManagement = lazy(() => import('./pages/team/TeamManagement').then(m => ({ default: m.TeamManagement })));
 
+// Community (MedX) — lazy-loaded
+const Community = lazy(() => import('./pages/community/Community'));
+const PostDetail = lazy(() => import('./pages/community/PostDetail'));
+
 // Legal & Compliance — lazy-loaded
 const PrivacyPolicy = lazy(() => import('./pages/legal/PrivacyPolicy').then(m => ({ default: m.PrivacyPolicy })));
 const TermsOfService = lazy(() => import('./pages/legal/TermsOfService').then(m => ({ default: m.TermsOfService })));
@@ -205,6 +209,10 @@ function App() {
                       <Route path="/tools/procedures" element={<ProcedureGuide />} />
                       <Route path="/tools/session/:sessionId" element={<SharedToolSession />} />
                       
+                      {/* Community (MedX) */}
+                      <Route path="/community" element={<Community />} />
+                      <Route path="/community/post/:postId" element={<PostDetail />} />
+
                       {/* Team Management */}
                       <Route path="/team" element={<TeamManagement />} />
                       

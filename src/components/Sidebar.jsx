@@ -99,6 +99,7 @@ const Sidebar = ({
   const navItems = [
     { id: 'chat', icon: '💬', label: t('nav.dashboard'), path: '/dashboard' },
     { id: 'profile', icon: '👤', label: t('nav.profile'), path: '/profile' },
+    { id: 'community', icon: '🩺', label: 'Community', path: '/community' },
     { id: 'team', icon: '👥', label: t('nav.team'), path: '/team', permission: Permission.MANAGE_USERS },
     { id: 'audit', icon: '📜', label: t('nav.auditLogs'), path: '/audit-logs', permission: Permission.VIEW_AUDIT_LOGS },
     { id: 'analytics', icon: '📊', label: t('nav.analytics'), path: '/analytics', permission: Permission.VIEW_ANALYTICS },

@@ -281,9 +281,7 @@ body {
   font-weight: var(--font-weight-normal);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: radial-gradient(circle at top, rgba(0, 212, 170, 0.03), transparent 40%),
-    radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.02), transparent 45%),
-    var(--surface-secondary);
+  background: #000;
   color: var(--text-primary);
   overflow-x: hidden;
   overflow-y: auto;
@@ -295,6 +293,16 @@ body {
   width: 100%;
   min-height: 100dvh;
   height: 100%;
+  background: #000;
+}
+
+html.route-auth,
+html.route-auth body,
+body.route-auth,
+html.route-auth #root,
+body.route-auth #root {
+  background: #000 !important;
+  background-image: none !important;
 }
 
 /* Mobile-first responsive system */
@@ -1024,7 +1032,7 @@ html.theme-light {
 }
 
 html.theme-light body {
-  background: linear-gradient(135deg, #f0f4ff 0%, #f5f7fb 50%, #faf5ff 100%);
+  background: #000;
   color: var(--text-primary);
 }
 

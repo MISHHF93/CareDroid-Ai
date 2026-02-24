@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './PublicShell.css';
 import appConfig from '../config/appConfig';
@@ -13,12 +14,25 @@ import appConfig from '../config/appConfig';
 export const PublicShell = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const isLandingPage = location.pathname === '/';
-  const isHelpPage = location.pathname === '/help';
-  const isPrivacyPage = location.pathname === '/privacy';
-  const isTermsPage = location.pathname === '/terms';
-  const showHeader = !isLandingPage && !isHelpPage && !isPrivacyPage && !isTermsPage;
-  const showFooter = !isLandingPage && !isHelpPage;
+  const normalizedPath = location.pathname.replace(/\/+$/, '') || '/';
+  const isLandingPage = normalizedPath === '/';
+  const isAuthPage = normalizedPath === '/auth' || normalizedPath.startsWith('/auth/');
+  const isHelpPage = normalizedPath === '/help';
+  const isPrivacyPage = normalizedPath === '/privacy';
+  const isTermsPage = normalizedPath === '/terms';
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('route-auth', isAuthPage);
+    document.body.classList.toggle('route-auth', isAuthPage);
+
+    return () => {
+      document.documentElement.classList.remove('route-auth');
+      document.body.classList.remove('route-auth');
+    };
+  }, [isAuthPage]);
+
+  const showHeader = !isLandingPage && !isAuthPage && !isHelpPage && !isPrivacyPage && !isTermsPage;
+  const showFooter = !isLandingPage && !isAuthPage && !isHelpPage;
   const appName = appConfig.app.name;
   const appVersion = appConfig.app.version;
   const buildDate = appConfig.app.buildDate;
@@ -28,7 +42,7 @@ export const PublicShell = ({ children }) => {
   const hipaaUrl = appConfig.legal.hipaaBaaUrl;
 
   return (
-    <div className={`public-shell ${isHelpPage ? 'public-shell-help' : ''} ${isPrivacyPage ? 'public-shell-privacy' : ''} ${isTermsPage ? 'public-shell-terms' : ''}`}>
+    <div className={`public-shell ${isLandingPage ? 'public-shell-landing' : ''} ${isAuthPage ? 'public-shell-auth' : ''} ${isHelpPage ? 'public-shell-help' : ''} ${isPrivacyPage ? 'public-shell-privacy' : ''} ${isTermsPage ? 'public-shell-terms' : ''}`}>
       {showHeader && (
         <header className="public-header">
           <div className="public-header-content">
@@ -52,7 +66,7 @@ export const PublicShell = ({ children }) => {
         </header>
       )}
 
-      <main className={`public-main ${isLandingPage ? 'public-main-landing' : ''} ${isHelpPage ? 'public-main-help' : ''}`} id="main-content">
+      <main className={`public-main ${isLandingPage ? 'public-main-landing' : ''} ${isAuthPage ? 'public-main-auth' : ''} ${isHelpPage ? 'public-main-help' : ''}`} id="main-content">
         {children}
       </main>
 

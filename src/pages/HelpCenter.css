@@ -294,3 +294,25 @@
     grid-template-columns: 1fr;
   }
 }
+
+html.route-auth .help-center-page,
+html.route-auth .help-center-container,
+html.route-auth .help-hero,
+html.route-auth .help-metric-card,
+html.route-auth .help-faq-card,
+html.route-auth .help-support-panel,
+html.route-auth .help-inline-brand,
+html.route-auth .help-support-btn.primary,
+body.route-auth .help-center-page,
+body.route-auth .help-center-container,
+body.route-auth .help-hero,
+body.route-auth .help-metric-card,
+body.route-auth .help-faq-card,
+body.route-auth .help-support-panel,
+body.route-auth .help-inline-brand,
+body.route-auth .help-support-btn.primary {
+  background: #000 !important;
+  background-image: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}

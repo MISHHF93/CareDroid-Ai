@@ -56,7 +56,7 @@ async function bootstrap() {
   // app.use(LoggingMiddleware);
 
   // CORS configuration (allow same-origin since frontend is proxied)
-  const defaultOrigins = ['http://localhost:8000'];
+  const defaultOrigins = ['http://localhost:5173', 'http://localhost:8000'];
   const envOrigins = (process.env.FRONTEND_URL || '')
     .split(',')
     .map((origin) => origin.trim())

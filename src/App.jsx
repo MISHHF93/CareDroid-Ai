@@ -1,5 +1,5 @@
 import React, { lazy, Suspense, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useNavigate, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { UserProvider } from './contexts/UserContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { ConversationProvider } from './contexts/ConversationContext';
@@ -7,7 +7,7 @@ import { WorkspaceProvider } from './contexts/WorkspaceContext';
 import { CostTrackingProvider } from './contexts/CostTrackingContext';
 import { ToolPreferencesProvider } from './contexts/ToolPreferencesContext';
 import { AppearanceProvider } from './contexts/AppearanceContext';
-import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
+import { LanguageProvider } from './contexts/LanguageContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import logger from './utils/logger';
 
@@ -66,92 +66,58 @@ const HelpCenter = lazy(() => import('./pages/HelpCenter'));
 // Shells
 import { PublicShell } from './layout/PublicShell';
 
-// Loading component
-const PageLoader = () => {
-  const { t } = useLanguage();
-  const label = t('app.loading');
-  return (
-  <div style={{
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: '100dvh',
-    background: '#000000',
-    color: '#f8fafc',
-    flexDirection: 'column',
-    gap: '16px',
-    fontFamily: 'system-ui, sans-serif'
-  }}>
-    <div style={{
-      width: '48px',
-      height: '48px',
-      border: '4px solid rgba(148, 163, 184, 0.3)',
-      borderTopColor: 'var(--accent, #3B82F6)',
-      borderRadius: '50%',
-      animation: 'spin 1s linear infinite'
-    }}></div>
-    <div style={{ fontSize: '14px', color: 'rgba(248,250,252,0.6)' }}>{label}</div>
-  </div>
-  );
-};
-
 // Welcome page
 function WelcomePage() {
-  const { t } = useLanguage();
   const navigate = useNavigate();
   const valuePillars = [
-    {
-      title: 'Rapid Clinical Reasoning',
-      detail: 'Triage-focused support built for urgent decisions.',
-    },
-    {
-      title: 'Evidence-Aligned Guidance',
-      detail: 'Actionable recommendations with structured context.',
-    },
-    {
-      title: 'Secure Team Workflow',
-      detail: 'Designed for healthcare collaboration and compliance.',
-    },
+    'Rapid clinical reasoning at triage speed',
+    'Evidence-aligned recommendations with context',
+    'Secure team workflow for healthcare environments'
   ];
 
   return (
-    <section className="welcome-hero" aria-labelledby="welcome-title">
-      <div className="welcome-surface">
-        <div className="welcome-brand-mark" aria-hidden="true">⚕️</div>
+    <section className="landing" aria-labelledby="landing-title">
+      <div className="landing-shell">
+        <header className="landing-brand" aria-label="Brand header">
+          <div className="landing-brand-icon" aria-hidden="true">⚕️</div>
+          <p className="landing-brand-text">Clinical Intelligence Platform</p>
+        </header>
 
-        <div className="welcome-content">
-          <p className="welcome-eyebrow">Clinical Intelligence Platform</p>
-          <h1 id="welcome-title" className="welcome-title">{t('app.name')}</h1>
-          <p className="welcome-tagline">{t('app.tagline')}</p>
+        <div className="landing-body">
+          <h1 id="landing-title" className="landing-title">CareDroid</h1>
+          <p className="landing-subtitle">
+            AI-powered clinical decision support designed for healthcare teams.
+          </p>
 
-          <div className="welcome-pillars" aria-label="Core platform strengths">
+          <ul className="landing-points" aria-label="Core strengths">
             {valuePillars.map((item) => (
-              <article key={item.title} className="welcome-pillar">
-                <h2 className="welcome-pillar-title">{item.title}</h2>
-                <p className="welcome-pillar-detail">{item.detail}</p>
-              </article>
+              <li key={item} className="landing-point">{item}</li>
             ))}
+          </ul>
+
+          <div className="landing-trust" aria-label="Trust and compliance capabilities">
+            <span>HIPAA Ready</span>
+            <span>Encrypted</span>
+            <span>Audit Logs</span>
+            <span>Role-Based Access</span>
           </div>
 
-          <div className="welcome-actions">
-            <button
-              onClick={() => navigate('/auth')}
-              className="welcome-cta"
-            >
-              {t('app.signIn')}
-            </button>
-          </div>
+          <p className="landing-disclaimer">
+            Decision support only. Always apply licensed clinical judgment and local protocols.
+          </p>
+        </div>
 
-          <div className="welcome-utility-links" aria-label="Landing quick navigation">
-            <Link to="/help" className="welcome-utility-link">Help</Link>
-            <Link to="/privacy" className="welcome-utility-link">Privacy</Link>
-            <Link to="/terms" className="welcome-utility-link">Terms</Link>
-          </div>
-
-          <div className="welcome-meta-strip" aria-label="Trust and compliance indicators">
-            <span className="welcome-meta-chip">🔒 HIPAA Compliant</span>
-            <span className="welcome-meta-chip">Clinical-grade Security</span>
-            <span className="welcome-meta-chip">24/7 Care Workflow Ready</span>
+        <div className="landing-actions">
+          <button
+            onClick={() => navigate('/auth')}
+            className="landing-cta"
+          >
+            Enter Secure Clinical Workspace
+          </button>
+          <div className="landing-links" aria-label="Utility links">
+            <button type="button" onClick={() => navigate('/help')}>Help</button>
+            <button type="button" onClick={() => navigate('/privacy')}>Privacy</button>
+            <button type="button" onClick={() => navigate('/terms')}>Terms</button>
           </div>
         </div>
       </div>
@@ -191,7 +157,7 @@ function App() {
               <WorkspaceProvider>
                 <ToolPreferencesProvider>
                   <CostTrackingProvider>
-                    <Suspense fallback={<PageLoader />}>
+                    <Suspense fallback={null}>
                       <Routes>
                       {/* ==================== PUBLIC ROUTES ==================== */}
                       <Route path="/" element={<PublicShell><WelcomePage /></PublicShell>} />
@@ -203,6 +169,8 @@ function App() {
                       <Route path="/privacy" element={<PublicShell><PrivacyPolicy /></PublicShell>} />
                       <Route path="/terms" element={<PublicShell><TermsOfService /></PublicShell>} />
                       <Route path="/help" element={<PublicShell><HelpCenter /></PublicShell>} />
+                      <Route path="/auth/help" element={<PublicShell><HelpCenter /></PublicShell>} />
+                      <Route path="/auth/Help" element={<PublicShell><HelpCenter /></PublicShell>} />
                       <Route path="/hipaa" element={<PublicShell><HIPAANotice /></PublicShell>} />
                       <Route path="/gdpr" element={<PublicShell><GDPRNotice /></PublicShell>} />
 

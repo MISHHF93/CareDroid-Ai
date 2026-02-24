@@ -10,6 +10,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
@@ -21,7 +22,16 @@ import { LoginDto } from './dto/login.dto';
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
+
+  private getFrontendBaseUrl(): string {
+    const configured = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
+    const firstOrigin = configured.split(',')[0]?.trim() || 'http://localhost:5173';
+    return firstOrigin.replace(/\/+$/, '');
+  }
 
   @Post('register')
   @ApiOperation({ summary: 'Register new user with email and password' })
@@ -76,7 +86,8 @@ export class AuthController {
   async googleCallback(@Req() req: any, @Res() res: Response) {
     const accessToken = req.user?.accessToken;
     if (accessToken) {
-      return res.redirect(`/auth/callback?token=${encodeURIComponent(accessToken)}`);
+      const redirectUrl = `${this.getFrontendBaseUrl()}/auth/callback?token=${encodeURIComponent(accessToken)}`;
+      return res.redirect(redirectUrl);
     }
     return res.json({
       accessToken: req.user?.accessToken,
@@ -99,7 +110,8 @@ export class AuthController {
   async linkedinCallback(@Req() req: any, @Res() res: Response) {
     const accessToken = req.user?.accessToken;
     if (accessToken) {
-      return res.redirect(`/auth/callback?token=${encodeURIComponent(accessToken)}`);
+      const redirectUrl = `${this.getFrontendBaseUrl()}/auth/callback?token=${encodeURIComponent(accessToken)}`;
+      return res.redirect(redirectUrl);
     }
     return res.json({
       accessToken: req.user?.accessToken,

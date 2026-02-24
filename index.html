@@ -4,46 +4,22 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#0a0e27" />
+    <meta name="theme-color" content="#000000" />
     <meta name="description" content="CareDroid - 3D Holographic Clinical AI Platform" />
     <title>CareDroid - Clinical AI</title>
+    <style>
+      html, body, #root {
+        margin: 0;
+        min-height: 100%;
+        background: #000;
+      }
+      body {
+        color: #f8fafc;
+      }
+    </style>
   </head>
   <body>
-    <div id="root" style="min-height:100vh;background:#0b1220;color:#f8fafc;display:flex;align-items:center;justify-content:center;font-family:system-ui;">
-      <div style="text-align:center;max-width:480px;padding:24px;">
-        <h1 style="margin:0 0 12px 0;font-size:22px;">CareDroid App Starting...</h1>
-        <p style="margin:0;color:rgba(248,250,252,0.7);font-size:14px;">Loading...</p>
-        <div id="debug-log" style="margin-top:20px;padding:12px;background:rgba(0,0,0,0.3);border-radius:8px;font-size:12px;text-align:left;max-height:200px;overflow:auto;"></div>
-      </div>
-    </div>
-    <script>
-      // Capture errors before React loads
-      window.debugLog = (msg) => {
-        const log = document.getElementById('debug-log');
-        if (log) {
-          const time = new Date().toLocaleTimeString();
-          log.innerHTML += `<div>${time}: ${msg}</div>`;
-        }
-        console.log(msg);
-      };
-      
-      window.addEventListener('error', (e) => {
-        window.debugLog('❌ ERROR: ' + e.message);
-      });
-      
-      window.addEventListener('unhandledrejection', (e) => {
-        window.debugLog('❌ Promise rejection: ' + (e.reason?.message || e.reason));
-      });
-      
-      window.debugLog('✓ HTML loaded');
-      
-      // Timeout check
-      setTimeout(() => {
-        if (!window.__REACT_MOUNTED__) {
-          window.debugLog('⚠ React not mounted after 5 seconds');
-        }
-      }, 5000);
-    </script>
+    <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

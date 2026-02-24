@@ -11,7 +11,6 @@ import {
 } from '@react-three/postprocessing';
 import { BlendFunction, Effect } from 'postprocessing';
 import { Uniform, Vector2 } from 'three';
-import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 
 const scanlineShader = /* glsl */ `
 uniform float time;
@@ -199,26 +198,6 @@ function TemporalUpscale({ strength = 0.28 }) {
   return <primitive object={effect} dispose={null} />;
 }
 
-function UnrealOuterGlowPass({ composerRef, threshold = 0.8, intensity = 1.2, radius = 0.8 }) {
-  const { size } = useThree();
-
-  useEffect(() => {
-    if (!composerRef.current) return undefined;
-
-    const pass = new UnrealBloomPass(new Vector2(size.width, size.height), intensity, radius, threshold);
-    composerRef.current.addPass(pass);
-
-    return () => {
-      if (composerRef.current?.removePass) {
-        composerRef.current.removePass(pass);
-      }
-      pass.dispose();
-    };
-  }, [composerRef, intensity, radius, size.height, size.width, threshold]);
-
-  return null;
-}
-
 function GodRaySource({ sourceRef, position = [0, 2.6, 1.5], severity = 0 }) {
   const scale = 0.26 + Math.min(0.32, severity * 0.07);
 
@@ -239,7 +218,6 @@ export default function HolographicEffects({
   temporalUpscaleStrength = 0.3,
   lowQuality = false,
 }) {
-  const composerRef = useRef();
   const [godRaySource, setGodRaySource] = useState(null);
   const godRaySourceRef = useRef(null);
 
@@ -252,12 +230,20 @@ export default function HolographicEffects({
     <>
       <GodRaySource sourceRef={handleGodRayRef} severity={severityScore} />
 
-      <EffectComposer ref={composerRef} multisampling={lowQuality ? 0 : 4} autoClear={false}>
+      <EffectComposer multisampling={lowQuality ? 0 : 4} autoClear={false}>
         <Bloom
           luminanceThreshold={0.8}
           luminanceSmoothing={0.2}
           intensity={2.5}
           radius={1.2}
+          mipmapBlur
+        />
+
+        <Bloom
+          luminanceThreshold={0.72}
+          luminanceSmoothing={0.18}
+          intensity={lowQuality ? 0.55 : 0.9}
+          radius={0.9}
           mipmapBlur
         />
 
@@ -307,13 +293,6 @@ export default function HolographicEffects({
           enabled={outlineEnabled}
         />
       </EffectComposer>
-
-      <UnrealOuterGlowPass
-        composerRef={composerRef}
-        threshold={0.8}
-        intensity={1.35}
-        radius={0.9}
-      />
     </>
   );
 }

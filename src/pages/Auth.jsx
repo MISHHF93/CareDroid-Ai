@@ -4,11 +4,12 @@ import { Button } from '../components/ui/atoms/Button';
 import { Card } from '../components/ui/molecules/Card';
 import { Input } from '../components/ui/atoms/Input';
 import appConfig from '../config/appConfig';
-import { apiFetch } from '../services/apiClient';
+import { apiFetch, buildApiUrl } from '../services/apiClient';
 import { useNotificationActions } from '../hooks/useNotificationActions';
 import { useUser } from '../contexts/UserContext';
 import logger from '../utils/logger';
 import { useLanguage } from '../contexts/LanguageContext';
+import './Auth.css';
 
 const Auth = ({ onAuthSuccess }) => {
   const navigate = useNavigate();
@@ -20,6 +21,8 @@ const Auth = ({ onAuthSuccess }) => {
   const [userId, setUserId] = useState(null);
   const [twoFactorToken, setTwoFactorToken] = useState('');
   const bypassToken = appConfig.dev.bearerToken;
+  const googleAuthUrl = buildApiUrl('/api/auth/google');
+  const linkedInAuthUrl = buildApiUrl('/api/auth/linkedin');
   const { success, error, info } = useNotificationActions();
   const { t } = useLanguage();
 
@@ -149,98 +152,88 @@ const Auth = ({ onAuthSuccess }) => {
   };
 
   return (
-    <Card style={{ width: '100%', maxWidth: '520px' }}>
+    <Card
+      className="auth-enterprise-card"
+      padding="none"
+      border={false}
+      shadow="none"
+      rounded={false}
+      style={{ width: '100%', maxWidth: '100%' }}
+    >
       {/* 2FA Verification Screen */}
       {requiresTwoFactor ? (
-        <div>
-          <div style={{ marginBottom: '24px', textAlign: 'center' }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔐</div>
-            <h2 style={{ margin: 0, fontSize: '22px' }}>{t('auth.twoFactorAuth')}</h2>
-            <p style={{ marginTop: '8px', color: 'var(--muted-text)', fontSize: '14px' }}>
+        <div className="auth-screen auth-2fa-screen">
+          <div className="auth-2fa-header">
+            <div className="auth-2fa-icon">🔐</div>
+            <h2 className="auth-title">{t('auth.twoFactorAuth')}</h2>
+            <p className="auth-subtitle">
               {t('auth.twoFactorPrompt')}
             </p>
           </div>
 
-          <form onSubmit={handleTwoFactorSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <form onSubmit={handleTwoFactorSubmit} className="auth-2fa-form">
             <Input
               type="text"
               placeholder="000000"
               value={twoFactorToken}
               onChange={(e) => setTwoFactorToken(e.target.value.replace(/\D/g, '').slice(0, 8))}
               maxLength={8}
-              style={{
-                textAlign: 'center',
-                fontSize: '24px',
-                letterSpacing: '0.5em',
-                fontFamily: 'monospace',
-              }}
+              className="auth-2fa-input"
               autoComplete="off"
               autoFocus
             />
 
-            <div style={{ display: 'flex', gap: '12px' }}>
+            <div className="auth-2fa-actions">
               <Button
                 type="button"
                 variant="secondary"
                 onClick={handleCancelTwoFactor}
-                style={{ flex: 1 }}
+                className="auth-btn-secondary"
               >
                 {t('auth.cancel')}
               </Button>
               <Button
                 type="submit"
                 disabled={twoFactorToken.length < 6}
-                style={{ flex: 1 }}
+                className="auth-btn-primary"
               >
                 {t('auth.verify')}
               </Button>
             </div>
           </form>
 
-          <div style={{
-            marginTop: '16px',
-            fontSize: '12px',
-            color: 'var(--muted-text)',
-            textAlign: 'center',
-          }}>
+          <div className="auth-2fa-footer">
             <button
               type="button"
               onClick={() => setTwoFactorToken('')}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#00FFFF',
-                fontSize: '12px',
-                cursor: 'pointer',
-                textDecoration: 'underline',
-              }}
+              className="auth-inline-btn"
             >
               {t('auth.useBackupCode')}
             </button>
           </div>
         </div>
       ) : (
-        <div>
+        <div className="auth-screen">
           {/* Regular Login Screen */}
-          <div style={{ marginBottom: '16px' }}>
-            <h2 style={{ margin: 0, fontSize: '22px' }}>{t('auth.institutionalSignIn')}</h2>
-            <p style={{ marginTop: '8px', color: 'var(--muted-text)', fontSize: '14px' }}>
+          <div className="auth-title-block">
+            <h2 className="auth-title">{t('auth.institutionalSignIn')}</h2>
+            <p className="auth-subtitle">
               {t('auth.secureAccessDescription')}
             </p>
           </div>
 
-      <form onSubmit={handleMagicLink} style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
+      <form onSubmit={handleMagicLink} className="auth-magic-form">
         <Input
           type="email"
           placeholder={t('auth.emailPlaceholder')}
           value={magicEmail}
           onChange={(e) => setMagicEmail(e.target.value)}
-          style={{ flex: 1 }}
+          className="auth-input auth-magic-input"
         />
-        <Button type="submit">{t('auth.sendLink')}</Button>
+        <Button type="submit" className="auth-magic-btn">{t('auth.sendLink')}</Button>
       </form>
 
-        <div style={{ display: 'grid', gap: '8px', marginBottom: '18px' }}>
+        <div className="auth-provider-grid">
           <button
             onClick={async () => {
               try {
@@ -251,15 +244,7 @@ const Auth = ({ onAuthSuccess }) => {
                 info(t('auth.ssoUnavailable'), t('auth.oidcNotAvailable'));
               }
             }}
-            style={{
-              padding: '10px 12px',
-              borderRadius: '10px',
-              border: '1px solid var(--panel-border)',
-              background: 'transparent',
-              color: 'var(--text-color)',
-              cursor: 'pointer',
-              textAlign: 'left'
-            }}
+            className="auth-provider-btn"
           >
             🔐 {t('auth.institutionalSSOOIDC')}
           </button>
@@ -273,52 +258,38 @@ const Auth = ({ onAuthSuccess }) => {
                 info(t('auth.ssoUnavailable'), t('auth.samlNotAvailable'));
               }
             }}
-            style={{
-              padding: '10px 12px',
-              borderRadius: '10px',
-              border: '1px solid var(--panel-border)',
-              background: 'transparent',
-              color: 'var(--text-color)',
-              cursor: 'pointer',
-              textAlign: 'left'
-            }}
+            className="auth-provider-btn"
           >
             🏢 {t('auth.institutionalSSOSAML')}
           </button>
         </div>
 
-        <div style={{ margin: '18px 0 12px', color: 'var(--muted-text)', fontSize: '12px' }}>
+        <div className="auth-separator">
           {t('auth.orContinueSocialLogin')}
         </div>
 
-        <div style={{ display: 'grid', gap: '10px' }}>
-          <a
-            href="/api/auth/google"
-            style={{
-              padding: '10px 12px',
-              borderRadius: '10px',
-              border: '1px solid var(--panel-border)',
-              background: 'transparent',
-              color: 'var(--text-color)',
-              textDecoration: 'none',
-              textAlign: 'left'
-            }}
-          >
-            🔎 {t('auth.continueWithGoogle')}
+        <div className="auth-social-grid">
+          <a href={googleAuthUrl} className="auth-social-link" aria-label={t('auth.continueWithGoogle')}>
+            <span className="auth-social-icon auth-social-icon-google" aria-hidden="true">
+              <svg viewBox="0 0 24 24" role="img" focusable="false">
+                <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.25 1.25-.95 2.3-2 3l3.25 2.5c1.9-1.75 3-4.35 3-7.45 0-.7-.07-1.35-.2-2H12z"/>
+                <path fill="#34A853" d="M12 22c2.7 0 4.95-.9 6.6-2.4l-3.25-2.5c-.9.6-2.05.95-3.35.95-2.6 0-4.8-1.75-5.6-4.1l-3.35 2.6C4.7 19.75 8.05 22 12 22z"/>
+                <path fill="#FBBC05" d="M6.4 13.95c-.2-.6-.3-1.25-.3-1.95s.1-1.35.3-1.95l-3.35-2.6C2.35 8.8 2 10.35 2 12s.35 3.2 1.05 4.55l3.35-2.6z"/>
+                <path fill="#4285F4" d="M12 5.95c1.45 0 2.75.5 3.8 1.5l2.85-2.85C16.95 3 14.7 2 12 2 8.05 2 4.7 4.25 3.05 7.45l3.35 2.6c.8-2.35 3-4.1 5.6-4.1z"/>
+              </svg>
+            </span>
+            <span>{t('auth.continueWithGoogle')}</span>
           </a>
-          <a
-            href="/api/auth/linkedin"
-            style={{
-              padding: '10px 12px',
-              borderRadius: '10px',
-              border: '1px solid var(--panel-border)',
-              background: 'transparent',
-              color: 'var(--text-color)',
-              textDecoration: 'none',
-              textAlign: 'left'
-            }}
-          >
-            💼 {t('auth.continueWithLinkedIn')}
+          <a href={linkedInAuthUrl} className="auth-social-link" aria-label={t('auth.continueWithLinkedIn')}>
+            <span className="auth-social-icon auth-social-icon-linkedin" aria-hidden="true">
+              <svg viewBox="0 0 24 24" role="img" focusable="false">
+                <rect x="2" y="2" width="20" height="20" rx="4" fill="#0A66C2" />
+                <rect x="6" y="10" width="2.4" height="8" fill="#FFFFFF" />
+                <circle cx="7.2" cy="7.3" r="1.35" fill="#FFFFFF" />
+                <path d="M11 10h2.3v1.1h.03c.32-.6 1.1-1.24 2.27-1.24 2.43 0 2.88 1.6 2.88 3.68V18h-2.4v-3.95c0-.94-.02-2.15-1.31-2.15-1.31 0-1.51 1.02-1.51 2.08V18H11v-8z" fill="#FFFFFF"/>
+              </svg>
+            </span>
+            <span>{t('auth.continueWithLinkedIn')}</span>
           </a>
           <Button
             onClick={() => {
@@ -388,23 +359,24 @@ const Auth = ({ onAuthSuccess }) => {
               info(t('auth.signingIn'), t('auth.signingInProgress'));
             }}
             variant="ghost"
-            style={{ borderStyle: 'dashed', textAlign: 'left' }}
+            className="auth-dev-btn"
           >
             ⚡ {t('auth.directSignIn')}
           </Button>
         </div>
 
-        <div style={{ margin: '18px 0 10px', color: 'var(--muted-text)', fontSize: '12px' }}>
+        <div className="auth-separator auth-separator-small">
           {t('auth.orSignInWithEmail')}
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <form onSubmit={handleSubmit} className="auth-email-form">
           {mode === 'signup' && (
             <Input
               type="text"
               placeholder={t('auth.fullName')}
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className="auth-input"
             />
           )}
           <Input
@@ -412,33 +384,26 @@ const Auth = ({ onAuthSuccess }) => {
             placeholder={t('auth.emailAddress')}
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
+            className="auth-input"
           />
           <Input
             type="password"
             placeholder={t('auth.password')}
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
+            className="auth-input"
           />
-          <Button type="submit" style={{ marginTop: '6px' }}>
+          <Button type="submit" className="auth-submit-btn">
             {mode === 'login' ? t('auth.signIn') : t('auth.createAccount')}
           </Button>
         </form>
-        <div style={{
-          marginTop: '16px',
-          fontSize: '13px',
-          color: 'var(--muted-text)'
-        }}>
+        <div className="auth-toggle-row">
           {mode === 'login' ? (
             <span>
               {t('auth.newHere')}{' '}
               <button
                 onClick={() => setMode('signup')}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#00FFFF',
-                  cursor: 'pointer'
-                }}
+                className="auth-inline-btn"
               >
                 {t('auth.createAccount')}
               </button>
@@ -448,20 +413,22 @@ const Auth = ({ onAuthSuccess }) => {
               {t('auth.alreadyHaveAccount')}{' '}
               <button
                 onClick={() => setMode('login')}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#00FFFF',
-                  cursor: 'pointer'
-                }}
+                className="auth-inline-btn"
               >
                 {t('auth.signIn')}
               </button>
             </span>
           )}
         </div>
-        <div style={{ marginTop: '18px', fontSize: '12px', color: 'var(--muted-text)' }}>
-          <Link to="/" style={{ color: '#00FF88', textDecoration: 'none' }}>
+
+        <div className="auth-utility-links" aria-label="Auth quick navigation">
+          <Link to="/help" className="auth-utility-link">Help</Link>
+          <Link to="/privacy" className="auth-utility-link">Privacy</Link>
+          <Link to="/terms" className="auth-utility-link">Terms</Link>
+        </div>
+
+        <div className="auth-back-row">
+          <Link to="/" className="auth-back-link">
             {t('auth.backToChat')}
           </Link>
         </div>

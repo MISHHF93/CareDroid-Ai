@@ -185,31 +185,57 @@ export const DashboardSkeletonLayout = () => {
     <SkeletonBanner />
 
     {/* Stats row */}
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-4)' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-3)' }}>
       <SkeletonStatCard />
       <SkeletonStatCard />
       <SkeletonStatCard />
       <SkeletonStatCard />
     </div>
 
-    {/* Feed row */}
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 'var(--space-4)' }}>
+    {/* Triage and Workload row */}
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'var(--space-4)' }}>
       <SkeletonFeedCard />
-      <SkeletonFeedCard />
-    </div>
-
-    {/* Compact widgets row */}
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--space-4)' }}>
       <SkeletonCompactCard lines={5} />
+    </div>
+
+    {/* Tools grid */}
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-3)' }}>
       <SkeletonCompactCard lines={3} />
-      <SkeletonCompactCard lines={4} />
+      <SkeletonCompactCard lines={3} />
+      <SkeletonCompactCard lines={3} />
+      <SkeletonCompactCard lines={3} />
     </div>
 
-    {/* Bottom row */}
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--space-4)' }}>
-      <SkeletonCompactCard lines={4} />
-      <SkeletonCompactCard lines={5} />
-      <SkeletonBedBoard />
+    {/* Patient section skeleton */}
+    <div style={{
+      padding: 'var(--space-5)',
+      borderRadius: 'var(--radius-xl)',
+      background: 'var(--surface-primary)',
+      border: '1px solid var(--border-color-subtle)',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 'var(--space-4)',
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Skeleton variant="title" width="30%" height={24} />
+        <Skeleton variant="rect" width={40} height={20} />
+      </div>
+      <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+        {[80, 60, 70, 90].map((w, i) => (
+          <Skeleton key={i} variant="rect" width={w} height={28} className="skeleton-pill" />
+        ))}
+      </div>
+      <Skeleton variant="rect" width="100%" height={40} />
+      {[1, 2, 3].map((i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-3) 0', borderBottom: i < 3 ? '1px solid var(--border-color-subtle)' : 'none' }}>
+          <Skeleton variant="avatar" width={32} height={32} />
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
+            <Skeleton variant="text" width="60%" height={16} />
+            <Skeleton variant="text" width="40%" height={12} />
+          </div>
+          <Skeleton variant="rect" width={60} height={24} />
+        </div>
+      ))}
     </div>
   </div>
   );

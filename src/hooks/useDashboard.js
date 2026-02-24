@@ -100,6 +100,11 @@ export function useDashboard() {
     }
   }, []);
 
+  // Initial data load
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
   // Refetch patients when filters change
   useEffect(() => {
     if (initialPatientLoad.current) {

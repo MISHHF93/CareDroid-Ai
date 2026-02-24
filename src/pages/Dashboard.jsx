@@ -1,36 +1,17 @@
-import React, { useCallback, useEffect, useMemo, useState, Suspense, lazy } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import { useDashboard } from '../hooks/useDashboard';
 import AppShell from '../layout/AppShell';
 import { DashboardHeader } from '../components/dashboard/DashboardHeader';
-import { StatCard } from '../components/dashboard/StatCard';
-import { CommandFeed } from '../components/dashboard/CommandFeed';
-import { SmartTriageQueue } from '../components/dashboard/SmartTriageQueue';
-import { MyWorkload } from '../components/dashboard/MyWorkload';
-import { QuickOrders } from '../components/dashboard/QuickOrders';
-import { MARPreview } from '../components/dashboard/MARPreview';
-import { OnCallRoster } from '../components/dashboard/OnCallRoster';
-import { ClinicalBanner } from '../components/dashboard/ClinicalBanner';
-import { BedBoard } from '../components/dashboard/BedBoard';
-import { LabTimeline } from '../components/dashboard/LabTimeline';
-import { PatientCard } from '../components/clinical/PatientCard';
-import WidgetErrorBoundary from '../components/dashboard/WidgetErrorBoundary';
+import { CurrentShiftSection } from '../components/dashboard/CurrentShiftSection';
+import { PatientOverviewSection } from '../components/dashboard/PatientOverviewSection';
 import { DashboardSkeletonLayout } from '../components/dashboard/DashboardSkeleton';
-import { NewPatientModal } from '../components/dashboard/NewPatientModal';
-import { EmergencyModal } from '../components/dashboard/EmergencyModal';
-import { ToolCard } from '../components/dashboard/ToolCard';
 import '../components/dashboard/Dashboard.css';
 import { useLanguage } from '../contexts/LanguageContext';
-import { useWebGLSupport } from '../hooks/useWebGLSupport';
-import HolographicLoader from '../components/3d/HolographicLoader';
 import toolRegistry from '../data/toolRegistry';
 import { useToolPreferences } from '../contexts/ToolPreferencesContext';
-
-// Lazy-load 3D timeline
-const HolographicCanvas = lazy(() => import('../components/3d/HolographicCanvas'));
-const Timeline3D = lazy(() => import('../components/3d/charts/Timeline3D'));
 
 /**
  * Dashboard Page - Clinical Command Center
@@ -40,13 +21,15 @@ function Dashboard() {
   const { user, signOut } = useUser();
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const { supported: webglSupported } = useWebGLSupport();
-  const { favorites, recentTools, toggleFavorite, recordToolAccess } = useToolPreferences();
+  const tr = useCallback((key, fallback) => {
+    const value = t(key);
+    return !value || value === key ? fallback : value;
+  }, [t]);
+  const { favorites, recentTools, recordToolAccess } = useToolPreferences();
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window === 'undefined') return false;
     return window.matchMedia('(max-width: 767px)').matches;
   });
-  const [show3DTimeline, setShow3DTimeline] = useState(true);
   const {
     notifications,
     markAsRead,
@@ -57,14 +40,9 @@ function Dashboard() {
   // Dashboard data and methods from custom hook
   const {
     stats,
-    activities,
     alerts,
     criticalPatients,
     workload,
-    marMedications,
-    onCallRoster,
-    bedBoard,
-    labTimeline,
     cdsReminders,
     loading,
     refreshing,
@@ -73,8 +51,6 @@ function Dashboard() {
     acknowledgeAlert,
     trackToolAccess,
     toggleTask,
-    placeOrder,
-    createPatient,
     refresh,
     setPatientFilters
   } = useDashboard();
@@ -82,12 +58,6 @@ function Dashboard() {
   const [patientSearch, setPatientSearch] = useState('');
   const [patientStatusFilter, setPatientStatusFilter] = useState('critical');
   const [expandedPatients, setExpandedPatients] = useState(new Set());
-  const [showNewPatient, setShowNewPatient] = useState(false);
-  const [showEmergency, setShowEmergency] = useState(false);
-  const [showSecondaryWidgets, setShowSecondaryWidgets] = useState(() => {
-    if (typeof window === 'undefined') return true;
-    return !window.matchMedia('(max-width: 767px)').matches;
-  });
 
   useEffect(() => {
     const prefetchLandingRoutes = () => {
@@ -130,54 +100,25 @@ function Dashboard() {
 
   const statusOptions = useMemo(
     () => [
-      { id: 'all', label: t('dashboard.all') },
-      { id: 'critical', label: t('dashboard.critical') },
-      { id: 'urgent', label: t('dashboard.urgent') },
-      { id: 'stable', label: t('dashboard.stable') },
+      { id: 'all', label: tr('dashboard.all', 'All') },
+      { id: 'critical', label: tr('dashboard.critical', 'Critical') },
+      { id: 'urgent', label: tr('dashboard.urgent', 'Urgent') },
+      { id: 'stable', label: tr('dashboard.stable', 'Stable') },
     ],
-    [t]
+    [tr]
   );
 
   const sectionTitle = useMemo(() => {
     const current = statusOptions.find((option) => option.id === patientStatusFilter);
-    if (!current || current.id === 'all') return t('dashboard.patients');
+    if (!current || current.id === 'all') return tr('dashboard.patients', 'Patients');
     return `${current.label} Patients`;
-  }, [patientStatusFilter, statusOptions]);
-
-  const allExpanded = useMemo(() => {
-    if (!criticalPatients.length) return false;
-    return criticalPatients.every((patient) => expandedPatients.has(patient.id));
-  }, [criticalPatients, expandedPatients]);
+  }, [patientStatusFilter, statusOptions, tr]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
-
-  // Sparkline data (from API or fallback 7-day trends)
-  const sparklines = useMemo(() => ({
-    critical: stats?.sparklines?.criticalPatients || [3, 2, 4, 3, 5, 4, stats?.criticalPatients || 0],
-    active: stats?.sparklines?.activePatients || [18, 20, 19, 22, 21, 23, stats?.activePatients || 0],
-    labs: stats?.sparklines?.pendingLabs || [8, 5, 12, 9, 7, 11, stats?.pendingLabs || 0],
-    stable: stats?.sparklines?.stablePatients || [12, 13, 11, 14, 15, 14, stats?.stablePatients || 0],
-  }), [stats]);
-
-  // Build patient list for QuickOrders
-  const patientList = useMemo(() =>
-    (criticalPatients || []).map((p) => ({ id: p.id, name: p.name, room: p.room })),
-    [criticalPatients]
-  );
 
   const handleAcknowledgeAlert = useCallback((alertId) => {
     acknowledgeAlert(alertId);
   }, [acknowledgeAlert]);
-
-  const handleActivityClick = useCallback((activity) => {
-    // Navigate to the relevant clinical tool based on activity type
-    const routes = { lab: '/tools/lab-interpreter', medication: '/tools/drug-checker', procedure: '/tools/procedures' };
-    if (activity.patientId) {
-      navigate('/chat', { state: { patientId: activity.patientId, activityType: activity.type } });
-    } else if (routes[activity.type]) {
-      navigate(routes[activity.type]);
-    }
-  }, [navigate]);
 
   const handleAlertClick = useCallback((alert) => {
     // Navigate to patient context in chat with the alert info
@@ -196,34 +137,7 @@ function Dashboard() {
     navigate('/chat', { state: { patientId, action: 'addNote' } });
   }, [navigate]);
 
-  const handlePageClinician = useCallback((clinician) => {
-    navigate('/chat', { state: { action: 'page', clinicianId: clinician.id, clinicianName: clinician.name } });
-  }, [navigate]);
 
-  const handleMessageClinician = useCallback((clinician) => {
-    navigate('/chat', { state: { action: 'message', clinicianId: clinician.id, clinicianName: clinician.name } });
-  }, [navigate]);
-
-  const handleViewLabResult = useCallback((event) => {
-    navigate('/tools/lab-interpreter', { state: { labEventId: event.id, testName: event.test } });
-  }, [navigate]);
-
-  const handleAdministerMed = useCallback(async (med) => {
-    // Optimistic — real implementation would call backend
-    await new Promise((r) => setTimeout(r, 300));
-  }, []);
-
-  const handleViewFullMAR = useCallback(() => {
-    navigate('/chat', { state: { action: 'viewMAR' } });
-  }, [navigate]);
-
-  const handleNewPatient = useCallback(() => {
-    setShowNewPatient(true);
-  }, []);
-
-  const handleEmergency = useCallback(() => {
-    setShowEmergency(true);
-  }, []);
 
   // Show loading state
   if (loading) {
@@ -240,8 +154,6 @@ function Dashboard() {
         <div className="dashboard-container">
           <DashboardHeader
             userName={user?.name || 'Clinician'}
-            onNewPatient={() => {}}
-            onEmergency={() => {}}
             searchValue=""
             onSearchChange={() => {}}
             onSearch={() => {}}
@@ -335,8 +247,6 @@ function Dashboard() {
         {/* Dashboard Header */}
         <DashboardHeader
           userName={user?.name || 'Clinician'}
-          onNewPatient={handleNewPatient}
-          onEmergency={handleEmergency}
           searchValue={patientSearch}
           onSearchChange={setPatientSearch}
           onSearch={(query) => setPatientSearch(query)}
@@ -351,467 +261,40 @@ function Dashboard() {
           onClearAll={clearAll}
         />
 
-        {/* Clinical Decision Support Banner */}
-        <WidgetErrorBoundary widgetName="Clinical Banner">
-          <ClinicalBanner reminders={cdsReminders.length > 0 ? cdsReminders : undefined} />
-        </WidgetErrorBoundary>
+        <CurrentShiftSection
+          tr={tr}
+          cdsReminders={cdsReminders}
+          stats={stats}
+          alerts={alerts}
+          handleAcknowledgeAlert={handleAcknowledgeAlert}
+          handleAlertClick={handleAlertClick}
+          workload={workload}
+          toggleTask={toggleTask}
+          toolRegistry={toolRegistry}
+          favorites={favorites}
+          recentTools={recentTools}
+          recordToolAccess={recordToolAccess}
+          trackToolAccess={trackToolAccess}
+          navigate={navigate}
+          isMobile={isMobile}
+        />
 
-        {/* Stats Cards Row — 8 clinical KPIs */}
-        <div className="dashboard-stats-row dashboard-row-enter">
-          <WidgetErrorBoundary widgetName="Critical Patients">
-            <StatCard
-              label={t('dashboard.criticalPatients')}
-              value={stats?.criticalPatients ?? 0}
-              trend={stats?.trends?.criticalPatients?.value != null ? `${stats.trends.criticalPatients.value > 0 ? '+' : ''}${stats.trends.criticalPatients.value}` : undefined}
-              trendDirection={stats?.trends?.criticalPatients?.direction}
-              color="critical"
-              icon="🚨"
-            />
-          </WidgetErrorBoundary>
-          <WidgetErrorBoundary widgetName="Active Patients">
-            <StatCard
-              label={t('dashboard.activePatients')}
-              value={stats?.activePatients ?? 0}
-              trend={stats?.trends?.activePatients?.value != null ? `${stats.trends.activePatients.value > 0 ? '+' : ''}${stats.trends.activePatients.value}` : undefined}
-              trendDirection={stats?.trends?.activePatients?.direction}
-              color="info"
-              icon="👥"
-            />
-          </WidgetErrorBoundary>
-          <WidgetErrorBoundary widgetName="Overdue Meds">
-            <StatCard
-              label="Overdue Meds"
-              value={stats?.overdueMeds ?? 0}
-              trend={stats?.trends?.overdueMeds?.value != null ? `${stats.trends.overdueMeds.value > 0 ? '+' : ''}${stats.trends.overdueMeds.value}` : undefined}
-              trendDirection={stats?.trends?.overdueMeds?.direction}
-              color="critical"
-              icon="💊"
-            />
-          </WidgetErrorBoundary>
-          <WidgetErrorBoundary widgetName="Pending Orders">
-            <StatCard
-              label="Pending Orders"
-              value={stats?.pendingOrders ?? 0}
-              trend={stats?.trends?.pendingOrders?.value != null ? `${stats.trends.pendingOrders.value > 0 ? '+' : ''}${stats.trends.pendingOrders.value}` : undefined}
-              trendDirection={stats?.trends?.pendingOrders?.direction}
-              color="warning"
-              icon="📋"
-            />
-          </WidgetErrorBoundary>
-          <WidgetErrorBoundary widgetName="Pending Labs">
-            <StatCard
-              label={t('dashboard.pendingLabs')}
-              value={stats?.pendingLabs ?? 0}
-              color="warning"
-              icon="🧪"
-            />
-          </WidgetErrorBoundary>
-          <WidgetErrorBoundary widgetName="Pending Discharges">
-            <StatCard
-              label="Pending D/C"
-              value={stats?.pendingDischarges ?? 0}
-              trend={stats?.trends?.pendingDischarges?.value != null ? `${stats.trends.pendingDischarges.value > 0 ? '+' : ''}${stats.trends.pendingDischarges.value}` : undefined}
-              trendDirection={stats?.trends?.pendingDischarges?.direction}
-              color="success"
-              icon="📤"
-            />
-          </WidgetErrorBoundary>
-          <WidgetErrorBoundary widgetName="Beds Available">
-            <StatCard
-              label="Beds Free"
-              value={stats?.bedsAvailable ?? 0}
-              trend={stats?.trends?.bedsAvailable?.value != null ? `${stats.trends.bedsAvailable.value > 0 ? '+' : ''}${stats.trends.bedsAvailable.value}` : undefined}
-              trendDirection={stats?.trends?.bedsAvailable?.direction}
-              color="success"
-              icon="🛏️"
-            />
-          </WidgetErrorBoundary>
-          <WidgetErrorBoundary widgetName="Consults Pending">
-            <StatCard
-              label="Consults"
-              value={stats?.consultsPending ?? 0}
-              trend={stats?.trends?.consultsPending?.value != null ? `${stats.trends.consultsPending.value > 0 ? '+' : ''}${stats.trends.consultsPending.value}` : undefined}
-              trendDirection={stats?.trends?.consultsPending?.direction}
-              color="info"
-              icon="⚕️"
-            />
-          </WidgetErrorBoundary>
-        </div>
-
-        {/* Quick Access Tools Grid */}
-        <section aria-label="Clinical Tools" style={{ width: '100%' }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: 'var(--space-3)',
-            flexWrap: 'wrap',
-            gap: 'var(--space-2)'
-          }}>
-            <h2 style={{
-              margin: 0,
-              fontSize: 'var(--font-size-lg)',
-              fontWeight: 'var(--font-weight-semibold)',
-              color: 'var(--text-primary)'
-            }}>
-              🛠️ {t('dashboard.clinicalTools') || 'Clinical Tools'}
-            </h2>
-            <button
-              onClick={() => navigate('/tools')}
-              style={{
-                fontSize: 'var(--font-size-xs)',
-                fontWeight: 'var(--font-weight-medium)',
-                color: 'var(--clinical-primary)',
-                background: 'none',
-                border: '1px solid var(--clinical-primary)',
-                borderRadius: '999px',
-                padding: '4px 14px',
-                cursor: 'pointer'
-              }}
-            >
-              {t('dashboard.viewAll') || 'View All'}
-            </button>
-          </div>
-          <div className="dashboard-tools-grid">
-            {toolRegistry.map((tool) => (
-              <WidgetErrorBoundary key={tool.id} widgetName={tool.name}>
-                <ToolCard
-                  icon={tool.icon}
-                  name={tool.name}
-                  description={tool.description}
-                  color={tool.color}
-                  shortcut={!isMobile ? tool.shortcut : undefined}
-                  isFavorite={favorites.includes(tool.id)}
-                  recentlyUsed={recentTools.includes(tool.id)}
-                  onClick={() => {
-                    recordToolAccess(tool.id);
-                    trackToolAccess(tool.id);
-                    navigate(tool.path);
-                  }}
-                />
-              </WidgetErrorBoundary>
-            ))}
-          </div>
-        </section>
-
-        {/* Row 1: Command Feed + Triage Queue */}
-        <div className="dashboard-row-2col dashboard-row-enter">
-          <WidgetErrorBoundary widgetName="Command Feed">
-            <CommandFeed
-              activities={activities}
-              onActivityClick={handleActivityClick}
-            />
-          </WidgetErrorBoundary>
-          <WidgetErrorBoundary widgetName="Triage Queue">
-            <SmartTriageQueue
-              alerts={alerts}
-              onAcknowledge={handleAcknowledgeAlert}
-              onAlertClick={handleAlertClick}
-            />
-          </WidgetErrorBoundary>
-        </div>
-
-        {/* Row 2: My Workload + Quick Orders + MAR Preview */}
-        {(!isMobile || showSecondaryWidgets) && (
-          <div className="dashboard-row-3col dashboard-row-enter">
-            <WidgetErrorBoundary widgetName="My Workload">
-              <MyWorkload
-                tasks={workload?.tasks}
-                shiftEnd={workload?.shiftEnd}
-                onToggleTask={toggleTask}
-              />
-            </WidgetErrorBoundary>
-            <WidgetErrorBoundary widgetName="Quick Orders">
-              <QuickOrders patients={patientList} onPlaceOrder={placeOrder} />
-            </WidgetErrorBoundary>
-            <WidgetErrorBoundary widgetName="MAR Preview">
-              <MARPreview
-                medications={marMedications.length > 0 ? marMedications : undefined}
-                onAdminister={handleAdministerMed}
-                onViewMAR={handleViewFullMAR}
-              />
-            </WidgetErrorBoundary>
-          </div>
-        )}
-
-        {/* Row 3: On-Call Roster + Lab Timeline + Bed Board */}
-        {(!isMobile || showSecondaryWidgets) && (
-          <div className="dashboard-row-3col dashboard-row-enter">
-            <WidgetErrorBoundary widgetName="On-Call Roster">
-              <OnCallRoster
-                roster={onCallRoster.length > 0 ? onCallRoster : undefined}
-                onPage={handlePageClinician}
-                onMessage={handleMessageClinician}
-              />
-            </WidgetErrorBoundary>
-            <WidgetErrorBoundary widgetName="Lab Timeline">
-              <LabTimeline
-                events={labTimeline.length > 0 ? labTimeline : undefined}
-                onViewResult={handleViewLabResult}
-              />
-            </WidgetErrorBoundary>
-
-            {/* 3D Patient Timeline */}
-            {webglSupported && show3DTimeline && labTimeline.length > 0 && !isMobile && (
-              <WidgetErrorBoundary widgetName="3D Patient Timeline">
-                <div style={{ marginTop: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, padding: '0 4px' }}>
-                    <span style={{ fontSize: 12, color: '#00e5ff', letterSpacing: '0.05em' }}>
-                      3D Patient Timeline
-                    </span>
-                    <button
-                      onClick={() => setShow3DTimeline(false)}
-                      aria-label="Hide 3D timeline"
-                      style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: 11 }}
-                    >
-                      Hide
-                    </button>
-                  </div>
-                  <div
-                    style={{ height: 200, borderRadius: 10, overflow: 'hidden', background: 'rgba(11,18,32,0.6)', border: '1px solid rgba(0,229,255,0.12)' }}
-                    aria-label="3D patient timeline visualization"
-                  >
-                    <Suspense fallback={<HolographicLoader size={32} label="" />}>
-                      <HolographicCanvas cameraPosition={[0, 0, 5]} controls>
-                        <Suspense fallback={null}>
-                          <Timeline3D
-                            title="Lab Timeline"
-                            events={labTimeline.slice(0, 8).map((e) => ({
-                              id: e.id || e.timestamp,
-                              label: e.test || e.label || 'Event',
-                              date: e.time || e.timestamp || '',
-                              type: e.status === 'critical' ? 'alert' : 'lab',
-                            }))}
-                          />
-                        </Suspense>
-                      </HolographicCanvas>
-                    </Suspense>
-                  </div>
-                </div>
-              </WidgetErrorBoundary>
-            )}
-            <WidgetErrorBoundary widgetName="Bed Board">
-              <BedBoard beds={bedBoard?.beds} unit={bedBoard?.unit} />
-            </WidgetErrorBoundary>
-          </div>
-        )}
-
-        {/* Show More/Less Toggle on Mobile */}
-        {isMobile && (
-          <div style={{ textAlign: 'center', marginBottom: 'var(--space-4)' }}>
-            <button
-              onClick={() => setShowSecondaryWidgets(!showSecondaryWidgets)}
-              style={{
-                padding: '12px 24px',
-                fontSize: 'var(--font-size-sm)',
-                fontWeight: 'var(--font-weight-medium)',
-                borderRadius: '999px',
-                border: '1px solid var(--border-subtle)',
-                background: 'var(--surface-1)',
-                color: 'var(--text-primary)',
-                cursor: 'pointer'
-              }}
-            >
-              {showSecondaryWidgets ? 'Show Less' : 'Show More Tools'}
-            </button>
-          </div>
-        )}
-
-        {/* Patients Section */}
-        <section aria-label="Patient list" style={{
-          animation: 'slideUp 0.4s var(--ease-smooth)',
-          animationDelay: '0.2s',
-          animationFillMode: 'both'
-        }}>
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 'var(--space-3)',
-            marginBottom: 'var(--space-4)'
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: isMobile ? 'stretch' : 'center',
-              justifyContent: 'space-between',
-              gap: 'var(--space-3)',
-              flexWrap: 'wrap',
-              flexDirection: isMobile ? 'column' : 'row'
-            }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--space-3)',
-                justifyContent: isMobile ? 'space-between' : 'flex-start',
-                width: isMobile ? '100%' : 'auto'
-              }}>
-                <h2 style={{
-                  margin: 0,
-                  fontSize: 'var(--font-size-xl)',
-                  fontWeight: 'var(--font-weight-semibold)',
-                  color: 'var(--text-primary)'
-                }}>
-                  {sectionTitle}
-                </h2>
-                <span style={{
-                  padding: '4px 12px',
-                  fontSize: 'var(--font-size-sm)',
-                  fontWeight: 'var(--font-weight-semibold)',
-                  color: '#fff',
-                  background: patientStatusFilter === 'critical' ? '#EF4444' : 'var(--clinical-info)',
-                  borderRadius: '999px'
-                }}>
-                  {criticalPatients.length}
-                </span>
-              </div>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--space-2)',
-                width: isMobile ? '100%' : 'auto',
-                justifyContent: isMobile ? 'flex-end' : 'flex-start'
-              }}>
-                <button
-                  onClick={() => {
-                    if (allExpanded) {
-                      setExpandedPatients(new Set());
-                    } else {
-                      setExpandedPatients(new Set(criticalPatients.map((patient) => patient.id)));
-                    }
-                  }}
-                  style={{
-                    padding: '6px 12px',
-                    fontSize: 'var(--font-size-xs)',
-                    fontWeight: 'var(--font-weight-medium)',
-                    borderRadius: '999px',
-                    border: '1px solid var(--border-subtle)',
-                    background: 'transparent',
-                    cursor: 'pointer'
-                  }}
-                >
-                  {allExpanded ? t('dashboard.collapseAll') : t('dashboard.expandAll')}
-                </button>
-              </div>
-            </div>
-
-            <div style={{
-              display: 'flex',
-              alignItems: isMobile ? 'stretch' : 'center',
-              gap: 'var(--space-3)',
-              flexWrap: 'wrap',
-              flexDirection: isMobile ? 'column' : 'row'
-            }}>
-              <div style={{
-                display: 'flex',
-                gap: 'var(--space-2)',
-                flexWrap: 'wrap',
-                width: isMobile ? '100%' : 'auto'
-              }}>
-                {statusOptions.map((option) => (
-                  <button
-                    key={option.id}
-                    onClick={() => setPatientStatusFilter(option.id)}
-                    style={{
-                      padding: '6px 12px',
-                      fontSize: 'var(--font-size-xs)',
-                      fontWeight: 'var(--font-weight-medium)',
-                      borderRadius: '999px',
-                      border: option.id === patientStatusFilter
-                        ? '1px solid var(--clinical-primary)'
-                        : '1px solid var(--border-subtle)',
-                      background: option.id === patientStatusFilter
-                        ? 'var(--clinical-primary-light)'
-                        : 'transparent',
-                      color: option.id === patientStatusFilter
-                        ? 'var(--clinical-primary)'
-                        : 'var(--text-secondary)',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-              <div style={{
-                marginLeft: isMobile ? 0 : 'auto',
-                flex: isMobile ? '1 1 100%' : '1 1 240px',
-                maxWidth: isMobile ? '100%' : '320px',
-                width: isMobile ? '100%' : 'auto'
-              }}>
-                <input
-                  type="search"
-                  placeholder={t('dashboard.searchPatientsPlaceholder')}
-                  value={patientSearch}
-                  onChange={(event) => setPatientSearch(event.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    fontSize: 'var(--font-size-sm)',
-                    borderRadius: '999px',
-                    border: '1px solid var(--border-subtle)',
-                    outline: 'none',
-                    background: 'var(--surface-1)'
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {criticalPatients.length === 0 ? (
-            <div style={{
-              padding: 'var(--space-6)',
-              textAlign: 'center',
-              color: 'var(--text-tertiary)',
-              border: '1px dashed var(--border-subtle)',
-              borderRadius: 'var(--radius-lg)'
-            }}>
-              <p style={{ margin: 0 }}>{t('dashboard.noMatchFilters')}</p>
-            </div>
-          ) : (
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 'var(--space-4)'
-            }}>
-              {criticalPatients.map((patient) => {
-                const isExpanded = expandedPatients.has(patient.id);
-                return (
-                  <PatientCard
-                    key={patient.id}
-                    patient={patient}
-                    compact={!isExpanded}
-                    showVitals={isExpanded}
-                    showActions={isExpanded}
-                    onClick={() => {
-                      setExpandedPatients((prev) => {
-                        const next = new Set(prev);
-                        if (next.has(patient.id)) {
-                          next.delete(patient.id);
-                        } else {
-                          next.add(patient.id);
-                        }
-                        return next;
-                      });
-                    }}
-                    onViewDetails={handleViewPatientDetails}
-                    onUpdateVitals={handleUpdateVitals}
-                    onAddNote={handleAddNote}
-                  />
-                );
-              })}
-            </div>
-          )}
-        </section>
+        <PatientOverviewSection
+          tr={tr}
+          sectionTitle={sectionTitle}
+          criticalPatients={criticalPatients}
+          patientStatusFilter={patientStatusFilter}
+          statusOptions={statusOptions}
+          setPatientStatusFilter={setPatientStatusFilter}
+          patientSearch={patientSearch}
+          setPatientSearch={setPatientSearch}
+          expandedPatients={expandedPatients}
+          setExpandedPatients={setExpandedPatients}
+          handleViewPatientDetails={handleViewPatientDetails}
+          handleUpdateVitals={handleUpdateVitals}
+          handleAddNote={handleAddNote}
+        />
       </div>
-      <NewPatientModal
-        isOpen={showNewPatient}
-        onClose={() => setShowNewPatient(false)}
-        onSave={createPatient}
-      />
-      <EmergencyModal
-        isOpen={showEmergency}
-        onClose={() => setShowEmergency(false)}
-        patients={patientList}
-      />
     </AppShell>
   );
 }

@@ -4,7 +4,6 @@ import { useUser } from '../contexts/UserContext';
 import AppShell from '../layout/AppShell';
 import { VitalsInput, buildVitalsPayload } from '../components/clinical/VitalsInput';
 import dashboardService from '../services/dashboardService';
-import '../components/dashboard/NewPatientModal.css';
 import './NewPatientPage.css';
 import { useLanguage } from '../contexts/LanguageContext';
 

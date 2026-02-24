@@ -26,12 +26,26 @@ export const DashboardHeader = ({
   onClearAll,
 }) => {
   const { t } = useLanguage();
+  const tr = (key, fallback) => {
+    const value = t(key);
+    return !value || value === key ? fallback : value;
+  };
   const [showNotifications, setShowNotifications] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const notificationsRef = useRef(null);
   const searchRef = useRef(null);
+  const [isTiny, setIsTiny] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth <= 520
+  );
 
-  const isTiny = typeof window !== 'undefined' && window.innerWidth <= 380;
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia('(max-width: 520px)');
+    const handler = (e) => setIsTiny(e.matches);
+    handler(mq);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   const getGreeting = () => {
     const h = new Date().getHours();
@@ -89,7 +103,7 @@ export const DashboardHeader = ({
         display: 'flex',
         alignItems: 'center',
         gap: 8,
-        flexWrap: 'nowrap',
+        flexWrap: isTiny ? 'wrap' : 'nowrap',
         minHeight: '40px'
       }}>
 
@@ -117,7 +131,7 @@ export const DashboardHeader = ({
         </div>
 
         {/* ── Right: Actions ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0, flexWrap: isTiny ? 'wrap' : 'nowrap', justifyContent: 'flex-end' }}>
 
           {/* Inline search */}
           {onSearchChange && (
@@ -129,10 +143,11 @@ export const DashboardHeader = ({
                 onChange={(e) => onSearchChange(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') onSearchSubmit?.(searchValue); if (e.key === 'Escape') setShowSearch(false); }}
                 onBlur={() => { if (!searchValue) setShowSearch(false); }}
-                placeholder={t('dashboard.searchPatients')}
-                aria-label={t('dashboard.searchPatients')}
+                placeholder={tr('dashboard.searchPatients', 'Search patients')}
+                aria-label={tr('dashboard.searchPatients', 'Search patients')}
                 style={{
-                  width: '160px',
+                  width: isTiny ? '100%' : '160px',
+                  maxWidth: isTiny ? '100%' : '160px',
                   height: '32px',
                   padding: '0 10px',
                   fontSize: '12px',
@@ -145,8 +160,8 @@ export const DashboardHeader = ({
             ) : (
               <button
                 onClick={() => setShowSearch(true)}
-                aria-label={t('dashboard.searchPatients')}
-                title={t('dashboard.searchPatients')}
+                aria-label={tr('dashboard.searchPatients', 'Search patients')}
+                title={tr('dashboard.searchPatients', 'Search patients')}
                 style={iconBtn()}
               >🔍</button>
             )
@@ -156,15 +171,15 @@ export const DashboardHeader = ({
           {onNewPatient && (
             <button
               onClick={onNewPatient}
-              aria-label={t('dashboard.newPatient')}
-              title={t('dashboard.newPatient')}
+              aria-label={tr('dashboard.newPatient', 'New Patient')}
+              title={tr('dashboard.newPatient', 'New Patient')}
               style={{
                 ...iconBtn({ background: 'var(--clinical-primary, #3B82F6)', borderColor: 'transparent', color: '#fff', width: 'auto', padding: '0 10px', gap: 4, fontSize: '12px', fontWeight: 600 }),
                 display: 'flex'
               }}
             >
               <span style={{ fontSize: '14px', lineHeight: 1 }}>+</span>
-              <span style={{ whiteSpace: 'nowrap' }}>{t('dashboard.newPatient')}</span>
+              <span style={{ whiteSpace: 'nowrap' }}>{isTiny ? tr('dashboard.newPatientShort', 'New') : tr('dashboard.newPatient', 'New Patient')}</span>
             </button>
           )}
 
@@ -172,8 +187,8 @@ export const DashboardHeader = ({
           {onEmergency && (
             <button
               onClick={onEmergency}
-              aria-label={t('dashboard.emergency')}
-              title={t('dashboard.emergency')}
+              aria-label={tr('dashboard.emergency', 'Emergency')}
+              title={tr('dashboard.emergency', 'Emergency')}
               style={iconBtn({ borderColor: '#EF4444', color: '#EF4444' })}
             >🚨</button>
           )}
@@ -242,9 +257,9 @@ export const DashboardHeader = ({
 
           {/* Connection status dot */}
           <span
-            title={connectionState === 'connected' ? t('dashboard.realtimeActive')
-                 : connectionState === 'connecting' ? t('dashboard.connectingStream')
-                 : t('dashboard.disconnectedReconnect')}
+              title={connectionState === 'connected' ? tr('dashboard.realtimeActive', 'Realtime active')
+                : connectionState === 'connecting' ? tr('dashboard.connectingStream', 'Connecting stream')
+                : tr('dashboard.disconnectedReconnect', 'Disconnected — reconnecting')}
             aria-label={`Status: ${connectionState}`}
             style={{
               display: 'flex',
@@ -271,9 +286,9 @@ export const DashboardHeader = ({
                        : connectionState === 'connecting' ? 'livePulse 0.8s ease-in-out infinite'
                        : 'none'
             }} />
-            {connectionState === 'connected' ? t('dashboard.live')
-             : connectionState === 'connecting' ? t('dashboard.connecting')
-             : t('status.offline')}
+            {isTiny
+              ? (connectionState === 'connected' ? tr('dashboard.liveShort', 'Live') : connectionState === 'connecting' ? tr('dashboard.connectingShort', 'Sync') : tr('status.offline', 'Off'))
+              : (connectionState === 'connected' ? tr('dashboard.live', 'Live') : connectionState === 'connecting' ? tr('dashboard.connecting', 'Connecting') : tr('status.offline', 'Offline'))}
           </span>
 
         </div>

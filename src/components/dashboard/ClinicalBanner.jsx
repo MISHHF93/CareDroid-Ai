@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 const DEFAULT_REMINDERS = [
@@ -15,6 +15,19 @@ export const ClinicalBanner = ({ reminders: propReminders, onDismiss, onSnooze }
   const { t } = useLanguage();
   const reminders = propReminders || DEFAULT_REMINDERS;
   const [dismissed, setDismissed] = useState(new Set());
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(max-width: 1100px)').matches;
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mediaQuery = window.matchMedia('(max-width: 1100px)');
+    const handleChange = (event) => setIsMobile(event.matches);
+    handleChange(mediaQuery);
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
 
   const visible = useMemo(
     () => reminders.filter((r) => !dismissed.has(r.id)),
@@ -46,15 +59,20 @@ export const ClinicalBanner = ({ reminders: propReminders, onDismiss, onSnooze }
   return (
     <div
       style={{
-        display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
+        display: 'flex', alignItems: isMobile ? 'stretch' : 'center', gap: 'var(--space-3)',
+        flexDirection: isMobile ? 'column' : 'row',
         padding: '12px 16px',
         borderRadius: 'var(--radius-lg)',
         borderLeft: `4px solid ${ps.border}`,
         background: ps.bg,
         animation: 'slideUp 0.3s var(--ease-smooth)',
+        width: '100%',
+        maxWidth: '100%',
+        overflow: 'hidden',
+        boxSizing: 'border-box',
       }}
     >
-      <span style={{ fontSize: '20px', flexShrink: 0 }}>{current.icon}</span>
+      <span style={{ fontSize: '20px', flexShrink: 0, alignSelf: isMobile ? 'flex-start' : 'auto' }}>{current.icon}</span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: '13px', fontWeight: 600, color: ps.text }}>{current.message}</div>
         {visible.length > 1 && (
@@ -63,16 +81,16 @@ export const ClinicalBanner = ({ reminders: propReminders, onDismiss, onSnooze }
           </div>
         )}
       </div>
-      <div style={{ display: 'flex', gap: 'var(--space-2)', flexShrink: 0 }}>
+      <div style={{ display: 'flex', gap: 'var(--space-2)', flexShrink: 0, width: isMobile ? '100%' : 'auto' }}>
         <button
           onClick={handleSnooze}
-          style={{ fontSize: '11px', fontWeight: 600, padding: '4px 10px', borderRadius: '999px', border: `1px solid ${ps.border}40`, background: 'transparent', color: ps.text, cursor: 'pointer' }}
+          style={{ fontSize: '11px', fontWeight: 600, padding: '4px 10px', borderRadius: '999px', border: `1px solid ${ps.border}40`, background: 'transparent', color: ps.text, cursor: 'pointer', flex: isMobile ? 1 : '0 0 auto' }}
         >
           {t('widgets.clinicalBanner.snooze1h')}
         </button>
         <button
           onClick={handleDismiss}
-          style={{ fontSize: '11px', fontWeight: 600, padding: '4px 10px', borderRadius: '999px', border: 'none', background: `${ps.border}15`, color: ps.text, cursor: 'pointer' }}
+          style={{ fontSize: '11px', fontWeight: 600, padding: '4px 10px', borderRadius: '999px', border: 'none', background: `${ps.border}15`, color: ps.text, cursor: 'pointer', flex: isMobile ? 1 : '0 0 auto' }}
         >
           {t('widgets.clinicalBanner.done')} ✓
         </button>

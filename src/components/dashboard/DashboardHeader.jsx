@@ -1,14 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import { Button } from '../ui/atoms/Button';
+import React, { useEffect, useRef, useState } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { NotificationDropdown } from './NotificationDropdown';
 
 /**
- * DashboardHeader - Top header section of the dashboard
- * Displays greeting, quick actions, and system status
+ * DashboardHeader — Compact single-row clinical bar
+ * EMR-density: greeting (left) + all actions (right) in ~44px
  */
 export const DashboardHeader = ({
   userName = 'User',
-
   onNewPatient,
   onEmergency,
   onSearch,
@@ -19,189 +18,263 @@ export const DashboardHeader = ({
   onRefresh,
   refreshing = false,
   autoRefresh = true,
-  connectionState = 'disconnected'
+  connectionState = 'disconnected',
+  notifications = [],
+  unreadCount = 0,
+  onMarkRead,
+  onMarkAllRead,
+  onClearAll,
 }) => {
   const { t } = useLanguage();
-  const [isMobile, setIsMobile] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return window.matchMedia('(max-width: 768px)').matches;
-  });
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const notificationsRef = useRef(null);
+  const searchRef = useRef(null);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const mediaQuery = window.matchMedia('(max-width: 768px)');
-    const handleChange = (event) => setIsMobile(event.matches);
-    handleChange(mediaQuery);
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, []);
+  const isTiny = typeof window !== 'undefined' && window.innerWidth <= 380;
 
   const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return t('dashboard.goodMorning');
-    if (hour < 17) return t('dashboard.goodAfternoon');
-    return t('dashboard.goodEvening');
+    const h = new Date().getHours();
+    if (h < 12) return '☀️';
+    if (h < 17) return '🌤️';
+    return '🌙';
   };
 
-  const getFormattedDate = () => {
-    return new Date().toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
+  const getShortDate = () =>
+    new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', weekday: 'short' });
 
-  const statusColors = {
-    online: '#10B981',
-    offline: '#EF4444',
-    degraded: '#F59E0B'
-  };
+  const connColor = connectionState === 'connected' ? '#22C55E'
+                  : connectionState === 'connecting' ? '#F59E0B'
+                  : '#6B7280';
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (notificationsRef.current && !notificationsRef.current.contains(e.target)) {
+        setShowNotifications(false);
+      }
+    };
+    if (showNotifications) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showNotifications]);
+
+  useEffect(() => {
+    if (showSearch && searchRef.current) searchRef.current.focus();
+  }, [showSearch]);
+
+  const iconBtn = (extraStyle = {}) => ({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '32px',
+    height: '32px',
+    borderRadius: '8px',
+    border: '1px solid var(--border-subtle)',
+    background: 'transparent',
+    cursor: 'pointer',
+    color: 'var(--text-secondary)',
+    fontSize: '15px',
+    flexShrink: 0,
+    padding: 0,
+    transition: 'background 0.15s',
+    ...extraStyle
+  });
 
   return (
     <header style={{
-      padding: isMobile ? 'var(--space-4) 0' : 'var(--space-6) 0',
+      padding: '6px 0 8px',
       borderBottom: '1px solid var(--border-subtle)',
-      marginBottom: 'var(--space-6)'
+      marginBottom: '10px'
     }}>
       <div style={{
         display: 'flex',
-        alignItems: isMobile ? 'stretch' : 'center',
-        justifyContent: 'space-between',
-        gap: 'var(--space-4)',
-        flexWrap: 'wrap',
-        flexDirection: isMobile ? 'column' : 'row'
+        alignItems: 'center',
+        gap: 8,
+        flexWrap: 'nowrap',
+        minHeight: '40px'
       }}>
-        {/* Left: Greeting */}
-        <div style={{ flex: '1 1 300px', width: isMobile ? '100%' : 'auto' }}>
-          <h1 style={{
-            margin: 0,
-            fontSize: isMobile ? 'var(--font-size-2xl)' : 'var(--font-size-3xl)',
-            fontWeight: 'var(--font-weight-bold)',
+
+        {/* ── Left: Greeting ── */}
+        <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0 }}>
+          <span style={{
+            fontSize: '13px',
+            fontWeight: 700,
             color: 'var(--text-primary)',
-            marginBottom: 'var(--space-1)'
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            lineHeight: 1.25
           }}>
-            {getGreeting()}, {userName}
-          </h1>
-          <p style={{
-            margin: 0,
-            fontSize: 'var(--font-size-sm)',
+            {getGreeting()} {userName}
+          </span>
+          <span style={{
+            fontSize: '10px',
             color: 'var(--text-tertiary)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 'var(--space-2)'
+            whiteSpace: 'nowrap',
+            lineHeight: 1.3
           }}>
-            <span>{getFormattedDate()}</span>
-          </p>
+            {getShortDate()}
+          </span>
         </div>
 
-        {/* Right: Actions and Notifications */}
-        <div style={{
-          display: 'flex',
-          alignItems: isMobile ? 'stretch' : 'center',
-          gap: 'var(--space-3)',
-          flex: '0 0 auto',
-          flexWrap: 'wrap',
-          flexDirection: isMobile ? 'column' : 'row',
-          width: isMobile ? '100%' : 'auto'
-        }}>
+        {/* ── Right: Actions ── */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
+
+          {/* Inline search */}
           {onSearchChange && (
-            <div style={{
-              position: 'relative',
-              display: 'flex',
-              alignItems: 'center',
-              width: isMobile ? '100%' : 'auto'
-            }}>
+            showSearch ? (
               <input
+                ref={searchRef}
                 type="search"
                 value={searchValue}
-                onChange={(event) => onSearchChange(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') {
-                    onSearchSubmit?.(searchValue);
-                  }
-                }}
+                onChange={(e) => onSearchChange(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') onSearchSubmit?.(searchValue); if (e.key === 'Escape') setShowSearch(false); }}
+                onBlur={() => { if (!searchValue) setShowSearch(false); }}
                 placeholder={t('dashboard.searchPatients')}
                 aria-label={t('dashboard.searchPatients')}
                 style={{
-                  width: isMobile ? '100%' : '220px',
-                  padding: '8px 12px',
-                  fontSize: 'var(--font-size-sm)',
-                  borderRadius: '999px',
+                  width: '160px',
+                  height: '32px',
+                  padding: '0 10px',
+                  fontSize: '12px',
+                  borderRadius: '8px',
                   border: '1px solid var(--border-subtle)',
-                  background: 'var(--surface-1)'
+                  background: 'var(--surface-1)',
+                  outline: 'none'
                 }}
               />
-            </div>
+            ) : (
+              <button
+                onClick={() => setShowSearch(true)}
+                aria-label={t('dashboard.searchPatients')}
+                title={t('dashboard.searchPatients')}
+                style={iconBtn()}
+              >🔍</button>
+            )
           )}
 
-          <Button
-            variant="primary"
-            size="md"
-            fullWidth={isMobile}
-            onClick={onNewPatient}
-          >
-            <span style={{ marginRight: '6px' }}>+</span>
-            {t('dashboard.newPatient')}
-          </Button>
+          {/* New Patient */}
+          {onNewPatient && (
+            <button
+              onClick={onNewPatient}
+              aria-label={t('dashboard.newPatient')}
+              title={t('dashboard.newPatient')}
+              style={{
+                ...iconBtn({ background: 'var(--clinical-primary, #3B82F6)', borderColor: 'transparent', color: '#fff', width: 'auto', padding: '0 10px', gap: 4, fontSize: '12px', fontWeight: 600 }),
+                display: 'flex'
+              }}
+            >
+              <span style={{ fontSize: '14px', lineHeight: 1 }}>+</span>
+              <span style={{ whiteSpace: 'nowrap' }}>{t('dashboard.newPatient')}</span>
+            </button>
+          )}
 
-          <Button
-            variant="danger"
-            size="md"
-            fullWidth={isMobile}
-            onClick={onEmergency}
-          >
-            <span style={{ marginRight: '6px' }}>🚨</span>
-            {t('dashboard.emergency')}
-          </Button>
+          {/* Emergency */}
+          {onEmergency && (
+            <button
+              onClick={onEmergency}
+              aria-label={t('dashboard.emergency')}
+              title={t('dashboard.emergency')}
+              style={iconBtn({ borderColor: '#EF4444', color: '#EF4444' })}
+            >🚨</button>
+          )}
 
-          {/* Live indicator — shows SSE connection status */}
-          <div
+          {/* Refresh */}
+          {onRefresh && (
+            <button
+              onClick={onRefresh}
+              disabled={refreshing}
+              aria-label="Refresh"
+              title="Refresh dashboard"
+              style={iconBtn({
+                cursor: refreshing ? 'not-allowed' : 'pointer',
+                animation: refreshing ? 'spin 1s linear infinite' : 'none',
+                opacity: refreshing ? 0.6 : 1
+              })}
+            >🔄</button>
+          )}
+
+          {/* Notification bell */}
+          <div ref={notificationsRef} style={{ position: 'relative' }}>
+            <button
+              onClick={() => setShowNotifications(v => !v)}
+              aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
+              title="Notifications"
+              style={iconBtn({
+                borderColor: showNotifications ? 'var(--clinical-primary, #3B82F6)' : undefined,
+                background: showNotifications ? 'rgba(59,130,246,0.1)' : undefined,
+                position: 'relative'
+              })}
+            >
+              🔔
+              {unreadCount > 0 && (
+                <span style={{
+                  position: 'absolute',
+                  top: '-4px',
+                  right: '-4px',
+                  minWidth: '16px',
+                  height: '16px',
+                  padding: '0 3px',
+                  fontSize: '9px',
+                  fontWeight: 700,
+                  color: '#fff',
+                  background: '#EF4444',
+                  borderRadius: '999px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  lineHeight: 1,
+                  border: '2px solid var(--surface-0, #0d1117)'
+                }}>
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </button>
+            {showNotifications && (
+              <NotificationDropdown
+                notifications={notifications}
+                onMarkRead={onMarkRead}
+                onMarkAllRead={onMarkAllRead}
+                onClearAll={onClearAll}
+                onClose={() => setShowNotifications(false)}
+              />
+            )}
+          </div>
+
+          {/* Connection status dot */}
+          <span
+            title={connectionState === 'connected' ? t('dashboard.realtimeActive')
+                 : connectionState === 'connecting' ? t('dashboard.connectingStream')
+                 : t('dashboard.disconnectedReconnect')}
+            aria-label={`Status: ${connectionState}`}
             style={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: isMobile ? 'center' : 'flex-start',
-              gap: '6px',
-              padding: '6px 12px',
-              fontSize: 'var(--font-size-xs)',
-              color: connectionState === 'connected' ? '#10B981'
-                   : connectionState === 'connecting' ? '#F59E0B'
-                   : 'var(--text-tertiary)',
-              borderRadius: '999px',
-              border: '1px solid',
-              borderColor: connectionState === 'connected' ? 'rgba(16, 185, 129, 0.3)'
-                         : connectionState === 'connecting' ? 'rgba(245, 158, 11, 0.3)'
-                         : 'var(--border-subtle)',
-              background: connectionState === 'connected' ? 'rgba(16, 185, 129, 0.08)'
-                        : connectionState === 'connecting' ? 'rgba(245, 158, 11, 0.08)'
-                        : 'transparent',
-              transition: 'all 0.3s ease',
-              width: isMobile ? '100%' : 'auto',
-              boxSizing: 'border-box'
+              gap: 4,
+              padding: '3px 8px',
+              borderRadius: 999,
+              border: `1px solid ${connColor}44`,
+              background: `${connColor}11`,
+              fontSize: '10px',
+              fontWeight: 600,
+              color: connColor,
+              whiteSpace: 'nowrap',
+              flexShrink: 0
             }}
-            title={connectionState === 'connected'
-              ? t('dashboard.realtimeActive')
-              : connectionState === 'connecting'
-              ? t('dashboard.connectingStream')
-              : t('dashboard.disconnectedReconnect')}
-            aria-label={`Real-time status: ${connectionState}`}
           >
             <span style={{
-              width: '8px',
-              height: '8px',
+              width: 6,
+              height: 6,
               borderRadius: '50%',
-              background: connectionState === 'connected' ? '#10B981'
-                        : connectionState === 'connecting' ? '#F59E0B'
-                        : 'var(--text-tertiary)',
+              background: connColor,
+              flexShrink: 0,
               animation: connectionState === 'connected' ? 'livePulse 2s ease-in-out infinite'
                        : connectionState === 'connecting' ? 'livePulse 0.8s ease-in-out infinite'
-                       : 'none',
-              flexShrink: 0
+                       : 'none'
             }} />
             {connectionState === 'connected' ? t('dashboard.live')
              : connectionState === 'connecting' ? t('dashboard.connecting')
              : t('status.offline')}
-          </div>
+          </span>
 
         </div>
       </div>

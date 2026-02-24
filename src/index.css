@@ -339,12 +339,23 @@ body.route-auth #root {
   flex: 1;
   display: flex;
   flex-direction: column;
+  align-items: center;
   margin-left: 280px;
   min-width: 0;
   min-height: 100dvh;
   overflow: auto;
   padding-bottom: var(--safe-area-bottom);
   transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: #000;
+}
+
+.app-shell-phone-frame {
+  width: 100%;
+  max-width: 100%;
+  min-height: 100dvh;
+  background: #000;
+  display: flex;
+  flex-direction: column;
 }
 
 .app-shell.app-shell-collapsed .app-shell-main {
@@ -512,7 +523,7 @@ p {
 
 /* ===== RESPONSIVE UTILITIES ===== */
 
-@media (max-width: 768px) {
+@media (max-width: 1100px) {
   .hidden-mobile { display: none !important; }
 
   .app-shell {
@@ -522,9 +533,26 @@ p {
   .app-shell-main {
     margin-left: 0;
     width: 100%;
+    align-items: stretch;
+    justify-content: flex-start;
     padding-left: var(--safe-area-left);
     padding-right: var(--safe-area-right);
     padding-bottom: calc(12px + var(--safe-area-bottom));
+    background: #000;
+    overflow-x: hidden;
+  }
+
+  .app-shell.app-shell-collapsed .app-shell-main,
+  .app-shell:not(.app-shell-collapsed) .app-shell-main {
+    margin-left: 0;
+  }
+
+  .app-shell-phone-frame {
+    width: 100%;
+    max-width: none;
+    min-height: 100dvh;
+    margin: 0;
+    background: #000;
   }
 
   .app-shell-overlay {
@@ -581,7 +609,7 @@ p {
   }
 }
 
-@media (min-width: 769px) {
+@media (min-width: 1101px) {
   .hidden-desktop { display: none !important; }
 }
 

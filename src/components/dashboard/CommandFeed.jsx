@@ -77,24 +77,24 @@ export const CommandFeed = ({ activities = [], onActivityClick, onAction, lastVi
   return (
     <Card padding="lg" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 'var(--space-3)', borderBottom: '1px solid var(--border-subtle)' }}>
-        <h3 style={{ margin: 0, fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '7px', borderBottom: '1px solid var(--border-subtle)', marginBottom: 0 }}>
+        <h3 style={{ margin: 0, fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', gap: 6 }}>
           {t('widgets.commandFeed.title')}
-          <span role="status" aria-label="Live feed active" style={{ fontSize: '10px', fontWeight: 600, color: 'var(--clinical-success)', padding: '2px 8px', borderRadius: '999px', background: 'var(--clinical-success-light)', border: '1px solid rgba(16,185,129,0.3)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--clinical-success)', animation: 'pulse 2s ease-in-out infinite' }} />
+          <span role="status" aria-label="Live feed active" style={{ fontSize: '9px', fontWeight: 700, color: 'var(--clinical-success)', padding: '1px 5px', borderRadius: '999px', background: 'var(--clinical-success-light)', border: '1px solid rgba(16,185,129,0.3)', display: 'flex', alignItems: 'center', gap: 3 }}>
+            <span aria-hidden="true" style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--clinical-success)', animation: 'pulse 2s ease-in-out infinite' }} />
             {t('widgets.commandFeed.live')}
           </span>
           {unreadCount > 0 && (
-            <span role="status" aria-label={`${unreadCount} new items`} style={{ fontSize: '10px', fontWeight: 700, color: '#fff', padding: '2px 7px', borderRadius: '999px', background: 'var(--clinical-error)', minWidth: '18px', textAlign: 'center' }}>
+            <span role="status" aria-label={`${unreadCount} new items`} style={{ fontSize: '9px', fontWeight: 700, color: '#fff', padding: '1px 5px', borderRadius: '999px', background: 'var(--clinical-error)', minWidth: '16px', textAlign: 'center' }}>
               {unreadCount}
             </span>
           )}
         </h3>
-        <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-tertiary)' }}>{filtered.length} {t('widgets.commandFeed.items')}</span>
+        <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>{filtered.length} {t('widgets.commandFeed.items')}</span>
       </div>
 
       {/* Category Tabs */}
-      <div role="tablist" aria-label="Activity categories" style={{ display: 'flex', gap: 'var(--space-1)', padding: 'var(--space-3) 0', overflowX: 'auto', flexShrink: 0 }}>
+      <div role="tablist" aria-label="Activity categories" style={{ display: 'flex', gap: 3, padding: '6px 0 5px', overflowX: 'auto', flexShrink: 0, borderBottom: '1px solid var(--border-subtle)', marginBottom: 6 }}>
         {CATEGORY_TABS.map((tab) => {
           const count = tab.id === 'all' ? activities.length : categoryCounts[tab.id] || 0;
           const isActive = activeCategory === tab.id;
@@ -106,8 +106,8 @@ export const CommandFeed = ({ activities = [], onActivityClick, onAction, lastVi
               aria-controls="command-feed-list"
               onClick={() => setActiveCategory(tab.id)}
               style={{
-                display: 'flex', alignItems: 'center', gap: '4px',
-                padding: '4px 10px', fontSize: '12px', fontWeight: 600,
+                display: 'flex', alignItems: 'center', gap: 3,
+                padding: '3px 8px', fontSize: '11px', fontWeight: 600,
                 borderRadius: '999px', border: 'none', cursor: 'pointer',
                 whiteSpace: 'nowrap',
                 background: isActive ? 'var(--clinical-primary-light)' : 'transparent',
@@ -131,10 +131,10 @@ export const CommandFeed = ({ activities = [], onActivityClick, onAction, lastVi
       </div>
 
       {/* Feed List */}
-      <div id="command-feed-list" role="tabpanel" aria-live="polite" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', overflowY: 'auto', flex: 1, maxHeight: '380px' }}>
+      <div id="command-feed-list" role="tabpanel" aria-live="polite" style={{ display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto', flex: 1, maxHeight: '280px' }}>
         {filtered.length === 0 ? (
-          <div style={{ padding: 'var(--space-6)', textAlign: 'center', color: 'var(--text-tertiary)' }}>
-            <div style={{ fontSize: '32px', marginBottom: 'var(--space-2)' }}>📭</div>
+          <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-tertiary)' }}>
+            <div style={{ fontSize: '24px', marginBottom: 4 }}>📭</div>
             <p style={{ margin: 0 }}>{t('widgets.commandFeed.noActivity')}</p>
           </div>
         ) : (
@@ -150,7 +150,7 @@ export const CommandFeed = ({ activities = [], onActivityClick, onAction, lastVi
                 aria-label={`${isPinned ? 'Pinned: ' : ''}${activity.title || activity.message} — ${getRelativeTime(activity.timestamp)}${unread ? ' (new)' : ''}`}
                 onClick={() => onActivityClick?.(activity)}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onActivityClick?.(activity); } }}
-                style={{ display: 'flex', gap: 'var(--space-3)', padding: 'var(--space-2) var(--space-3)', borderRadius: 'var(--radius-md)', cursor: 'pointer', transition: 'background 0.15s', position: 'relative', borderLeft: isPinned ? '3px solid var(--clinical-error)' : '3px solid transparent' }}
+                style={{ display: 'flex', gap: 8, padding: '5px 8px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', transition: 'background 0.12s', position: 'relative', borderLeft: isPinned ? '2px solid var(--clinical-error)' : '2px solid transparent' }}
                 onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-secondary)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
               >
@@ -158,9 +158,9 @@ export const CommandFeed = ({ activities = [], onActivityClick, onAction, lastVi
                 {unread && (
                   <span aria-hidden="true" style={{ position: 'absolute', left: isPinned ? '-8px' : '-5px', top: '50%', transform: 'translateY(-50%)', width: '6px', height: '6px', borderRadius: '50%', background: 'var(--clinical-primary)' }} />
                 )}
-                <div style={{ fontSize: '22px', lineHeight: 1, flexShrink: 0, marginTop: '2px' }}>{getIcon(activity.type)}</div>
+                <div style={{ fontSize: '16px', lineHeight: 1, flexShrink: 0, marginTop: '1px' }}>{getIcon(activity.type)}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '13px', fontWeight: unread ? 700 : 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: unread ? 700 : 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 3 }}>
                     {isPinned && <span aria-label="Pinned" title="Priority item" style={{ fontSize: '11px' }}>📌</span>}
                     {activity.title || activity.message}
                   </div>

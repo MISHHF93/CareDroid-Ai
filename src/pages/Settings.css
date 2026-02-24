@@ -84,8 +84,8 @@
   animation: gradientMove 3s ease infinite;
 }
 
-/* ─── Responsive: single-column below 768px ─── */
-@media (max-width: 768px) {
+/* ─── Responsive: single-column below compact threshold ─── */
+@media (max-width: 1100px) {
   .settings-layout {
     flex-direction: column !important;
   }

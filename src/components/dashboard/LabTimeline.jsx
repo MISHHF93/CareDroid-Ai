@@ -22,7 +22,7 @@ export const LabTimeline = ({ events: propEvents, onViewResult, lastViewedTimest
   const { reducedMotion } = useHolographicMode();
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window === 'undefined') return false;
-    return window.matchMedia('(max-width: 768px)').matches;
+    return window.matchMedia('(max-width: 767px)').matches;
   });
   const events = propEvents || DEFAULT_EVENTS;
   const [expandedId, setExpandedId] = useState(null);
@@ -51,7 +51,7 @@ export const LabTimeline = ({ events: propEvents, onViewResult, lastViewedTimest
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    const mediaQuery = window.matchMedia('(max-width: 767px)');
     const handleChange = (event) => setIsMobile(event.matches);
     handleChange(mediaQuery);
     mediaQuery.addEventListener('change', handleChange);

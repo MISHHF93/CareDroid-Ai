@@ -105,8 +105,8 @@ export const SmartTriageQueue = ({ alerts = [], onAcknowledge, onAlertClick, onR
   return (
     <Card padding="lg" style={{ display: 'flex', flexDirection: 'column', height: '100%', minWidth: 0, overflow: 'visible' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 'var(--space-3)', borderBottom: '1px solid var(--border-subtle)' }}>
-        <h3 id="triage-queue-title" style={{ margin: 0, fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '7px', borderBottom: '1px solid var(--border-subtle)', marginBottom: 0 }}>
+        <h3 id="triage-queue-title" style={{ margin: 0, fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', gap: 6 }}>
           {t('widgets.smartTriageQueue.title')}
           {alerts.length > 0 && <Badge variant="danger" size="sm" role="status" aria-label={`${alerts.length} alerts`}>{alerts.length}</Badge>}
         </h3>
@@ -139,7 +139,7 @@ export const SmartTriageQueue = ({ alerts = [], onAcknowledge, onAlertClick, onR
       </div>
 
       {/* Alert Groups / Resolved Archive */}
-      <div role="list" aria-labelledby="triage-queue-title" aria-live="polite" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', overflowY: 'auto', overflowX: 'hidden', flex: 1, maxHeight: '380px', paddingTop: 'var(--space-3)', minWidth: 0 }}>
+      <div role="list" aria-labelledby="triage-queue-title" aria-live="polite" style={{ display: 'flex', flexDirection: 'column', gap: 6, overflowY: 'auto', overflowX: 'hidden', flex: 1, maxHeight: '280px', paddingTop: 8, minWidth: 0 }}>
         {showResolved ? (
           /* Resolved Alerts Archive */
           resolvedAlerts.length === 0 ? (
@@ -148,14 +148,14 @@ export const SmartTriageQueue = ({ alerts = [], onAcknowledge, onAlertClick, onR
             </div>
           ) : (
             resolvedAlerts.map((ra, idx) => (
-              <div key={`resolved-${ra.id}-${idx}`} role="listitem" style={{ padding: 'var(--space-3)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', background: 'var(--surface-secondary)', opacity: 0.85 }}>
+              <div key={`resolved-${ra.id}-${idx}`} role="listitem" style={{ padding: '6px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', background: 'var(--surface-secondary)', opacity: 0.85 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                   <Badge variant="secondary" size="sm">{ra.severity?.toUpperCase()}</Badge>
                   <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>
                     {new Date(ra.resolvedAt).toLocaleTimeString()}
                   </span>
                 </div>
-                <div style={{ fontSize: '13px', color: 'var(--text-primary)', marginBottom: '2px' }}>{ra.message}</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-primary)', marginBottom: '2px' }}>{ra.message}</div>
                 <div style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>
                   {ra.patient || ra.patientName ? `${t('widgets.smartTriageQueue.patient')}: ${ra.patient || ra.patientName} · ` : ''}
                   {ra.action} {t('widgets.smartTriageQueue.by')} {ra.resolvedBy}
@@ -165,10 +165,10 @@ export const SmartTriageQueue = ({ alerts = [], onAcknowledge, onAlertClick, onR
           )
         ) : (
         groupedAlerts.length === 0 ? (
-          <div style={{ padding: 'var(--space-6)', textAlign: 'center', color: 'var(--text-tertiary)' }}>
-            <div style={{ fontSize: '32px', marginBottom: 'var(--space-2)' }}>✅</div>
-            <p style={{ margin: 0 }}>{t('widgets.smartTriageQueue.noActiveAlerts')}</p>
-            <p style={{ margin: 0, fontSize: '13px', marginTop: 4 }}>{t('widgets.smartTriageQueue.allSystemsNormal')}</p>
+          <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-tertiary)' }}>
+            <div style={{ fontSize: '24px', marginBottom: 4 }}>✅</div>
+            <p style={{ margin: 0, fontSize: '12px' }}>{t('widgets.smartTriageQueue.noActiveAlerts')}</p>
+            <p style={{ margin: 0, fontSize: '11px', marginTop: 3 }}>{t('widgets.smartTriageQueue.allSystemsNormal')}</p>
           </div>
         ) : (
           groupedAlerts.map((group) => {

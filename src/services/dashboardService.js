@@ -603,17 +603,30 @@ class DashboardService {
     return {
       criticalPatients: 5,
       activePatients: 24,
-      stablePatients: 12,
       pendingLabs: 8,
+      overdueMeds: 3,
+      pendingOrders: 11,
+      pendingDischarges: 4,
+      bedsAvailable: 6,
+      consultsPending: 7,
       trends: {
         criticalPatients: { value: 2, direction: 'up' },
         activePatients: { value: -1, direction: 'down' },
+        overdueMeds: { value: 1, direction: 'up' },
+        pendingOrders: { value: 3, direction: 'up' },
+        pendingDischarges: { value: -1, direction: 'down' },
+        bedsAvailable: { value: 2, direction: 'up' },
+        consultsPending: { value: 2, direction: 'up' },
       },
       sparklines: {
         criticalPatients: [3, 2, 4, 3, 5, 4, 5],
         activePatients: [18, 20, 19, 22, 21, 23, 24],
         pendingLabs: [8, 5, 12, 9, 7, 11, 8],
-        stablePatients: [12, 13, 11, 14, 15, 14, 12],
+        overdueMeds: [1, 2, 1, 3, 2, 3, 3],
+        pendingOrders: [7, 9, 8, 10, 9, 11, 11],
+        pendingDischarges: [2, 3, 4, 5, 4, 3, 4],
+        bedsAvailable: [4, 5, 4, 6, 5, 7, 6],
+        consultsPending: [4, 5, 6, 5, 7, 6, 7],
       },
     };
   }

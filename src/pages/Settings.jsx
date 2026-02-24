@@ -403,7 +403,7 @@ const Settings = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window === 'undefined') return false;
-    return window.matchMedia('(max-width: 768px)').matches;
+    return window.matchMedia('(max-width: 1100px)').matches;
   });
 
   // Storage
@@ -469,7 +469,7 @@ const Settings = () => {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    const mediaQuery = window.matchMedia('(max-width: 1100px)');
     const updateMobile = (event) => setIsMobile(event.matches);
     updateMobile(mediaQuery);
     mediaQuery.addEventListener('change', updateMobile);

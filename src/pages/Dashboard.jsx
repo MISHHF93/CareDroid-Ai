@@ -20,10 +20,13 @@ import WidgetErrorBoundary from '../components/dashboard/WidgetErrorBoundary';
 import { DashboardSkeletonLayout } from '../components/dashboard/DashboardSkeleton';
 import { NewPatientModal } from '../components/dashboard/NewPatientModal';
 import { EmergencyModal } from '../components/dashboard/EmergencyModal';
+import { ToolCard } from '../components/dashboard/ToolCard';
 import '../components/dashboard/Dashboard.css';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useWebGLSupport } from '../hooks/useWebGLSupport';
 import HolographicLoader from '../components/3d/HolographicLoader';
+import toolRegistry from '../data/toolRegistry';
+import { useToolPreferences } from '../contexts/ToolPreferencesContext';
 
 // Lazy-load 3D timeline
 const HolographicCanvas = lazy(() => import('../components/3d/HolographicCanvas'));
@@ -38,9 +41,10 @@ function Dashboard() {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { supported: webglSupported } = useWebGLSupport();
+  const { favorites, recentTools, toggleFavorite, recordToolAccess } = useToolPreferences();
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window === 'undefined') return false;
-    return window.matchMedia('(max-width: 768px)').matches;
+    return window.matchMedia('(max-width: 767px)').matches;
   });
   const [show3DTimeline, setShow3DTimeline] = useState(true);
   const {
@@ -80,6 +84,10 @@ function Dashboard() {
   const [expandedPatients, setExpandedPatients] = useState(new Set());
   const [showNewPatient, setShowNewPatient] = useState(false);
   const [showEmergency, setShowEmergency] = useState(false);
+  const [showSecondaryWidgets, setShowSecondaryWidgets] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return !window.matchMedia('(max-width: 767px)').matches;
+  });
 
   useEffect(() => {
     const prefetchLandingRoutes = () => {
@@ -101,7 +109,7 @@ function Dashboard() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    const mediaQuery = window.matchMedia('(max-width: 767px)');
     const handleChange = (event) => setIsMobile(event.matches);
     handleChange(mediaQuery);
     mediaQuery.addEventListener('change', handleChange);
@@ -336,6 +344,11 @@ function Dashboard() {
           onRefresh={refresh}
           refreshing={refreshing}
           connectionState={connectionState}
+          notifications={notifications}
+          unreadCount={unreadCount}
+          onMarkRead={markAsRead}
+          onMarkAllRead={markAllAsRead}
+          onClearAll={clearAll}
         />
 
         {/* Clinical Decision Support Banner */}
@@ -343,49 +356,143 @@ function Dashboard() {
           <ClinicalBanner reminders={cdsReminders.length > 0 ? cdsReminders : undefined} />
         </WidgetErrorBoundary>
 
-        {/* Stats Cards Row — with sparklines */}
+        {/* Stats Cards Row — 8 clinical KPIs */}
         <div className="dashboard-stats-row dashboard-row-enter">
           <WidgetErrorBoundary widgetName="Critical Patients">
             <StatCard
               label={t('dashboard.criticalPatients')}
-              value={stats?.criticalPatients || 0}
-              trend={stats?.trends?.criticalPatients?.value ? `${stats.trends.criticalPatients.value > 0 ? '+' : ''}${stats.trends.criticalPatients.value}` : undefined}
+              value={stats?.criticalPatients ?? 0}
+              trend={stats?.trends?.criticalPatients?.value != null ? `${stats.trends.criticalPatients.value > 0 ? '+' : ''}${stats.trends.criticalPatients.value}` : undefined}
               trendDirection={stats?.trends?.criticalPatients?.direction}
               color="critical"
               icon="🚨"
-              sparklineData={sparklines.critical}
             />
           </WidgetErrorBoundary>
           <WidgetErrorBoundary widgetName="Active Patients">
             <StatCard
               label={t('dashboard.activePatients')}
-              value={stats?.activePatients || 0}
-              trend={stats?.trends?.activePatients?.value ? `${stats.trends.activePatients.value > 0 ? '+' : ''}${stats.trends.activePatients.value}` : undefined}
+              value={stats?.activePatients ?? 0}
+              trend={stats?.trends?.activePatients?.value != null ? `${stats.trends.activePatients.value > 0 ? '+' : ''}${stats.trends.activePatients.value}` : undefined}
               trendDirection={stats?.trends?.activePatients?.direction}
               color="info"
               icon="👥"
-              sparklineData={sparklines.active}
+            />
+          </WidgetErrorBoundary>
+          <WidgetErrorBoundary widgetName="Overdue Meds">
+            <StatCard
+              label="Overdue Meds"
+              value={stats?.overdueMeds ?? 0}
+              trend={stats?.trends?.overdueMeds?.value != null ? `${stats.trends.overdueMeds.value > 0 ? '+' : ''}${stats.trends.overdueMeds.value}` : undefined}
+              trendDirection={stats?.trends?.overdueMeds?.direction}
+              color="critical"
+              icon="💊"
+            />
+          </WidgetErrorBoundary>
+          <WidgetErrorBoundary widgetName="Pending Orders">
+            <StatCard
+              label="Pending Orders"
+              value={stats?.pendingOrders ?? 0}
+              trend={stats?.trends?.pendingOrders?.value != null ? `${stats.trends.pendingOrders.value > 0 ? '+' : ''}${stats.trends.pendingOrders.value}` : undefined}
+              trendDirection={stats?.trends?.pendingOrders?.direction}
+              color="warning"
+              icon="📋"
             />
           </WidgetErrorBoundary>
           <WidgetErrorBoundary widgetName="Pending Labs">
             <StatCard
               label={t('dashboard.pendingLabs')}
-              value={stats?.pendingLabs || 0}
+              value={stats?.pendingLabs ?? 0}
               color="warning"
               icon="🧪"
-              sparklineData={sparklines.labs}
             />
           </WidgetErrorBoundary>
-          <WidgetErrorBoundary widgetName="Stable Patients">
+          <WidgetErrorBoundary widgetName="Pending Discharges">
             <StatCard
-              label={t('dashboard.stablePatients')}
-              value={stats?.stablePatients || 0}
+              label="Pending D/C"
+              value={stats?.pendingDischarges ?? 0}
+              trend={stats?.trends?.pendingDischarges?.value != null ? `${stats.trends.pendingDischarges.value > 0 ? '+' : ''}${stats.trends.pendingDischarges.value}` : undefined}
+              trendDirection={stats?.trends?.pendingDischarges?.direction}
               color="success"
-              icon="✅"
-              sparklineData={sparklines.stable}
+              icon="📤"
+            />
+          </WidgetErrorBoundary>
+          <WidgetErrorBoundary widgetName="Beds Available">
+            <StatCard
+              label="Beds Free"
+              value={stats?.bedsAvailable ?? 0}
+              trend={stats?.trends?.bedsAvailable?.value != null ? `${stats.trends.bedsAvailable.value > 0 ? '+' : ''}${stats.trends.bedsAvailable.value}` : undefined}
+              trendDirection={stats?.trends?.bedsAvailable?.direction}
+              color="success"
+              icon="🛏️"
+            />
+          </WidgetErrorBoundary>
+          <WidgetErrorBoundary widgetName="Consults Pending">
+            <StatCard
+              label="Consults"
+              value={stats?.consultsPending ?? 0}
+              trend={stats?.trends?.consultsPending?.value != null ? `${stats.trends.consultsPending.value > 0 ? '+' : ''}${stats.trends.consultsPending.value}` : undefined}
+              trendDirection={stats?.trends?.consultsPending?.direction}
+              color="info"
+              icon="⚕️"
             />
           </WidgetErrorBoundary>
         </div>
+
+        {/* Quick Access Tools Grid */}
+        <section aria-label="Clinical Tools" style={{ width: '100%' }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 'var(--space-3)',
+            flexWrap: 'wrap',
+            gap: 'var(--space-2)'
+          }}>
+            <h2 style={{
+              margin: 0,
+              fontSize: 'var(--font-size-lg)',
+              fontWeight: 'var(--font-weight-semibold)',
+              color: 'var(--text-primary)'
+            }}>
+              🛠️ {t('dashboard.clinicalTools') || 'Clinical Tools'}
+            </h2>
+            <button
+              onClick={() => navigate('/tools')}
+              style={{
+                fontSize: 'var(--font-size-xs)',
+                fontWeight: 'var(--font-weight-medium)',
+                color: 'var(--clinical-primary)',
+                background: 'none',
+                border: '1px solid var(--clinical-primary)',
+                borderRadius: '999px',
+                padding: '4px 14px',
+                cursor: 'pointer'
+              }}
+            >
+              {t('dashboard.viewAll') || 'View All'}
+            </button>
+          </div>
+          <div className="dashboard-tools-grid">
+            {toolRegistry.map((tool) => (
+              <WidgetErrorBoundary key={tool.id} widgetName={tool.name}>
+                <ToolCard
+                  icon={tool.icon}
+                  name={tool.name}
+                  description={tool.description}
+                  color={tool.color}
+                  shortcut={!isMobile ? tool.shortcut : undefined}
+                  isFavorite={favorites.includes(tool.id)}
+                  recentlyUsed={recentTools.includes(tool.id)}
+                  onClick={() => {
+                    recordToolAccess(tool.id);
+                    trackToolAccess(tool.id);
+                    navigate(tool.path);
+                  }}
+                />
+              </WidgetErrorBoundary>
+            ))}
+          </div>
+        </section>
 
         {/* Row 1: Command Feed + Triage Queue */}
         <div className="dashboard-row-2col dashboard-row-enter">
@@ -405,85 +512,110 @@ function Dashboard() {
         </div>
 
         {/* Row 2: My Workload + Quick Orders + MAR Preview */}
-        <div className="dashboard-row-3col dashboard-row-enter">
-          <WidgetErrorBoundary widgetName="My Workload">
-            <MyWorkload
-              tasks={workload?.tasks}
-              shiftEnd={workload?.shiftEnd}
-              onToggleTask={toggleTask}
-            />
-          </WidgetErrorBoundary>
-          <WidgetErrorBoundary widgetName="Quick Orders">
-            <QuickOrders patients={patientList} onPlaceOrder={placeOrder} />
-          </WidgetErrorBoundary>
-          <WidgetErrorBoundary widgetName="MAR Preview">
-            <MARPreview
-              medications={marMedications.length > 0 ? marMedications : undefined}
-              onAdminister={handleAdministerMed}
-              onViewMAR={handleViewFullMAR}
-            />
-          </WidgetErrorBoundary>
-        </div>
+        {(!isMobile || showSecondaryWidgets) && (
+          <div className="dashboard-row-3col dashboard-row-enter">
+            <WidgetErrorBoundary widgetName="My Workload">
+              <MyWorkload
+                tasks={workload?.tasks}
+                shiftEnd={workload?.shiftEnd}
+                onToggleTask={toggleTask}
+              />
+            </WidgetErrorBoundary>
+            <WidgetErrorBoundary widgetName="Quick Orders">
+              <QuickOrders patients={patientList} onPlaceOrder={placeOrder} />
+            </WidgetErrorBoundary>
+            <WidgetErrorBoundary widgetName="MAR Preview">
+              <MARPreview
+                medications={marMedications.length > 0 ? marMedications : undefined}
+                onAdminister={handleAdministerMed}
+                onViewMAR={handleViewFullMAR}
+              />
+            </WidgetErrorBoundary>
+          </div>
+        )}
 
         {/* Row 3: On-Call Roster + Lab Timeline + Bed Board */}
-        <div className="dashboard-row-3col dashboard-row-enter">
-          <WidgetErrorBoundary widgetName="On-Call Roster">
-            <OnCallRoster
-              roster={onCallRoster.length > 0 ? onCallRoster : undefined}
-              onPage={handlePageClinician}
-              onMessage={handleMessageClinician}
-            />
-          </WidgetErrorBoundary>
-          <WidgetErrorBoundary widgetName="Lab Timeline">
-            <LabTimeline
-              events={labTimeline.length > 0 ? labTimeline : undefined}
-              onViewResult={handleViewLabResult}
-            />
-          </WidgetErrorBoundary>
-
-          {/* 3D Patient Timeline */}
-          {webglSupported && show3DTimeline && labTimeline.length > 0 && (
-            <WidgetErrorBoundary widgetName="3D Patient Timeline">
-              <div style={{ marginTop: 8 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, padding: '0 4px' }}>
-                  <span style={{ fontSize: 12, color: '#00e5ff', letterSpacing: '0.05em' }}>
-                    3D Patient Timeline
-                  </span>
-                  <button
-                    onClick={() => setShow3DTimeline(false)}
-                    aria-label="Hide 3D timeline"
-                    style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: 11 }}
-                  >
-                    Hide
-                  </button>
-                </div>
-                <div
-                  style={{ height: 200, borderRadius: 10, overflow: 'hidden', background: 'rgba(11,18,32,0.6)', border: '1px solid rgba(0,229,255,0.12)' }}
-                  aria-label="3D patient timeline visualization"
-                >
-                  <Suspense fallback={<HolographicLoader size={32} label="" />}>
-                    <HolographicCanvas cameraPosition={[0, 0, 5]} controls>
-                      <Suspense fallback={null}>
-                        <Timeline3D
-                          title="Lab Timeline"
-                          events={labTimeline.slice(0, 8).map((e) => ({
-                            id: e.id || e.timestamp,
-                            label: e.test || e.label || 'Event',
-                            date: e.time || e.timestamp || '',
-                            type: e.status === 'critical' ? 'alert' : 'lab',
-                          }))}
-                        />
-                      </Suspense>
-                    </HolographicCanvas>
-                  </Suspense>
-                </div>
-              </div>
+        {(!isMobile || showSecondaryWidgets) && (
+          <div className="dashboard-row-3col dashboard-row-enter">
+            <WidgetErrorBoundary widgetName="On-Call Roster">
+              <OnCallRoster
+                roster={onCallRoster.length > 0 ? onCallRoster : undefined}
+                onPage={handlePageClinician}
+                onMessage={handleMessageClinician}
+              />
             </WidgetErrorBoundary>
-          )}
-          <WidgetErrorBoundary widgetName="Bed Board">
-            <BedBoard beds={bedBoard?.beds} unit={bedBoard?.unit} />
-          </WidgetErrorBoundary>
-        </div>
+            <WidgetErrorBoundary widgetName="Lab Timeline">
+              <LabTimeline
+                events={labTimeline.length > 0 ? labTimeline : undefined}
+                onViewResult={handleViewLabResult}
+              />
+            </WidgetErrorBoundary>
+
+            {/* 3D Patient Timeline */}
+            {webglSupported && show3DTimeline && labTimeline.length > 0 && !isMobile && (
+              <WidgetErrorBoundary widgetName="3D Patient Timeline">
+                <div style={{ marginTop: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, padding: '0 4px' }}>
+                    <span style={{ fontSize: 12, color: '#00e5ff', letterSpacing: '0.05em' }}>
+                      3D Patient Timeline
+                    </span>
+                    <button
+                      onClick={() => setShow3DTimeline(false)}
+                      aria-label="Hide 3D timeline"
+                      style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: 11 }}
+                    >
+                      Hide
+                    </button>
+                  </div>
+                  <div
+                    style={{ height: 200, borderRadius: 10, overflow: 'hidden', background: 'rgba(11,18,32,0.6)', border: '1px solid rgba(0,229,255,0.12)' }}
+                    aria-label="3D patient timeline visualization"
+                  >
+                    <Suspense fallback={<HolographicLoader size={32} label="" />}>
+                      <HolographicCanvas cameraPosition={[0, 0, 5]} controls>
+                        <Suspense fallback={null}>
+                          <Timeline3D
+                            title="Lab Timeline"
+                            events={labTimeline.slice(0, 8).map((e) => ({
+                              id: e.id || e.timestamp,
+                              label: e.test || e.label || 'Event',
+                              date: e.time || e.timestamp || '',
+                              type: e.status === 'critical' ? 'alert' : 'lab',
+                            }))}
+                          />
+                        </Suspense>
+                      </HolographicCanvas>
+                    </Suspense>
+                  </div>
+                </div>
+              </WidgetErrorBoundary>
+            )}
+            <WidgetErrorBoundary widgetName="Bed Board">
+              <BedBoard beds={bedBoard?.beds} unit={bedBoard?.unit} />
+            </WidgetErrorBoundary>
+          </div>
+        )}
+
+        {/* Show More/Less Toggle on Mobile */}
+        {isMobile && (
+          <div style={{ textAlign: 'center', marginBottom: 'var(--space-4)' }}>
+            <button
+              onClick={() => setShowSecondaryWidgets(!showSecondaryWidgets)}
+              style={{
+                padding: '12px 24px',
+                fontSize: 'var(--font-size-sm)',
+                fontWeight: 'var(--font-weight-medium)',
+                borderRadius: '999px',
+                border: '1px solid var(--border-subtle)',
+                background: 'var(--surface-1)',
+                color: 'var(--text-primary)',
+                cursor: 'pointer'
+              }}
+            >
+              {showSecondaryWidgets ? 'Show Less' : 'Show More Tools'}
+            </button>
+          </div>
+        )}
 
         {/* Patients Section */}
         <section aria-label="Patient list" style={{

@@ -42,23 +42,23 @@ export const MyWorkload = ({ tasks: initialTasks, shiftEnd, onToggleTask, onUpda
   return (
     <Card padding="lg" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 'var(--space-3)', borderBottom: '1px solid var(--border-subtle)' }}>
-        <h3 style={{ margin: 0, fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--text-primary)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '7px', borderBottom: '1px solid var(--border-subtle)', marginBottom: 8 }}>
+        <h3 style={{ margin: 0, fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
           {t('widgets.myWorkload.title')}
         </h3>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-          <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>{t('widgets.myWorkload.shiftEndsIn')}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>{t('widgets.myWorkload.shiftEndsIn')}</span>
           <Badge variant="info" size="sm">⏱ {timeLeft}</Badge>
         </div>
       </div>
 
       {/* Progress */}
-      <div style={{ padding: 'var(--space-3) 0' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+      <div style={{ paddingBottom: 8 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+          <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>
             {completedCount}/{tasks.length} {t('widgets.myWorkload.tasksDone')}
           </span>
-          <span style={{ fontSize: '12px', fontWeight: 700, color: progress === 100 ? 'var(--clinical-success)' : 'var(--text-primary)' }}>
+          <span style={{ fontSize: '11px', fontWeight: 700, color: progress === 100 ? 'var(--clinical-success)' : 'var(--text-primary)' }}>
             {progress}%
           </span>
         </div>
@@ -68,45 +68,46 @@ export const MyWorkload = ({ tasks: initialTasks, shiftEnd, onToggleTask, onUpda
           aria-valuemin={0}
           aria-valuemax={100}
           aria-label={`Workload progress: ${progress}%`}
-          style={{ height: '6px', borderRadius: '3px', background: 'var(--surface-tertiary)', overflow: 'hidden' }}
+          style={{ height: '4px', borderRadius: '2px', background: 'var(--surface-tertiary)', overflow: 'hidden' }}
         >
-          <div style={{ height: '100%', borderRadius: '3px', width: `${progress}%`, background: progress === 100 ? 'var(--clinical-success)' : 'var(--clinical-primary)', transition: 'width 0.3s ease' }} />
+          <div style={{ height: '100%', borderRadius: '2px', width: `${progress}%`, background: progress === 100 ? 'var(--clinical-success)' : 'var(--clinical-primary)', transition: 'width 0.3s ease' }} />
         </div>
       </div>
 
       {/* Task List */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)', flex: 1, overflowY: 'auto', maxHeight: '200px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1, overflowY: 'auto', maxHeight: '160px' }}>
         {tasks.map((task) => (
           <label
             key={task.id}
             style={{
-              display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
-              padding: '6px 8px', borderRadius: 'var(--radius-md)', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '4px 6px', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
               background: task.done ? 'var(--surface-secondary)' : 'transparent',
-              transition: 'background 0.15s',
+              transition: 'background 0.12s',
             }}
           >
             <input
               type="checkbox"
               checked={task.done}
               onChange={() => onToggleTask?.(task.id)}
-              style={{ accentColor: 'var(--clinical-primary)', width: '16px', height: '16px', cursor: 'pointer' }}
+              style={{ accentColor: 'var(--clinical-primary)', width: '14px', height: '14px', cursor: 'pointer', flexShrink: 0 }}
             />
             <span style={{
-              fontSize: '13px', fontWeight: 500, flex: 1,
+              fontSize: '12px', fontWeight: 500, flex: 1,
               color: task.done ? 'var(--text-tertiary)' : 'var(--text-primary)',
               textDecoration: task.done ? 'line-through' : 'none',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
             }}>
               {task.label}
             </span>
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: priorityColor[task.priority] || '#63B3ED', flexShrink: 0 }} />
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: priorityColor[task.priority] || '#63B3ED', flexShrink: 0 }} />
           </label>
         ))}
       </div>
 
       {/* Handoff Notes */}
-      <div style={{ marginTop: 'var(--space-3)', paddingTop: 'var(--space-3)', borderTop: '1px solid var(--border-subtle)' }}>
-        <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+      <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border-subtle)' }}>
+        <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 5 }}>
           📝 {t('widgets.myWorkload.shiftHandoffNotes')}
         </div>
         <textarea
@@ -116,9 +117,10 @@ export const MyWorkload = ({ tasks: initialTasks, shiftEnd, onToggleTask, onUpda
           aria-label="Shift handoff notes"
           rows={2}
           style={{
-            width: '100%', padding: '8px', fontSize: '12px', borderRadius: 'var(--radius-md)',
+            width: '100%', padding: '6px 8px', fontSize: '11px', borderRadius: 'var(--radius-sm)',
             border: '1px solid var(--border-subtle)', background: 'var(--surface-secondary)',
             resize: 'vertical', fontFamily: 'inherit', color: 'var(--text-primary)',
+            boxSizing: 'border-box'
           }}
         />
       </div>

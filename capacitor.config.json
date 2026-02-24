@@ -15,7 +15,7 @@
       "launchAutoHide": true,
       "fadeOutDuration": 300,
       "showSpinner": false,
-      "backgroundColor": "#0b1220"
+      "backgroundColor": "#000000"
     },
     "Keyboard": {
       "resize": "body",

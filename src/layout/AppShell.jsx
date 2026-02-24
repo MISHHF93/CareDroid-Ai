@@ -24,12 +24,12 @@ const AppShell = ({
   const navigate = useNavigate();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     if (typeof window === 'undefined') return false;
-    return window.matchMedia('(max-width: 768px)').matches;
+    return window.matchMedia('(max-width: 1100px)').matches;
   });
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const mq = window.matchMedia('(max-width: 768px)');
+    const mq = window.matchMedia('(max-width: 1100px)');
     const syncSidebarState = (event) => {
       setIsSidebarCollapsed(event.matches);
     };
@@ -75,7 +75,9 @@ const AppShell = ({
 
       {/* Main Content Area - Pushed by sidebar width */}
       <div className="app-shell-main">
-        {children}
+        <div className="app-shell-phone-frame">
+          {children}
+        </div>
       </div>
     </div>
   );

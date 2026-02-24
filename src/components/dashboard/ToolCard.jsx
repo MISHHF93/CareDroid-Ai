@@ -1,132 +1,75 @@
 import React from 'react';
 import { Card } from '../ui/molecules/Card';
-import { Badge } from '../ui/atoms/Badge';
-import { useLanguage } from '../../contexts/LanguageContext';
 
 /**
- * ToolCard - Dashboard quick access tool card
- * Displays clinical tools with shortcuts and favorites
+ * ToolCard — Compact icon tile for quick-access clinical tools
+ * EMR-density: icon + name only, ~58px tall
  */
 export const ToolCard = ({
   icon,
   name,
-  description,
+  description,   // kept in API, not rendered for density
   color,
-  shortcut,
+  shortcut,      // kept in API, not rendered on mobile
   onClick,
   isFavorite = false,
   recentlyUsed = false
 }) => {
-  const { t } = useLanguage();
-
   return (
     <Card
-      padding="lg"
+      padding="none"
       onClick={onClick}
       style={{
         cursor: 'pointer',
-        transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+        transition: 'box-shadow 0.15s ease, transform 0.15s ease',
         position: 'relative',
-        overflow: 'visible',
-        borderTop: `3px solid ${color}`,
-        background: `linear-gradient(135deg, ${color}08, transparent)`
-      }}
-      hoverStyle={{
-        transform: 'translateY(-4px)',
-        boxShadow: `0 12px 24px ${color}20, 0 0 0 1px ${color}30`
-      }}
-    >
-      {/* Badges */}
-      <div style={{
-        position: 'absolute',
-        top: '-8px',
-        right: '12px',
-        display: 'flex',
-        gap: '6px'
-      }}>
-        {isFavorite && (
-          <Badge variant="success" size="sm">
-            ⭐
-          </Badge>
-        )}
-        {recentlyUsed && (
-          <Badge variant="info" size="sm">
-            {t('widgets.toolCard.recent')}
-          </Badge>
-        )}
-      </div>
-
-      <div style={{
+        overflow: 'hidden',
+        borderTop: `2px solid ${color}`,
+        padding: '8px 8px 7px',
         display: 'flex',
         flexDirection: 'column',
-        gap: 'var(--space-3)',
-        height: '100%'
+        alignItems: 'center',
+        gap: 3,
+        textAlign: 'center',
+        minHeight: '58px',
+        justifyContent: 'center',
+        userSelect: 'none',
+        WebkitTapHighlightColor: 'transparent'
+      }}
+      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = `0 6px 16px ${color}25`; }}
+      onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = ''; }}
+    >
+      {/* Favorite / recent dot indicator */}
+      {(isFavorite || recentlyUsed) && (
+        <span style={{
+          position: 'absolute',
+          top: 5,
+          right: 5,
+          width: 6,
+          height: 6,
+          borderRadius: '50%',
+          background: isFavorite ? '#F59E0B' : '#63B3ED',
+          flexShrink: 0
+        }} />
+      )}
+
+      {/* Icon */}
+      <span style={{ fontSize: '20px', lineHeight: 1 }}>{icon}</span>
+
+      {/* Name */}
+      <span style={{
+        fontSize: '10px',
+        fontWeight: 600,
+        color: 'var(--text-secondary)',
+        lineHeight: 1.25,
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        maxWidth: '100%',
+        paddingInline: 2
       }}>
-        {/* Icon and Name */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 'var(--space-3)'
-        }}>
-          <div style={{
-            fontSize: '32px',
-            lineHeight: 1,
-            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
-          }}>
-            {icon}
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <h3 style={{
-              margin: 0,
-              fontSize: '16px',
-              fontWeight: 'var(--font-weight-semibold)',
-              color: 'var(--text-primary)',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis'
-            }}>
-              {name}
-            </h3>
-          </div>
-        </div>
-
-        {/* Description */}
-        <p style={{
-          margin: 0,
-          fontSize: '13px',
-          color: 'var(--text-secondary)',
-          lineHeight: 1.5,
-          flex: 1,
-          display: '-webkit-box',
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: 'vertical',
-          overflow: 'hidden'
-        }}>
-          {description}
-        </p>
-
-        {/* Shortcut key */}
-        {shortcut && (
-          <div style={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            marginTop: 'auto'
-          }}>
-            <kbd style={{
-              padding: '4px 8px',
-              fontSize: '11px',
-              fontWeight: 600,
-              color: 'var(--text-tertiary)',
-              background: 'var(--surface-2)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: '4px',
-              fontFamily: 'var(--font-mono, monospace)'
-            }}>
-              {shortcut}
-            </kbd>
-          </div>
-        )}
-      </div>
+        {name}
+      </span>
     </Card>
   );
 };

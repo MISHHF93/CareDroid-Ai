@@ -200,7 +200,7 @@ button.card::after {
 
 /* ===== RESPONSIVE ADJUSTMENTS ===== */
 
-@media (max-width: 768px) {
+@media (max-width: 1100px) {
   .card {
     border-radius: var(--radius-lg);
   }

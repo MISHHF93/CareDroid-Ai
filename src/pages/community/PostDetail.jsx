@@ -353,7 +353,7 @@ export default function PostDetail() {
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
               <span style={{ color: 'var(--text-tertiary)' }}>Reputation</span>
-              <span style={{ fontWeight: 700, color: '#F59E0B' }}>{post.author?.reputation}</span>
+              <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{post.author?.reputation}</span>
             </div>
           </div>
         </aside>

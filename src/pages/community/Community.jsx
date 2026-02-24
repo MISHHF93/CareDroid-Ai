@@ -315,7 +315,7 @@ export default function Community() {
           {/* AI corpus stats */}
           <div className="sidebar-widget">
             <p className="sidebar-widget-title">🤖 AI Corpus</p>
-            <p style={{ fontSize: 22, fontWeight: 800, color: '#A78BFA', margin: '0 0 4px' }}>
+            <p style={{ fontSize: 22, fontWeight: 800, color: 'var(--clinical-primary, #7C3AED)', margin: '0 0 4px' }}>
               {aiCount}
             </p>
             <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: 0 }}>

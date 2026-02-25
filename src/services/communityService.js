@@ -435,8 +435,8 @@ export const toggleSave = (postId) => {
   if (post) post.saved = !post.saved;
 };
 
-/** Toggle AI annotation — auto-queues record to training pipeline */
-export const toggleAnnotate = (postId, note = '') => {
+/** Toggle AI annotation — internal, called by pipeline only */
+const toggleAnnotate = (postId, note = '') => {
   const post = store.posts.find(p => p.id === postId);
   if (!post) return;
   post.aiAnnotated = !post.aiAnnotated;

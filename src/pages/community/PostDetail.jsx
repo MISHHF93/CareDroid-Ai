@@ -4,7 +4,6 @@ import {
   getPost,
   votePost,
   toggleSave,
-  toggleAnnotate,
   addComment,
   voteComment,
   markAnswer,
@@ -115,7 +114,6 @@ export default function PostDetail() {
 
   function handleVote(dir) { votePost(post.id, dir); reload(); }
   function handleSave() { toggleSave(post.id); reload(); }
-  function handleAnnotate() { toggleAnnotate(post.id); reload(); }
   function handleVoteComment(cid, dir) { voteComment(post.id, cid, dir); reload(); }
   function handleMarkAnswer(cid) { markAnswer(post.id, cid); reload(); }
 
@@ -155,7 +153,6 @@ export default function PostDetail() {
                 {cat ? `${cat.icon} ${cat.label}` : post.category}
               </span>
               {post.pinned && <span className="ai-badge">📌 Pinned</span>}
-              {post.aiAnnotated && <span className="ai-badge">🤖 AI Corpus</span>}
             </div>
 
             <h1 className="post-detail-title">{post.title}</h1>
@@ -207,29 +204,11 @@ export default function PostDetail() {
                 >
                   {post.saved ? '🔖 Saved' : '🔖 Save'}
                 </button>
-                <button
-                  className={`post-action-btn${post.aiAnnotated ? ' annotated' : ''}`}
-                  onClick={handleAnnotate}
-                >
-                  🤖 {post.aiAnnotated ? 'Remove from AI' : 'Add to AI'}
-                </button>
               </div>
             </div>
 
-            {/* AI annotation note */}
-            {post.aiAnnotated && post.aiAnnotationNote && (
-              <div className="ai-panel" style={{ marginTop: 14 }}>
-                <p className="ai-panel-title">🤖 AI Training Annotation</p>
-                <p className="ai-panel-body">{post.aiAnnotationNote}</p>
-              </div>
-            )}
-          </div>
-
-          {/* Comments */}
-          <div className="comments-section">
-            <div className="comments-title">
-              Replies · {post.comments?.length ?? 0}
-            </div>
+            {/* Tags */}
+            {post.tags?.length > 0 && (
 
             {(post.comments || []).map(c => (
               <div
@@ -328,14 +307,6 @@ export default function PostDetail() {
               </div>
             </div>
 
-            {post.aiAnnotated && (
-              <div className="ai-panel">
-                <p className="ai-panel-title">🤖 AI Corpus Status</p>
-                <p className="ai-panel-body">
-                  This post is flagged for inclusion in CareDroid AI training. Clinical patterns will improve diagnostic suggestions.
-                </p>
-              </div>
-            )}
 
             <div className="sidebar-widget">
               <p className="sidebar-widget-title">👤 Author</p>

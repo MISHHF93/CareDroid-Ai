@@ -6,7 +6,6 @@ import {
   getPosts,
   votePost,
   toggleSave,
-  toggleAnnotate,
   createPost,
   getTrendingTags,
   getTopContributors,
@@ -42,7 +41,7 @@ function CategoryBadge({ category }) {
   );
 }
 
-function PostCard({ post, onVote, onSave, onAnnotate, onClick }) {
+function PostCard({ post, onVote, onSave, onClick }) {
   return (
     <article
       className={`post-card${post.pinned ? ' pinned' : ''}${post.hasAccepted ? ' accepted' : ''}`}
@@ -70,7 +69,6 @@ function PostCard({ post, onVote, onSave, onAnnotate, onClick }) {
         <div className="post-meta-top">
           <CategoryBadge category={post.category} />
           {post.pinned && <span className="ai-badge">📌 Pinned</span>}
-          {post.aiAnnotated && <span className="ai-badge">🤖 AI Corpus</span>}
         </div>
 
         <h3 className="post-title">{post.title}</h3>
@@ -82,13 +80,7 @@ function PostCard({ post, onVote, onSave, onAnnotate, onClick }) {
               <button
                 key={tag}
                 className="post-tag"
-                onClick={e => { e.stopPropagation(); onAnnotate && void 0; }}
-              >
-                #{tag}
-              </button>
-            ))}
-          </div>
-        )}
+                    onClick={e => e.stopPropagation()}
 
         <div className="post-footer">
           <div className="post-author-chip">
@@ -113,13 +105,6 @@ function PostCard({ post, onVote, onSave, onAnnotate, onClick }) {
               title={post.saved ? 'Saved' : 'Save'}
             >
               {post.saved ? '🔖 Saved' : '🔖 Save'}
-            </button>
-            <button
-              className={`post-action-btn${post.aiAnnotated ? ' annotated' : ''}`}
-              onClick={() => onAnnotate(post.id)}
-              title={post.aiAnnotated ? 'Remove from AI corpus' : 'Add to AI training corpus'}
-            >
-              🤖
             </button>
           </div>
         </div>
@@ -291,7 +276,6 @@ export default function Community() {
 
   function handleVote(id, dir) { votePost(id, dir); reload(); }
   function handleSave(id) { toggleSave(id); reload(); }
-  function handleAnnotate(id) { toggleAnnotate(id); reload(); }
 
   function handleCreatePost(data) {
     createPost({
@@ -410,7 +394,6 @@ export default function Community() {
                 post={post}
                 onVote={handleVote}
                 onSave={handleSave}
-                onAnnotate={handleAnnotate}
                 onClick={id => navigate(`/community/post/${id}`)}
               />
             ))

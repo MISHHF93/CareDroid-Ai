@@ -103,7 +103,7 @@ function PostCard({ post, onVote, onSave, onAnnotate, onClick }) {
           <span className="post-stat">💬 {post.commentCount ?? 0}</span>
           <span className="post-stat">👁 {post.views ?? 0}</span>
 
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: 4 }} onClick={e => e.stopPropagation()}>
+          <div className="post-actions" onClick={e => e.stopPropagation()}>
             <button
               className={`post-action-btn${post.saved ? ' saved' : ''}`}
               onClick={() => onSave(post.id)}
@@ -251,9 +251,7 @@ export default function Community() {
       <div className="community-topbar">
         <h1 className="community-title">
           <span>🩺</span> MedX
-          <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--text-tertiary)', marginLeft: 2 }}>
-            — CareDroid Clinical Community
-          </span>
+          <span className="community-title-sub">— Clinical Community</span>
         </h1>
         <input
           className="community-search"
@@ -312,15 +310,21 @@ export default function Community() {
 
         {/* Right sidebar */}
         <aside className="community-sidebar">
-          {/* AI corpus stats */}
+          {/* Stats + AI corpus — combined widget */}
           <div className="sidebar-widget">
-            <p className="sidebar-widget-title">🤖 AI Corpus</p>
-            <p style={{ fontSize: 22, fontWeight: 800, color: 'var(--clinical-primary, #7C3AED)', margin: '0 0 4px' }}>
-              {aiCount}
-            </p>
-            <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: 0 }}>
-              posts annotated for CareDroid AI training
-            </p>
+            <p className="sidebar-widget-title">📊 Community</p>
+            <div className="sidebar-stats-row">
+              {[
+                { label: 'Posts', value: getPosts({}).length },
+                { label: 'Members', value: 9 },
+                { label: 'AI', value: aiCount },
+              ].map(s => (
+                <div key={s.label} className="sidebar-stat">
+                  <div className="sidebar-stat-value">{s.value}</div>
+                  <div className="sidebar-stat-label">{s.label}</div>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Trending tags */}
@@ -354,22 +358,7 @@ export default function Community() {
             ))}
           </div>
 
-          {/* Community stats */}
-          <div className="sidebar-widget">
-            <p className="sidebar-widget-title">📊 Community</p>
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-              {[
-                { label: 'Posts', value: getPosts({}).length },
-                { label: 'Members', value: 9 },
-                { label: 'Categories', value: CATEGORIES.length - 1 },
-              ].map(s => (
-                <div key={s.label} style={{ textAlign: 'center', minWidth: 50 }}>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)' }}>{s.value}</div>
-                  <div style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>{s.label}</div>
-                </div>
-              ))}
-            </div>
-          </div>
+
         </aside>
       </div>
 

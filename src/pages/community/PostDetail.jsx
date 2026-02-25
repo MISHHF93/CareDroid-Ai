@@ -134,17 +134,23 @@ export default function PostDetail() {
 
   return (
     <div className="post-detail-page">
+      {/* Mobile-safe top nav */}
+      <div className="post-detail-topbar">
+        <button className="post-detail-back" onClick={() => navigate('/community')}>
+          ← MedX Community
+        </button>
+        <span className={`post-category-badge category-${post.category}`}>
+          {cat ? `${cat.icon} ${cat.label}` : post.category}
+        </span>
+      </div>
+
       <div className="post-detail-inner">
         {/* Main content column */}
         <main>
-          <button className="post-detail-back" onClick={() => navigate('/community')}>
-            ← Back to MedX Community
-          </button>
-
           {/* Post card */}
           <div className="post-detail-card">
             {/* Category + metadata header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
+            <div className="post-detail-meta-top">
               <span className={`post-category-badge category-${post.category}`}>
                 {cat ? `${cat.icon} ${cat.label}` : post.category}
               </span>
@@ -155,14 +161,14 @@ export default function PostDetail() {
             <h1 className="post-detail-title">{post.title}</h1>
 
             {/* Author row */}
-            <div className="post-author-chip" style={{ marginBottom: 14, gap: 6 }}>
+            <div className="post-author-chip post-detail-author">
               <AvatarChip name={post.author?.name} size={22} />
-              <span style={{ fontWeight: 700, fontSize: 12 }}>{post.author?.name}</span>
+              <span className="post-detail-author-name">{post.author?.name}</span>
               {post.author?.verified && <span className="verified-badge" title="Verified MD">✓</span>}
               {post.author?.specialty && (
-                <span style={{ color: 'var(--text-tertiary)', fontSize: 12 }}>· {post.author.specialty}</span>
+                <span className="post-detail-author-meta">· {post.author.specialty}</span>
               )}
-              <span style={{ color: 'var(--text-tertiary)', fontSize: 11 }}>
+              <span className="post-detail-author-meta">
                 · {new Date(post.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
               </span>
             </div>
@@ -180,24 +186,21 @@ export default function PostDetail() {
             )}
 
             {/* Actions bar */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 14, flexWrap: 'wrap' }}>
-              {/* Vote */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div className="post-detail-actions">
+              <div className="post-detail-vote">
                 <button
                   className={`vote-btn${post.userVote === 'up' ? ' active-up' : ''}`}
                   onClick={() => handleVote('up')}
                 >▲</button>
-                <span className="vote-score" style={{ fontSize: 14, minWidth: 28 }}>{net}</span>
+                <span className="vote-score">{net}</span>
                 <button
                   className={`vote-btn${post.userVote === 'down' ? ' active-down' : ''}`}
                   onClick={() => handleVote('down')}
                 >▼</button>
               </div>
-
-              <span className="post-stat" style={{ fontSize: 12 }}>💬 {post.comments?.length ?? 0} replies</span>
-              <span className="post-stat" style={{ fontSize: 12 }}>👁 {post.views ?? 0} views</span>
-
-              <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+              <span className="post-stat">💬 {post.comments?.length ?? 0} replies</span>
+              <span className="post-stat">👁 {post.views ?? 0} views</span>
+              <div className="post-actions">
                 <button
                   className={`post-action-btn${post.saved ? ' saved' : ''}`}
                   onClick={handleSave}
@@ -207,9 +210,8 @@ export default function PostDetail() {
                 <button
                   className={`post-action-btn${post.aiAnnotated ? ' annotated' : ''}`}
                   onClick={handleAnnotate}
-                  style={{ fontSize: 12 }}
                 >
-                  🤖 {post.aiAnnotated ? 'Remove from AI Corpus' : 'Add to AI Corpus'}
+                  🤖 {post.aiAnnotated ? 'Remove from AI' : 'Add to AI'}
                 </button>
               </div>
             </div>
@@ -239,39 +241,33 @@ export default function PostDetail() {
                 <div style={{ flexShrink: 0 }}>
                   <AvatarChip name={c.author?.name} size={26} />
                 </div>
-
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div className="post-author-chip" style={{ marginBottom: 6 }}>
-                    <span style={{ fontWeight: 700, fontSize: 12 }}>{c.author?.name}</span>
+                <div className="comment-body">
+                  <div className="post-author-chip comment-author-chip">
+                    <span className="post-detail-author-name">{c.author?.name}</span>
                     {c.author?.verified && <span className="verified-badge">✓</span>}
                     {c.author?.specialty && (
-                      <span style={{ color: 'var(--text-tertiary)', fontSize: 11 }}>· {c.author.specialty}</span>
+                      <span className="post-detail-author-meta">· {c.author.specialty}</span>
                     )}
-                    <span style={{ color: 'var(--text-tertiary)', fontSize: 11, marginLeft: 'auto' }}>
+                    <span className="comment-date">
                       {new Date(c.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </span>
                   </div>
                   <div className="comment-body-text">{c.body}</div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                  <div className="comment-vote-row">
                     <button
                       className={`vote-btn${c.userVote === 'up' ? ' active-up' : ''}`}
-                      style={{ width: 22, height: 22, fontSize: 11 }}
                       onClick={() => handleVoteComment(c.id, 'up')}
                     >▲</button>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>
+                    <span className="vote-score" style={{ fontSize: 11 }}>
                       {(c.upvotes || 0) - (c.downvotes || 0)}
                     </span>
                     <button
                       className={`vote-btn${c.userVote === 'down' ? ' active-down' : ''}`}
-                      style={{ width: 22, height: 22, fontSize: 11 }}
                       onClick={() => handleVoteComment(c.id, 'down')}
                     >▼</button>
-
                     {!c.isAnswer && post.category === 'question' && (
                       <button
                         className="post-action-btn"
-                        style={{ fontSize: 11, marginLeft: 4 }}
                         onClick={() => handleMarkAnswer(c.id)}
                         title="Mark as accepted answer"
                       >
@@ -285,9 +281,7 @@ export default function PostDetail() {
 
             {/* Add comment form */}
             <form onSubmit={handleSubmitComment}>
-              <div style={{ marginTop: 8, marginBottom: 4, fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Add a Reply
-              </div>
+              <p className="comments-reply-label">Add a Reply</p>
               <div className="comment-input-row">
                 <textarea
                   className="comment-textarea"
@@ -307,56 +301,64 @@ export default function PostDetail() {
           </div>
         </main>
 
-        {/* Right sidebar */}
-        <aside className="community-sidebar">
-          <div className="sidebar-widget">
-            <p className="sidebar-widget-title">📋 Post Stats</p>
-            {[
-              { label: 'Score', value: net },
-              { label: 'Upvotes', value: post.upvotes },
-              { label: 'Views', value: post.views },
-              { label: 'Replies', value: post.comments?.length ?? 0 },
-            ].map(s => (
-              <div key={s.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 12, borderBottom: '1px solid var(--border-subtle)' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>{s.label}</span>
-                <span style={{ fontWeight: 700 }}>{s.value}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="sidebar-widget">
-            <p className="sidebar-widget-title">🏷️ Tags</p>
-            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-              {(post.tags || []).map(tag => (
-                <span key={tag} className="post-tag">#{tag}</span>
-              ))}
-            </div>
-          </div>
-
-          {post.aiAnnotated && (
-            <div className="ai-panel">
-              <p className="ai-panel-title">🤖 AI Corpus Status</p>
-              <p className="ai-panel-body">
-                This post has been flagged for inclusion in the CareDroid AI training dataset. Clinical patterns and terminology will be used to improve diagnostic suggestions.
-              </p>
-            </div>
-          )}
-
-          <div className="sidebar-widget">
-            <p className="sidebar-widget-title">👤 About Author</p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <AvatarChip name={post.author?.name} size={32} />
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 700 }}>{post.author?.name}</div>
-                <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{post.author?.specialty}</div>
+          {/* Right sidebar */}
+          <aside className="community-sidebar">
+            <div className="sidebar-widget">
+              <p className="sidebar-widget-title">📋 Post Stats</p>
+              <div className="sidebar-stats-row">
+                {[
+                  { label: 'Score', value: net },
+                  { label: 'Views', value: post.views },
+                  { label: 'Replies', value: post.comments?.length ?? 0 },
+                ].map(s => (
+                  <div key={s.label} className="sidebar-stat">
+                    <div className="sidebar-stat-value">{s.value}</div>
+                    <div className="sidebar-stat-label">{s.label}</div>
+                  </div>
+                ))}
               </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-              <span style={{ color: 'var(--text-tertiary)' }}>Reputation</span>
-              <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{post.author?.reputation}</span>
+
+            <div className="sidebar-widget">
+              <p className="sidebar-widget-title">🏷️ Tags</p>
+              <div className="post-tags">
+                {(post.tags || []).map(tag => (
+                  <span key={tag} className="post-tag">#{tag}</span>
+                ))}
+              </div>
             </div>
-          </div>
-        </aside>
+
+            {post.aiAnnotated && (
+              <div className="ai-panel">
+                <p className="ai-panel-title">🤖 AI Corpus Status</p>
+                <p className="ai-panel-body">
+                  This post is flagged for inclusion in CareDroid AI training. Clinical patterns will improve diagnostic suggestions.
+                </p>
+              </div>
+            )}
+
+            <div className="sidebar-widget">
+              <p className="sidebar-widget-title">👤 Author</p>
+              <div className="contributor-row" style={{ paddingTop: 0 }}>
+                <AvatarChip name={post.author?.name} size={30} />
+                <div className="contributor-info">
+                  <div className="contributor-name">{post.author?.name}</div>
+                  <div className="contributor-specialty">{post.author?.specialty}</div>
+                </div>
+              </div>
+              <div className="sidebar-stats-row" style={{ marginTop: 8 }}>
+                <div className="sidebar-stat">
+                  <div className="sidebar-stat-value">{post.author?.reputation}</div>
+                  <div className="sidebar-stat-label">Rep</div>
+                </div>
+                <div className="sidebar-stat">
+                  <div className="sidebar-stat-value">{post.upvotes}</div>
+                  <div className="sidebar-stat-label">Votes</div>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
       </div>
     </div>
   );

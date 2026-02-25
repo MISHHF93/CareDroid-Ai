@@ -811,3 +811,164 @@ html:not(.theme-light) .ai-panel-title { color: #C4B5FD; }
   .post-detail-inner { padding: 10px 10px 14px; }
   .community-title  { font-size: 13px; }
 }
+
+/* ─── Feed meta bar (sort + results count) ─── */
+.feed-meta-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.feed-results-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  flex: 1;
+}
+
+.feed-filter-tag {
+  color: var(--clinical-primary, #3B82F6);
+  font-weight: 700;
+}
+
+.sort-tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--surface-tertiary);
+  border-radius: 999px;
+  padding: 2px;
+  border: 1px solid var(--border-subtle);
+}
+
+.sort-tab {
+  padding: 3px 11px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.12s;
+}
+.sort-tab:hover { color: var(--text-primary); }
+.sort-tab.active {
+  background: var(--surface-1);
+  color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+
+/* ─── Feed empty state ─── */
+.feed-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+}
+.feed-empty-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.5; }
+.feed-empty-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 6px;
+}
+.feed-empty-sub {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin: 0;
+  max-width: 280px;
+  line-height: 1.5;
+}
+
+/* ─── Post Detail topbar ─── */
+.post-detail-topbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 10px);
+}
+@media (max-width: 1099px) {
+  .post-detail-topbar {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 52px);
+  }
+}
+
+.post-detail-meta-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+/* ─── Post Detail author row ─── */
+.post-detail-author {
+  margin-bottom: 14px;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.post-detail-author-name {
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--text-primary);
+}
+.post-detail-author-meta {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+/* ─── Post Detail actions bar ─── */
+.post-detail-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+.post-detail-vote {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ─── Comment body ─── */
+.comment-body {
+  flex: 1;
+  min-width: 0;
+}
+.comment-author-chip {
+  margin-bottom: 5px;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.comment-date {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-left: auto;
+  white-space: nowrap;
+}
+.comment-vote-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+/* ─── Comments reply label ─── */
+.comments-reply-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 8px 0 4px;
+}
+

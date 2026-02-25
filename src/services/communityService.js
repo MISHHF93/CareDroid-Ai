@@ -273,8 +273,9 @@ export const resetStore = () => {
 };
 
 /** Get all posts, optionally filtered */
-export const getPosts = ({ category = 'all', search = '', tag = '' } = {}) => {
+export const getPosts = ({ category = 'all', search = '', tag = '', sort = 'hot', savedOnly = false } = {}) => {
   let result = store.posts;
+  if (savedOnly) result = result.filter(p => p.saved);
   if (category !== 'all') result = result.filter(p => p.category === category);
   if (tag) result = result.filter(p => p.tags.includes(tag));
   if (search) {
@@ -285,11 +286,19 @@ export const getPosts = ({ category = 'all', search = '', tag = '' } = {}) => {
       p.tags.some(t => t.toLowerCase().includes(q))
     );
   }
-  // Pinned first, then by upvotes desc
   return [...result].sort((a, b) => {
+    // Pinned always first
     if (a.pinned && !b.pinned) return -1;
     if (!a.pinned && b.pinned) return 1;
-    return (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes);
+    if (sort === 'new') return new Date(b.createdAt) - new Date(a.createdAt);
+    if (sort === 'top') return (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes);
+    // 'hot' — score weighted by recency (Wilson-style approximation)
+    const score = p => {
+      const net = p.upvotes - p.downvotes;
+      const ageHours = (Date.now() - new Date(p.createdAt)) / 36e5;
+      return net / Math.pow(ageHours + 2, 1.5);
+    };
+    return score(b) - score(a);
   });
 };
 

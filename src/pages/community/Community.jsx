@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   CATEGORIES,
@@ -211,20 +211,31 @@ export default function Community() {
   const navigate = useNavigate();
   const [category, setCategory] = useState('all');
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [sort, setSort] = useState('hot');
+  const [savedOnly, setSavedOnly] = useState(false);
   const [posts, setPosts] = useState([]);
   const [filterTag, setFilterTag] = useState('');
   const [trendingTags, setTrendingTags] = useState([]);
   const [topContributors, setTopContributors] = useState([]);
   const [showCreate, setShowCreate] = useState(false);
   const [aiCount, setAiCount] = useState(0);
+  const debounceRef = useRef(null);
+
+  // Debounce search input
+  const handleSearchChange = (val) => {
+    setSearch(val);
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setDebouncedSearch(val), 280);
+  };
 
   const reload = useCallback(() => {
-    const fetched = getPosts({ category, search, tag: filterTag });
+    const fetched = getPosts({ category, search: debouncedSearch, tag: filterTag, sort, savedOnly });
     setPosts(fetched);
     setAiCount(fetched.filter(p => p.aiAnnotated).length);
     setTrendingTags(getTrendingTags(12));
     setTopContributors(getTopContributors(5));
-  }, [category, search, filterTag]);
+  }, [category, debouncedSearch, filterTag, sort, savedOnly]);
 
   useEffect(() => { reload(); }, [reload]);
 
@@ -245,6 +256,12 @@ export default function Community() {
     reload();
   }
 
+  const SORT_OPTIONS = [
+    { id: 'hot',  label: '🔥 Hot' },
+    { id: 'new',  label: '🆕 New' },
+    { id: 'top',  label: '⬆️ Top' },
+  ];
+
   return (
     <div className="community-page">
       {/* Top bar */}
@@ -257,7 +274,7 @@ export default function Community() {
           className="community-search"
           placeholder="Search cases, questions, protocols…"
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={e => handleSearchChange(e.target.value)}
         />
         <button className="community-post-btn" onClick={() => setShowCreate(true)}>
           ✏️ New Post
@@ -269,12 +286,19 @@ export default function Community() {
         {CATEGORIES.map(cat => (
           <button
             key={cat.id}
-            className={`community-tab${category === cat.id ? ' active' : ''}`}
-            onClick={() => { setCategory(cat.id); setFilterTag(''); }}
+            className={`community-tab${category === cat.id && !savedOnly ? ' active' : ''}`}
+            onClick={() => { setCategory(cat.id); setFilterTag(''); setSavedOnly(false); }}
           >
             {cat.icon} {cat.label}
           </button>
         ))}
+        <button
+          className={`community-tab${savedOnly ? ' active' : ''}`}
+          onClick={() => { setSavedOnly(s => !s); }}
+          title="Saved posts"
+        >
+          🔖 Saved
+        </button>
         {filterTag && (
           <button
             className="community-tab active"
@@ -290,9 +314,44 @@ export default function Community() {
       <div className="community-inner">
         {/* Feed */}
         <section className="community-feed">
+          {/* Sort + results bar */}
+          <div className="feed-meta-bar">
+            <span className="feed-results-count">
+              {posts.length} {posts.length === 1 ? 'post' : 'posts'}
+              {filterTag && <span className="feed-filter-tag"> · #{filterTag}</span>}
+              {savedOnly && <span className="feed-filter-tag"> · saved</span>}
+            </span>
+            <div className="sort-tabs">
+              {SORT_OPTIONS.map(opt => (
+                <button
+                  key={opt.id}
+                  className={`sort-tab${sort === opt.id ? ' active' : ''}`}
+                  onClick={() => setSort(opt.id)}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {posts.length === 0 ? (
-            <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: 13 }}>
-              No posts found. Be the first to post!
+            <div className="feed-empty">
+              <div className="feed-empty-icon">🩺</div>
+              <p className="feed-empty-title">
+                {savedOnly ? 'No saved posts yet' : debouncedSearch ? 'No results found' : 'No posts here yet'}
+              </p>
+              <p className="feed-empty-sub">
+                {savedOnly
+                  ? 'Save posts to read them later.'
+                  : debouncedSearch
+                  ? `Try different keywords or clear the search.`
+                  : 'Be the first to post a case or question!'}
+              </p>
+              {!savedOnly && !debouncedSearch && (
+                <button className="community-post-btn" style={{ marginTop: 12 }} onClick={() => setShowCreate(true)}>
+                  ✏️ Write a Post
+                </button>
+              )}
             </div>
           ) : (
             posts.map(post => (
@@ -335,7 +394,7 @@ export default function Community() {
                 <button
                   key={tag}
                   className="trending-tag"
-                  onClick={() => setFilterTag(tag)}
+                  onClick={() => { setFilterTag(tag); setSavedOnly(false); }}
                 >
                   #{tag} <span style={{ opacity: 0.6, fontSize: 10 }}>{count}</span>
                 </button>
@@ -357,8 +416,6 @@ export default function Community() {
               </div>
             ))}
           </div>
-
-
         </aside>
       </div>
 

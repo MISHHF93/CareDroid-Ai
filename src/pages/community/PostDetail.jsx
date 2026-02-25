@@ -101,7 +101,7 @@ export default function PostDetail() {
         <p style={{ color: 'var(--text-tertiary)', fontSize: 13 }}>Post not found.</p>
         <button
           className="post-detail-back"
-          onClick={() => navigate('/community')}
+          onClick={() => navigate(-1)}
           style={{ marginTop: 8 }}
         >
           ← Back to Community
@@ -136,8 +136,8 @@ export default function PostDetail() {
     <div className="post-detail-page">
       {/* Mobile-safe top nav */}
       <div className="post-detail-topbar">
-        <button className="post-detail-back" onClick={() => navigate('/community')}>
-          ← MedX Community
+        <button className="post-detail-back" onClick={() => navigate(-1)}>
+          ← Back
         </button>
         <span className={`post-category-badge category-${post.category}`}>
           {cat ? `${cat.icon} ${cat.label}` : post.category}

@@ -980,3 +980,70 @@ html:not(.theme-light) .ai-panel-title { color: #C4B5FD; }
   margin: 8px 0 4px;
 }
 
+/* ─── AI Training Data widget ─── */
+.ai-dataset-widget {
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  background: color-mix(in srgb, var(--accent) 5%, var(--surface-1));
+}
+
+.ai-dataset-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.ai-dataset-badge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  border-radius: 20px;
+  padding: 2px 7px;
+  white-space: nowrap;
+}
+
+.ai-dataset-sub {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin: 0 0 10px;
+  line-height: 1.4;
+}
+
+.ai-dataset-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.ai-dataset-meta span {
+  font-size: 10px;
+  color: var(--text-secondary);
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 2px 8px;
+}
+
+.ai-export-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.ai-export-btn:hover  { opacity: 0.88; }
+.ai-export-btn:active { transform: scale(0.98); }

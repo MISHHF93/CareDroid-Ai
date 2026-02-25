@@ -435,3 +435,113 @@ export const getTopContributors = (limit = 5) => {
 };
 
 export const SPECIALTIES_LIST = SPECIALTIES;
+
+/**
+ * ─── AI Training Data Pipeline ───────────────────────────────────────────────
+ * The CareDroid community generates high-quality clinical Q&A from verified
+ * physicians. This data is the annotation corpus for CareDroid AI — useable
+ * in Scale AI, Argilla, Label Studio, or any RLHF/SFT fine-tuning pipeline.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
+/** Aggregate KPIs for the AI training dataset */
+export const getDatasetStats = () => {
+  const all = store.posts;
+  const annotated    = all.filter(p => p.aiAnnotated);
+  const answered     = all.filter(p => p.accepted);
+  const verifiedAuth = all.filter(p => p.author.verified);
+  const totalViews   = all.reduce((s, p) => s + p.views, 0);
+  const totalVotes   = all.reduce((s, p) => s + p.upvotes, 0);
+  const totalComments = all.reduce((s, p) => s + p.comments.length, 0);
+
+  // Exportable = annotated OR has an accepted answer
+  const exportable = all.filter(p =>
+    p.aiAnnotated || p.accepted
+  );
+
+  // Verified-answer count
+  const verifiedAnswers = all.filter(p =>
+    p.comments.some(c => c.isAnswer && c.author.verified)
+  ).length;
+
+  return {
+    total:          all.length,
+    annotated:      annotated.length,
+    answered:       answered.length,
+    answeredPct:    all.length ? Math.round((answered.length / all.length) * 100) : 0,
+    verifiedPosts:  verifiedAuth.length,
+    verifiedPct:    all.length ? Math.round((verifiedAuth.length / all.length) * 100) : 0,
+    verifiedAnswers,
+    totalViews,
+    totalVotes,
+    totalComments,
+    exportable:     exportable.length,
+  };
+};
+
+/**
+ * Export community data as Scale AI / RLHF / SFT-compatible records.
+ * Each record = { prompt, completion, metadata } — ready for fine-tuning
+ * or human review in annotation studios.
+ * Only posts that have at least one response are exported (need prompt+completion pairs).
+ */
+export const exportDataset = () => {
+  const records = [];
+
+  store.posts.forEach(post => {
+    const net            = post.upvotes - post.downvotes;
+    const acceptedCmt    = post.comments.find(c => c.isAnswer);
+    const topCmt         = [...post.comments].sort((a, b) => b.upvotes - a.upvotes)[0];
+    const bestAnswer     = acceptedCmt || topCmt;
+    if (!bestAnswer) return; // skip unanswered — no completion pair yet
+
+    // Engagement-weighted quality score [0–1]
+    const qualityScore = Math.min(
+      1,
+      (net * 2 + post.views / 50 + (bestAnswer.upvotes || 0)) / 200
+    );
+
+    records.push({
+      id:         post.id,
+      source:     'caredroid-community',
+      version:    '1.0',
+      category:   post.category,
+      tags:       post.tags,
+      prompt:     `${post.title}\n\n${post.body}`,
+      completion: bestAnswer.body,
+      metadata: {
+        author:                    post.author.name,
+        author_specialty:          post.author.specialty,
+        author_verified:           post.author.verified,
+        answer_author:             bestAnswer.author?.name   ?? null,
+        answer_author_specialty:   bestAnswer.author?.specialty ?? null,
+        answer_author_verified:    bestAnswer.author?.verified  ?? false,
+        answer_is_accepted:        !!acceptedCmt,
+        net_votes:                 net,
+        views:                     post.views,
+        comment_count:             post.comments.length,
+        quality_score:             +qualityScore.toFixed(3),
+        ai_annotated:              post.aiAnnotated,
+        annotation_note:           post.aiAnnotationNote ?? null,
+        created_at:                post.createdAt,
+      },
+    });
+  });
+
+  // Highest quality first
+  records.sort((a, b) => b.metadata.quality_score - a.metadata.quality_score);
+  return records;
+};
+
+/** Trigger a JSONL download of the training dataset in the browser */
+export const downloadDatasetJSONL = () => {
+  const records = exportDataset();
+  const jsonl   = records.map(r => JSON.stringify(r)).join('\n');
+  const blob    = new Blob([jsonl], { type: 'application/jsonl' });
+  const url     = URL.createObjectURL(blob);
+  const a       = document.createElement('a');
+  a.href        = url;
+  a.download    = `caredroid-dataset-${new Date().toISOString().slice(0, 10)}.jsonl`;
+  a.click();
+  URL.revokeObjectURL(url);
+};

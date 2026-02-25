@@ -9,6 +9,8 @@ import {
   createPost,
   getTrendingTags,
   getTopContributors,
+  getDatasetStats,
+  downloadDatasetJSONL,
 } from '../../services/communityService';
 import './Community.css';
 
@@ -219,7 +221,7 @@ export default function Community() {
   const [trendingTags, setTrendingTags] = useState([]);
   const [topContributors, setTopContributors] = useState([]);
   const [showCreate, setShowCreate] = useState(false);
-  const [aiCount, setAiCount] = useState(0);
+  const [datasetStats, setDatasetStats] = useState(null);
   const debounceRef = useRef(null);
 
   // Debounce search input
@@ -232,7 +234,7 @@ export default function Community() {
   const reload = useCallback(() => {
     const fetched = getPosts({ category, search: debouncedSearch, tag: filterTag, sort, savedOnly });
     setPosts(fetched);
-    setAiCount(fetched.filter(p => p.aiAnnotated).length);
+    setDatasetStats(getDatasetStats());
     setTrendingTags(getTrendingTags(12));
     setTopContributors(getTopContributors(5));
   }, [category, debouncedSearch, filterTag, sort, savedOnly]);
@@ -369,21 +371,43 @@ export default function Community() {
 
         {/* Right sidebar */}
         <aside className="community-sidebar">
-          {/* Stats + AI corpus — combined widget */}
-          <div className="sidebar-widget">
-            <p className="sidebar-widget-title">📊 Community</p>
-            <div className="sidebar-stats-row">
-              {[
-                { label: 'Posts', value: getPosts({}).length },
-                { label: 'Members', value: 9 },
-                { label: 'AI', value: aiCount },
-              ].map(s => (
-                <div key={s.label} className="sidebar-stat">
-                  <div className="sidebar-stat-value">{s.value}</div>
-                  <div className="sidebar-stat-label">{s.label}</div>
-                </div>
-              ))}
+          {/* AI Training Data widget */}
+          <div className="sidebar-widget ai-dataset-widget">
+            <div className="ai-dataset-header">
+              <p className="sidebar-widget-title" style={{ margin: 0 }}>🤖 AI Training Data</p>
+              <span className="ai-dataset-badge">Scale AI ready</span>
             </div>
+            <p className="ai-dataset-sub">Community Q&amp;A annotated for CareDroid AI fine-tuning</p>
+
+            {datasetStats && (
+              <>
+                <div className="sidebar-stats-row" style={{ marginBottom: 8 }}>
+                  {[
+                    { label: 'Records',   value: datasetStats.exportable },
+                    { label: 'Annotated', value: datasetStats.annotated },
+                    { label: 'Answered',  value: `${datasetStats.answeredPct}%` },
+                  ].map(s => (
+                    <div key={s.label} className="sidebar-stat">
+                      <div className="sidebar-stat-value">{s.value}</div>
+                      <div className="sidebar-stat-label">{s.label}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="ai-dataset-meta">
+                  <span>👁 {datasetStats.totalViews.toLocaleString()} views</span>
+                  <span>⬆️ {datasetStats.totalVotes.toLocaleString()} votes</span>
+                  <span>✅ {datasetStats.verifiedPct}% verified</span>
+                </div>
+              </>
+            )}
+
+            <button
+              className="ai-export-btn"
+              onClick={downloadDatasetJSONL}
+              title="Download as JSONL for Scale AI / Argilla / Label Studio"
+            >
+              ⬇ Export Dataset (.jsonl)
+            </button>
           </div>
 
           {/* Trending tags */}

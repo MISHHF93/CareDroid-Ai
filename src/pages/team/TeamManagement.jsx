@@ -1,19 +1,17 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useUser } from '../../contexts/UserContext';
-import { Permission } from '../../contexts/UserContext';
-import { apiFetch } from '../../services/apiClient';
-import { buildApiUrl } from '../../services/apiClient';
+import { useUser, Permission } from '../../contexts/UserContext';
+import { apiFetch, buildApiUrl } from '../../services/apiClient';
 import AppShell from '../../layout/AppShell';
 import { colors, alpha, gradients, text, surfaces, borders } from '../../config/theme';
 import { useAppearance } from '../../contexts/AppearanceContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import './TeamManagement.css';
 
 // ═══ Theme shorthand ═══
 const T = text;
 const S = surfaces;
 const B = borders;
-import './TeamManagement.css';
 
 // ═══ Design Tokens (from centralized theme) ═══
 const ROLE_STYLES = {

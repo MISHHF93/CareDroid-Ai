@@ -207,9 +207,7 @@ export default function PostDetail() {
               </div>
             </div>
 
-            {/* Tags */}
-            {post.tags?.length > 0 && (
-
+            {/* Comments */}
             {(post.comments || []).map(c => (
               <div
                 key={c.id}
@@ -331,6 +329,5 @@ export default function PostDetail() {
           </aside>
         </div>
       </div>
-    </div>
   );
 }

@@ -80,7 +80,13 @@ function PostCard({ post, onVote, onSave, onClick }) {
               <button
                 key={tag}
                 className="post-tag"
-                    onClick={e => e.stopPropagation()}
+                onClick={e => e.stopPropagation()}
+              >
+                #{tag}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="post-footer">
           <div className="post-author-chip">

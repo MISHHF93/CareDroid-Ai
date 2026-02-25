@@ -4,13 +4,59 @@
  * Future: swap to REST/WebSocket backend + AI annotation pipeline
  */
 
-const SPECIALTIES = [
-  'Cardiology', 'Emergency', 'ICU/Critical Care', 'Internal Medicine',
-  'Neurology', 'Oncology', 'Pediatrics', 'Surgery', 'Radiology',
-  'Psychiatry', 'Anesthesiology', 'Infectious Disease', 'Nephrology',
-  'Pulmonology', 'Endocrinology', 'Gastroenterology', 'Hematology',
-  'Rheumatology', 'Dermatology', 'Orthopedics'
+/**
+ * All clinical hospital departments — the canonical hashtag taxonomy for
+ * CareDroid Community. Every post must carry at least one department tag so
+ * data exports map cleanly to specialty-specific AI training corpora.
+ */
+export const DEPARTMENTS = [
+  // ── Emergency & Critical Care ──────────────────────────────────────────
+  { id: 'emergency-medicine',        label: 'Emergency Medicine',          icon: '🚨', group: 'Emergency & Critical Care' },
+  { id: 'icu-critical-care',         label: 'ICU / Critical Care',         icon: '🏥', group: 'Emergency & Critical Care' },
+  { id: 'anesthesiology',            label: 'Anesthesiology',              icon: '💉', group: 'Emergency & Critical Care' },
+  // ── Medicine ───────────────────────────────────────────────────────────
+  { id: 'internal-medicine',         label: 'Internal Medicine',           icon: '🩺', group: 'Medicine' },
+  { id: 'cardiology',                label: 'Cardiology',                  icon: '🫀', group: 'Medicine' },
+  { id: 'pulmonology',               label: 'Pulmonology',                 icon: '🫁', group: 'Medicine' },
+  { id: 'gastroenterology',          label: 'Gastroenterology',            icon: '🔬', group: 'Medicine' },
+  { id: 'nephrology',                label: 'Nephrology',                  icon: '🫘', group: 'Medicine' },
+  { id: 'endocrinology',             label: 'Endocrinology & Diabetology', icon: '⚗️', group: 'Medicine' },
+  { id: 'neurology',                 label: 'Neurology',                   icon: '🧠', group: 'Medicine' },
+  { id: 'hematology',                label: 'Hematology',                  icon: '🩸', group: 'Medicine' },
+  { id: 'oncology',                  label: 'Oncology',                    icon: '🎗️', group: 'Medicine' },
+  { id: 'rheumatology',              label: 'Rheumatology',                icon: '🦴', group: 'Medicine' },
+  { id: 'infectious-disease',        label: 'Infectious Disease',          icon: '🦠', group: 'Medicine' },
+  { id: 'dermatology',               label: 'Dermatology',                 icon: '🧬', group: 'Medicine' },
+  { id: 'geriatrics',                label: 'Geriatrics',                  icon: '👴', group: 'Medicine' },
+  // ── Surgery ────────────────────────────────────────────────────────────
+  { id: 'general-surgery',           label: 'General Surgery',             icon: '🔪', group: 'Surgery' },
+  { id: 'cardiothoracic-surgery',    label: 'Cardiothoracic Surgery',      icon: '🫀', group: 'Surgery' },
+  { id: 'neurosurgery',              label: 'Neurosurgery',                icon: '🧠', group: 'Surgery' },
+  { id: 'orthopedics',               label: 'Orthopedics',                 icon: '🦴', group: 'Surgery' },
+  { id: 'vascular-surgery',          label: 'Vascular Surgery',            icon: '🩸', group: 'Surgery' },
+  { id: 'urology',                   label: 'Urology',                     icon: '🔬', group: 'Surgery' },
+  { id: 'plastic-surgery',           label: 'Plastic & Reconstructive',    icon: '✂️', group: 'Surgery' },
+  { id: 'oral-maxillofacial',        label: 'Oral & Maxillofacial',        icon: '🦷', group: 'Surgery' },
+  // ── Women & Children ───────────────────────────────────────────────────
+  { id: 'obstetrics-gynecology',     label: 'Obstetrics & Gynecology',     icon: '🤰', group: 'Women & Children' },
+  { id: 'pediatrics',                label: 'Pediatrics',                  icon: '👶', group: 'Women & Children' },
+  { id: 'nicu',                      label: 'Neonatal ICU (NICU)',         icon: '🍼', group: 'Women & Children' },
+  { id: 'picu',                      label: 'Pediatric ICU (PICU)',        icon: '👶', group: 'Women & Children' },
+  // ── Diagnostics ────────────────────────────────────────────────────────
+  { id: 'radiology',                 label: 'Radiology',                   icon: '🩻', group: 'Diagnostics' },
+  { id: 'interventional-radiology',  label: 'Interventional Radiology',    icon: '🩻', group: 'Diagnostics' },
+  { id: 'pathology',                 label: 'Pathology',                   icon: '🧫', group: 'Diagnostics' },
+  { id: 'laboratory-medicine',       label: 'Laboratory Medicine',         icon: '🧪', group: 'Diagnostics' },
+  // ── Allied Specialties ─────────────────────────────────────────────────
+  { id: 'psychiatry',                label: 'Psychiatry',                  icon: '🧠', group: 'Allied Specialties' },
+  { id: 'ophthalmology',             label: 'Ophthalmology',               icon: '👁️', group: 'Allied Specialties' },
+  { id: 'ent',                       label: 'ENT / Otolaryngology',        icon: '👂', group: 'Allied Specialties' },
+  { id: 'rehabilitation',            label: 'Physical Medicine & Rehab',   icon: '🏃', group: 'Allied Specialties' },
+  { id: 'palliative-care',           label: 'Palliative Care',             icon: '🕊️', group: 'Allied Specialties' },
 ];
+
+/** Flat specialty list derived from DEPARTMENTS (used by author profiles) */
+const SPECIALTIES = DEPARTMENTS.map(d => d.label);
 
 export const CATEGORIES = [
   { id: 'all',           label: 'All',           icon: '🌐' },
@@ -42,7 +88,7 @@ const SEED_POSTS = [
     category: 'case',
     title: 'Unusual ARDS presentation post-cardiac surgery — refractory to prone positioning',
     body: `**Case Summary:**\n58M, post-CABG day 2. Developed bilateral infiltrates, PaO2/FiO2 ratio 82. Refractory to standard prone positioning after 16h. PEEP titration per ARDSnet failed to improve compliance.\n\n**Question:** Has anyone trialed VV-ECMO earlier in post-cardiac patients? What threshold PF ratio and compliance do you use for ECMO initiation in this context?\n\n**Key vitals:** pH 7.28, PaCO2 58, Driving pressure 18 cmH2O, Crs 22 mL/cmH2O`,
-    tags: ['ARDS', 'ECMO', 'post-cardiac', 'ICU', 'ventilation'],
+    tags: ['icu-critical-care', 'cardiothoracic-surgery', 'pulmonology', 'ARDS', 'ECMO', 'ventilation'],
     author: AUTHORS[2],
     upvotes: 48,
     downvotes: 2,
@@ -61,7 +107,7 @@ const SEED_POSTS = [
     category: 'question',
     title: 'Target MAP in septic shock with pre-existing hypertension — 65 vs 80 mmHg?',
     body: `PROSEVA and SEPSISPAM trials gave us some guidance but I still see major variation in our unit. For a patient with known Stage 3 HTN (baseline systolic 160s), do you adjust the MAP target upward? \n\nOur ID attending insists on 80+ for neuroprotection. Our intensivist argues the NE dose to achieve that causes more harm. Would love data or institutional protocols from this community.`,
-    tags: ['sepsis', 'shock', 'MAP', 'vasopressors', 'ICU'],
+    tags: ['icu-critical-care', 'internal-medicine', 'emergency-medicine', 'sepsis', 'vasopressors', 'MAP'],
     author: AUTHORS[6],
     upvotes: 61,
     downvotes: 3,
@@ -79,7 +125,7 @@ const SEED_POSTS = [
     category: 'protocol',
     title: 'Shared: Rapid RASS-based sedation weaning protocol for mechanically ventilated patients',
     body: `We implemented this at our centre 6 months ago and reduced mean ventilator days by 1.4. Sharing for community feedback.\n\n**Protocol Steps:**\n1. Daily SAT + SBT bundle at 06:00\n2. RASS target -1 to 0 after post-op day 1\n3. Propofol taper 20 mcg/kg/min Q2H if RASS ≥ 0 for 2 consecutive assessments\n4. Dexmedetomidine bridge for agitation during wean\n5. Mandatory delirium screen (CAM-ICU) Q8H\n\nHappy to share the full protocol PDF — DM me.`,
-    tags: ['sedation', 'ventilator-weaning', 'delirium', 'RASS', 'protocol', 'ICU'],
+    tags: ['icu-critical-care', 'anesthesiology', 'sedation', 'ventilator-weaning', 'delirium', 'RASS'],
     author: AUTHORS[2],
     upvotes: 93,
     downvotes: 1,
@@ -98,7 +144,7 @@ const SEED_POSTS = [
     category: 'research',
     title: 'New meta-analysis: SGLT2i mortality benefit extends to non-diabetic HFrEF — implications for prescribing',
     body: `Just published in NEJM Evidence. Pooled analysis of DAPA-HF and EMPEROR-Reduced with subgroup stratification. Key finding: NNT for all-cause mortality in non-DM HFrEF = 34 (95% CI 22–61) over 24 months.\n\nThis changes our institution's heart failure protocol. We're now initiating empagliflozin for all EF <40% regardless of glycaemic status.\n\nDiscussion on eGFR thresholds, drug interactions with loop diuretics, and titration schedules welcome.`,
-    tags: ['SGLT2i', 'heart-failure', 'HFrEF', 'cardiology', 'meta-analysis', 'NEJM'],
+    tags: ['cardiology', 'internal-medicine', 'heart-failure', 'SGLT2i', 'HFrEF', 'meta-analysis'],
     author: AUTHORS[0],
     upvotes: 134,
     downvotes: 4,
@@ -117,7 +163,7 @@ const SEED_POSTS = [
     category: 'case',
     title: 'Paediatric DKA — refractory hypokalemia despite aggressive replacement, unusual cause found',
     body: `14F, type 1 DM. DKA on presentation (glucose 41 mmol/L, pH 7.09, K+ 2.8 on admission after hydration). Replaced 200 mEq K+ over 12h — K+ remained 2.6.\n\n**Twist:** Concurrent hypomagnesaemia (Mg2+ 0.42 mmol/L) not initially recognised. Mg replacement corrected the refractory hypokalaemia within 6h.\n\n**Lesson:** Always check Mg in DKA with refractory hypokalaemia. Mag competes for same renal tubular exchanger.`,
-    tags: ['DKA', 'paediatrics', 'hypokalemia', 'hypomagnesaemia', 'electrolytes'],
+    tags: ['pediatrics', 'endocrinology', 'emergency-medicine', 'DKA', 'electrolytes', 'hypokalemia'],
     author: AUTHORS[3],
     upvotes: 79,
     downvotes: 0,
@@ -135,7 +181,7 @@ const SEED_POSTS = [
     category: 'discussion',
     title: 'AI-assisted diagnosis: where do you draw the line on LLM recommendations at the bedside?',
     body: `With tools like CareDroid's Diagnosis Assistant, I find myself using AI suggestions as a differential-generator, but I'm seeing junior colleagues take outputs as near-definitive. \n\nWhere do your institutions stand on AI-assisted diagnosis liability? Have you formalised any governance or informed consent frameworks?\n\nWould love to hear from both community hospitals and academic centres.`,
-    tags: ['AI', 'clinical-ai', 'governance', 'medtech', 'diagnosis'],
+    tags: ['internal-medicine', 'clinical-ai', 'governance', 'medtech', 'diagnosis'],
     author: AUTHORS[4],
     upvotes: 112,
     downvotes: 8,
@@ -153,7 +199,7 @@ const SEED_POSTS = [
     category: 'announcement',
     title: '📢 CareDroid Community Launch — Welcome to MedX!',
     body: `We're excited to launch **CareDroid Community (MedX)** — a professional network built for clinicians, by clinicians.\n\n**What you can do here:**\n- Share and discuss clinical cases (anonymised)\n- Ask clinical questions and get peer-reviewed answers\n- Share and download protocols\n- Discuss research findings\n- Contribute to CareDroid's AI training through voluntary data annotation\n\n**Ground rules:**\n1. Patient data must be fully anonymised\n2. Be collegial — debate ideas, not people\n3. Cite sources when making clinical claims\n4. Flag AI annotation contributions with the 🤖 annotation tool\n\nWelcome aboard. Let's raise the standard of clinical care together.`,
-    tags: ['announcement', 'community', 'CareDroid', 'MedX'],
+    tags: ['CareDroid', 'MedX', 'community', 'announcement'],
     author: { id: 'system', name: 'CareDroid Team', role: 'admin', specialty: 'Platform', verified: true, reputation: 0 },
     upvotes: 205,
     downvotes: 0,
@@ -171,7 +217,7 @@ const SEED_POSTS = [
     category: 'question',
     title: 'Best fluid resuscitation strategy for burn patients > 40% TBSA — Parkland still the standard?',
     body: `Dealing with a 32M, 45% TBSA burns, mixed partial/full thickness. Our burn unit still uses modified Parkland (4 mL/kg/% TBSA), but I've read centres moving to Brooke formula or albumin-supplemented protocols.\n\nEvidence seems to favour anything that limits oedema and avoids fluid creep. What's your unit using in 2026?`,
-    tags: ['burns', 'resuscitation', 'Parkland', 'fluid-therapy', 'surgery'],
+    tags: ['general-surgery', 'emergency-medicine', 'burns', 'fluid-resuscitation', 'Parkland'],
     author: AUTHORS[5],
     upvotes: 34,
     downvotes: 1,
@@ -189,7 +235,7 @@ const SEED_POSTS = [
     category: 'case',
     title: 'Bilateral pulmonary infiltrates on CXR — all cultures negative, steroids not helping, what am I missing?',
     body: `48F, never smoker, no known CTD. Progressive dyspnoea x 3 weeks. CXR bilateral infiltrates. HRCT: crazy-paving pattern. BAL: negative bacterial, viral, fungal. ANA 1:160 speckled. No rash, no arthritis, PFTs show restrictive pattern, DLCO 48%.\n\nStarted on 1mg/kg prednisolone — minimal improvement at 3 weeks. Considering cyclophosphamide or MMF but not sure of diagnosis.\n\nDifferential includes COP, NSIP, DIP, HP — open to thoughts.`,
-    tags: ['ILD', 'diffuse-lung-disease', 'HRCT', 'crazy-paving', 'autoimmune'],
+    tags: ['pulmonology', 'rheumatology', 'radiology', 'ILD', 'diffuse-lung-disease', 'HRCT'],
     author: AUTHORS[7],
     upvotes: 57,
     downvotes: 0,
@@ -208,7 +254,7 @@ const SEED_POSTS = [
     category: 'research',
     title: 'Lancet ID: bedaquiline + pretomanid combo halving XDR-TB treatment duration — experience from SA trial',
     body: `Colleagues treating XDR-TB should read the new Lancet ID paper. BPaL regimen (bedaquiline + pretomanid + linezolid) achieving 90% culture conversion at 6 months vs historical 26% at 24 months.\n\nKey safety concern: linezolid myelosuppression dose-dependence. SA group using 600mg daily (vs 1200mg) with equivalent efficacy and far less toxicity.\n\nImplications for our TB protocols? Happy to share our updated dosing schedule.`,
-    tags: ['TB', 'XDR-TB', 'bedaquiline', 'pretomanid', 'Lancet', 'infectious-disease'],
+    tags: ['infectious-disease', 'pulmonology', 'TB', 'XDR-TB', 'bedaquiline', 'pretomanid'],
     author: AUTHORS[8],
     upvotes: 88,
     downvotes: 2,
@@ -435,6 +481,7 @@ export const getTopContributors = (limit = 5) => {
 };
 
 export const SPECIALTIES_LIST = SPECIALTIES;
+export const DEPARTMENT_IDS = DEPARTMENTS.map(d => d.id);
 
 /**
  * ─── AI Training Data Pipeline ───────────────────────────────────────────────

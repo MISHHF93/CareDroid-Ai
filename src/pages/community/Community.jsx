@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   CATEGORIES,
+  DEPARTMENTS,
   getPosts,
   votePost,
   toggleSave,
@@ -132,18 +133,25 @@ function CreatePostModal({ onClose, onSubmit }) {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [category, setCategory] = useState('question');
-  const [tags, setTags] = useState('');
+  const [deptTags, setDeptTags] = useState([]);    // department IDs
+  const [clinicalTags, setClinicalTags] = useState(''); // free clinical terms
   const [submitting, setSubmitting] = useState(false);
+
+  const toggleDept = (id) =>
+    setDeptTags(prev => prev.includes(id) ? prev.filter(d => d !== id) : [...prev, id]);
 
   const handleSubmit = async e => {
     e.preventDefault();
     if (!title.trim() || !body.trim()) return;
     setSubmitting(true);
-    const tagList = tags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
-    await onSubmit({ title: title.trim(), body: body.trim(), category, tags: tagList });
+    const clinical = clinicalTags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+    await onSubmit({ title: title.trim(), body: body.trim(), category, tags: [...deptTags, ...clinical] });
     setSubmitting(false);
     onClose();
   };
+
+  // Group departments for the picker
+  const groups = [...new Set(DEPARTMENTS.map(d => d.group))];
 
   return (
     <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -183,15 +191,47 @@ function CreatePostModal({ onClose, onSubmit }) {
               required
             />
           </div>
+
+          {/* Department hashtag picker */}
           <div>
-            <label className="modal-label">Tags (comma-separated)</label>
+            <label className="modal-label">
+              Department Tags
+              {deptTags.length > 0 && (
+                <span className="modal-label-count">{deptTags.length} selected</span>
+              )}
+            </label>
+            <div className="dept-picker">
+              {groups.map(group => (
+                <div key={group} className="dept-picker-group">
+                  <p className="dept-picker-group-label">{group}</p>
+                  <div className="dept-picker-chips">
+                    {DEPARTMENTS.filter(d => d.group === group).map(dept => (
+                      <button
+                        key={dept.id}
+                        type="button"
+                        className={`dept-chip${deptTags.includes(dept.id) ? ' selected' : ''}`}
+                        onClick={() => toggleDept(dept.id)}
+                      >
+                        {dept.icon} {dept.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Optional additional clinical terms */}
+          <div>
+            <label className="modal-label">Additional Clinical Terms <span className="modal-label-hint">(comma-separated, optional)</span></label>
             <input
               className="modal-input"
-              placeholder="sepsis, icu, ventilator"
-              value={tags}
-              onChange={e => setTags(e.target.value)}
+              placeholder="e.g. ARDS, ECMO, sepsis, SGLT2i"
+              value={clinicalTags}
+              onChange={e => setClinicalTags(e.target.value)}
             />
           </div>
+
           <div className="modal-actions">
             <button type="button" className="modal-btn-cancel" onClick={onClose}>Cancel</button>
             <button
@@ -410,20 +450,36 @@ export default function Community() {
             </button>
           </div>
 
-          {/* Trending tags */}
+          {/* Departments browser */}
           <div className="sidebar-widget">
-            <p className="sidebar-widget-title">🔥 Trending Tags</p>
-            <div>
-              {trendingTags.map(({ tag, count }) => (
-                <button
-                  key={tag}
-                  className="trending-tag"
-                  onClick={() => { setFilterTag(tag); setSavedOnly(false); }}
-                >
-                  #{tag} <span style={{ opacity: 0.6, fontSize: 10 }}>{count}</span>
-                </button>
-              ))}
-            </div>
+            <p className="sidebar-widget-title">🏥 Departments</p>
+            {(() => {
+              // Build count map from trendingTags (dept IDs are now in tags)
+              const countMap = Object.fromEntries(trendingTags.map(t => [t.tag, t.count]));
+              const groups = [...new Set(DEPARTMENTS.map(d => d.group))];
+              return groups.map(group => (
+                <div key={group} className="sidebar-dept-group">
+                  <p className="sidebar-dept-group-label">{group}</p>
+                  <div className="sidebar-dept-chips">
+                    {DEPARTMENTS.filter(d => d.group === group).map(dept => {
+                      const count = countMap[dept.id] || 0;
+                      const active = filterTag === dept.id;
+                      return (
+                        <button
+                          key={dept.id}
+                          className={`sidebar-dept-chip${active ? ' active' : ''}${count > 0 ? ' has-posts' : ''}`}
+                          onClick={() => { setFilterTag(active ? '' : dept.id); setSavedOnly(false); }}
+                          title={`${dept.label}${count ? ` · ${count} post${count > 1 ? 's' : ''}` : ''}`}
+                        >
+                          {dept.icon} {dept.label}
+                          {count > 0 && <span className="sidebar-dept-count">{count}</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ));
+            })()}
           </div>
 
           {/* Top contributors */}

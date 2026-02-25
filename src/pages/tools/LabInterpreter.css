@@ -150,7 +150,7 @@
   background: linear-gradient(135deg, var(--accent), var(--accent-light));
   border: none;
   border-radius: 8px;
-  color: #0a0e27;
+  color: var(--navy-ink);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -263,7 +263,7 @@
   background: linear-gradient(135deg, var(--accent), var(--accent-light));
   border: none;
   border-radius: 10px;
-  color: #0a0e27;
+  color: var(--navy-ink);
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;

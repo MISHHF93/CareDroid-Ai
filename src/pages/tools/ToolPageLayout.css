@@ -240,14 +240,14 @@
 
 .clinical-insights-section {
   padding: 12px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--border-subtle, rgba(148, 163, 184, 0.2));
   margin-bottom: 16px;
 }
 
 .clinical-alerts-container {
   margin-top: 16px;
   padding-top: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--border-subtle, rgba(148, 163, 184, 0.2));
 }
 
 .alerts-title {

@@ -19,17 +19,38 @@
 .community-topbar {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   padding: 10px 16px 8px;
   flex-shrink: 0;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   border-bottom: 1px solid var(--border-subtle);
   padding-top: calc(env(safe-area-inset-top, 0px) + 10px);
 }
 
 @media (max-width: 1099px) {
   .community-topbar {
+    /* Stack into two rows on mobile:
+       row 1: title + button (space-between)
+       row 2: search full-width */
+    flex-wrap: wrap;
     padding-top: calc(env(safe-area-inset-top, 0px) + 52px);
+  }
+
+  .community-title {
+    flex: 1;
+  }
+
+  /* Push button to end of first row */
+  .community-post-btn {
+    order: 2;
+  }
+
+  /* Search drops to its own full-width row */
+  .community-search {
+    order: 3;
+    flex-basis: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
 }
 
@@ -770,14 +791,21 @@ html:not(.theme-light) .ai-panel-title { color: #C4B5FD; }
 
   .sidebar-widget {
     flex-shrink: 0;
-    min-width: 150px;
-    max-width: 190px;
+    min-width: 140px;
+    max-width: 170px;
     padding: 9px 11px;
+  }
+
+  /* Trending tags widget gets a bit more room */
+  .sidebar-widget:nth-child(2) {
+    min-width: 200px;
+    max-width: 240px;
   }
 }
 
 @media (max-width: 639px) {
-  .community-topbar { padding: 8px 12px 6px; padding-top: calc(env(safe-area-inset-top, 0px) + 52px); }
+  /* Don't override padding-top — handled by 1099px breakpoint */
+  .community-topbar { padding-right: 12px; padding-bottom: 6px; padding-left: 12px; }
   .community-tabs   { padding: 5px 12px 7px; }
   .community-inner,
   .post-detail-inner { padding: 10px 10px 14px; }

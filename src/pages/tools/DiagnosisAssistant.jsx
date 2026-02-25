@@ -80,8 +80,8 @@ const DiagnosisAssistant = () => {
                 width: '100%',
                 minHeight: '120px',
                 padding: '12px',
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.15)',
+                background: 'var(--input-bg)',
+                border: '1px solid var(--input-border)',
                 borderRadius: '8px',
                 color: 'var(--text-primary)',
                 fontSize: '14px',
@@ -104,8 +104,8 @@ const DiagnosisAssistant = () => {
                 style={{
                   width: '100%',
                   padding: '10px 12px',
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.15)',
+                  background: 'var(--input-bg)',
+                  border: '1px solid var(--input-border)',
                   borderRadius: '8px',
                   color: 'var(--text-primary)',
                 }}
@@ -122,8 +122,8 @@ const DiagnosisAssistant = () => {
                 style={{
                   width: '100%',
                   padding: '10px 12px',
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.15)',
+                  background: 'var(--input-bg)',
+                  border: '1px solid var(--input-border)',
                   borderRadius: '8px',
                   color: 'var(--text-primary)',
                 }}
@@ -146,8 +146,8 @@ const DiagnosisAssistant = () => {
                 width: '100%',
                 minHeight: '80px',
                 padding: '10px 12px',
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.15)',
+                background: 'var(--input-bg)',
+                border: '1px solid var(--input-border)',
                 borderRadius: '8px',
                 color: 'var(--text-primary)',
                 fontSize: '13px',
@@ -168,7 +168,7 @@ const DiagnosisAssistant = () => {
                 background: 'linear-gradient(135deg, var(--accent), var(--accent-light))',
                 border: 'none',
                 borderRadius: '10px',
-                color: '#0a0e27',
+                color: 'var(--navy-ink)',
                 fontSize: '16px',
                 fontWeight: 600,
                 cursor: loading ? 'not-allowed' : 'pointer',
@@ -182,8 +182,8 @@ const DiagnosisAssistant = () => {
             <button
               style={{
                 padding: '14px 20px',
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.15)',
+                background: 'var(--input-bg)',
+                border: '1px solid var(--input-border)',
                 borderRadius: '10px',
                 color: 'var(--text-secondary)',
                 fontSize: '14px',

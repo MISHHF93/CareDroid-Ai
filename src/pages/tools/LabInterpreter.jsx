@@ -358,11 +358,11 @@ function LabValues3DChart({ labValues }) {
   return (
     <div style={{ marginTop: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-        <span style={{ fontSize: 13, color: '#00e5ff', letterSpacing: '0.05em' }}>3D Lab Values</span>
+        <span style={{ fontSize: 13, color: 'var(--accent)', letterSpacing: '0.05em' }}>3D Lab Values</span>
         <button
           onClick={() => setShow3D(false)}
           aria-label="Hide 3D lab chart"
-          style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: 12 }}
+          style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 12 }}
         >
           Hide
         </button>

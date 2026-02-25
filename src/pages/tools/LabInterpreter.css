@@ -198,15 +198,15 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px;
-  background: rgba(255,255,255,0.03);
+  background: var(--surface-tertiary);
   border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid var(--border-subtle);
   transition: all 0.2s ease;
 }
 
 .lab-value-item:hover {
-  background: rgba(255,255,255,0.05);
-  border-color: rgba(255,255,255,0.15);
+  background: var(--surface-secondary);
+  border-color: var(--panel-border);
 }
 
 .lab-value-info {
@@ -288,8 +288,8 @@
 .lab-clear-button,
 .lab-load-example-button {
   padding: 14px 20px;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.15);
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
   border-radius: 10px;
   color: var(--text-secondary, rgba(255,255,255,0.7));
   font-size: 14px;
@@ -300,8 +300,8 @@
 
 .lab-clear-button:hover,
 .lab-load-example-button:hover {
-  background: rgba(255,255,255,0.08);
-  border-color: rgba(255,255,255,0.25);
+  background: var(--surface-secondary);
+  border-color: var(--border-color-default);
   color: var(--text-primary, #fff);
 }
 
@@ -385,9 +385,9 @@
 
 .lab-stat-card {
   padding: 16px;
-  background: rgba(255,255,255,0.03);
+  background: var(--surface-tertiary);
   border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--panel-border);
   text-align: center;
 }
 
@@ -459,12 +459,12 @@
   color: var(--text-secondary, rgba(255,255,255,0.6));
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 1px solid var(--panel-border);
 }
 
 .lab-values-table td {
   padding: 12px;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .lab-status-badge {
@@ -502,9 +502,9 @@
 
 .lab-interpretation-box {
   padding: 16px;
-  background: rgba(255,255,255,0.03);
+  background: var(--surface-tertiary);
   border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid var(--border-subtle);
 }
 
 .lab-interpretation-section {

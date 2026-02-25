@@ -50,8 +50,10 @@
 .medication-input {
   flex: 1;
   padding: clamp(12px, 3dvw, 16px);
+  background: var(--input-bg);
   border: 2px solid var(--panel-border, #e0e0e0);
   border-radius: 8px;
+  color: var(--text-primary);
   font-size: 16px;
   transition: all 0.2s;
   min-height: 44px;

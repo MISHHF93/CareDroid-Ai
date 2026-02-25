@@ -156,6 +156,11 @@
   --muted-text: rgba(248, 250, 252, 0.6);
   --panel-bg: rgba(255, 255, 255, 0.06);
   --panel-border: rgba(255, 255, 255, 0.14);
+  --panel-background: #0c0c10;              /* dark card/panel background */
+  --panel-hover: #040406;                   /* darker hover/recessed surface */
+  --border-color: rgba(255, 255, 255, 0.18); /* default border */
+  --input-bg: rgba(255, 255, 255, 0.05);    /* input field background */
+  --input-border: rgba(255, 255, 255, 0.15); /* input field border */
   --surface-1: rgba(0, 0, 0, 0.7);
   --surface-2: rgba(0, 0, 0, 0.4);
   --shadow-1: 0 8px 24px rgba(0, 0, 0, 0.35);
@@ -242,6 +247,11 @@
     --muted-text: rgba(27, 35, 64, 0.7);
     --panel-bg: rgba(27, 35, 64, 0.04);
     --panel-border: rgba(27, 35, 64, 0.12);
+    --panel-background: #f8fafc;              /* light card/panel background */
+    --panel-hover: #f1f5f9;                   /* light hover/recessed surface */
+    --border-color: rgba(27, 35, 64, 0.14);   /* default border */
+    --input-bg: #ffffff;                      /* white input background */
+    --input-border: rgba(27, 35, 64, 0.18);   /* visible input border */
     --surface-primary: #ffffff;
     --surface-secondary: #f8fafc;
     --surface-tertiary: #f1f5f9;
@@ -1040,6 +1050,11 @@ html.theme-light {
   --muted-text: rgba(27, 35, 64, 0.6);
   --panel-bg: rgba(255, 255, 255, 0.85);
   --panel-border: rgba(27, 35, 64, 0.12);
+  --panel-background: #f0f2f7;              /* light card/panel background */
+  --panel-hover: #e8ebf2;                   /* light hover/recessed surface */
+  --border-color: rgba(27, 35, 64, 0.14);   /* default border */
+  --input-bg: #ffffff;                      /* white input background */
+  --input-border: rgba(27, 35, 64, 0.18);   /* visible input border */
   --surface-1: rgba(255, 255, 255, 0.92);
   --surface-2: rgba(255, 255, 255, 0.65);
   --surface-primary: #ffffff;
@@ -1074,6 +1089,11 @@ html.theme-dark {
   --muted-text: rgba(248, 250, 252, 0.6);
   --panel-bg: rgba(255, 255, 255, 0.06);
   --panel-border: rgba(255, 255, 255, 0.14);
+  --panel-background: #0c0c10;              /* dark card/panel background */
+  --panel-hover: #040406;                   /* darker hover/recessed surface */
+  --border-color: rgba(255, 255, 255, 0.18); /* default border */
+  --input-bg: rgba(255, 255, 255, 0.05);    /* subtle input background */
+  --input-border: rgba(255, 255, 255, 0.15); /* input field border */
   --surface-1: rgba(0, 0, 0, 0.7);
   --surface-2: rgba(0, 0, 0, 0.4);
   --surface-primary: #060609;

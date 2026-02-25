@@ -150,8 +150,8 @@
 
   /* ===== LEGACY SUPPORT ===== */
   /* Keep existing variables for backward compatibility */
-  --navy-bg: #000000;
-  --navy-ink: #000000;
+  --navy-bg: #0b1220;           /* dark: deep navy background */
+  --navy-ink: #e2e8f0;          /* dark: light ink/text on navy surfaces */
   --text-color: #f8fafc;
   --muted-text: rgba(248, 250, 252, 0.6);
   --panel-bg: rgba(255, 255, 255, 0.06);
@@ -1058,14 +1058,14 @@ html.theme-light {
 }
 
 html.theme-light body {
-  background: #000;
+  background: var(--surface-primary);
   color: var(--text-primary);
 }
 
 /* ─── Theme: Dark mode (explicit) ─── */
 html.theme-dark {
-  --navy-bg: #000000;
-  --navy-ink: #000000;
+  --navy-bg: #0b1220;           /* dark navy page background */
+  --navy-ink: #e2e8f0;          /* light ink/text for dark surfaces */
   --text-color: #f8fafc;
   --text-primary: #f8fafc;
   --text-secondary: rgba(248, 250, 252, 0.7);

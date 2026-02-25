@@ -390,9 +390,6 @@ export const votePost = (postId, vote) => {
     else post.downvotes++;
     post.userVote = vote;
   }
-  // Auto-queue when net votes crosses quality threshold
-  const net = post.upvotes - post.downvotes;
-  if (net >= 10 && post.comments.length > 0) _pipelineQueue(postId, 'high_engagement');
 };
 
 /** Add comment */
@@ -435,28 +432,12 @@ export const toggleSave = (postId) => {
   if (post) post.saved = !post.saved;
 };
 
-/** Toggle AI annotation — internal, called by pipeline only */
-const toggleAnnotate = (postId, note = '') => {
-  const post = store.posts.find(p => p.id === postId);
-  if (!post) return;
-  post.aiAnnotated = !post.aiAnnotated;
-  if (post.aiAnnotated) {
-    post.aiAnnotationNote = note || 'Flagged for CareDroid AI training corpus';
-    _pipelineQueue(postId, 'annotation');
-  } else {
-    post.aiAnnotationNote = '';
-    // remove from queue if dequeued
-    store.pipeline.queue = store.pipeline.queue.filter(r => r.postId !== postId);
-  }
-};
-
-/** Mark comment as answer — auto-queues record to training pipeline */
+/** Mark comment as answer */
 export const markAnswer = (postId, commentId) => {
   const post = store.posts.find(p => p.id === postId);
   if (!post) return;
   post.comments.forEach(c => { c.isAnswer = c.id === commentId ? !c.isAnswer : false; });
   post.accepted = post.comments.some(c => c.isAnswer);
-  if (post.accepted) _pipelineQueue(postId, 'accepted_answer');
 };
 
 /** Increment view count */
@@ -492,126 +473,4 @@ export const getTopContributors = (limit = 5) => {
 export const SPECIALTIES_LIST = SPECIALTIES;
 export const DEPARTMENT_IDS   = DEPARTMENTS.map(d => d.id);
 
-/**
- * ─── Automatic AI Training Data Pipeline ─────────────────────────────────────
- * All annotation, accepted-answer, and high-engagement events are silently
- * captured and auto-flushed to the backend AI corpus every 8 seconds.
- * In production this POSTs to /api/ai/pipeline/ingest (NestJS backend).
- * No user action required — the community's activity IS the training data.
- * ─────────────────────────────────────────────────────────────────────────────
- */
 
-// Extend store with pipeline state
-store.pipeline = {
-  queue:      [],    // records pending next flush
-  synced:     0,     // cumulative records ingested
-  status:     'idle',// 'idle' | 'syncing' | 'synced' | 'error'
-  lastSyncAt: null,
-  errors:     0,
-};
-
-/** Build a SFT-v1 training record from a post (internal) */
-function _buildRecord(post, trigger) {
-  const net         = post.upvotes - post.downvotes;
-  const acceptedCmt = post.comments.find(c => c.isAnswer);
-  const topCmt      = [...post.comments].sort((a, b) => b.upvotes - a.upvotes)[0];
-  const bestAnswer  = acceptedCmt || topCmt;
-  const quality     = +Math.min(1,
-    (net * 2 + post.views / 50 + (bestAnswer?.upvotes || 0)) / 200
-  ).toFixed(3);
-  return {
-    record_id:     `${post.id}_${Date.now()}`,
-    post_id:       post.id,
-    trigger,
-    source:        'caredroid-community',
-    schema:        'sft-v1',
-    category:      post.category,
-    departments:   post.tags.filter(t => DEPARTMENT_IDS.includes(t)),
-    clinical_tags: post.tags.filter(t => !DEPARTMENT_IDS.includes(t)),
-    prompt:        `${post.title}\n\n${post.body}`,
-    completion:    bestAnswer?.body ?? null,
-    metadata: {
-      author:             post.author.name,
-      author_specialty:   post.author.specialty,
-      author_verified:    post.author.verified,
-      answer_author:      bestAnswer?.author?.name     ?? null,
-      answer_verified:    bestAnswer?.author?.verified ?? false,
-      answer_is_accepted: !!acceptedCmt,
-      net_votes:          net,
-      views:              post.views,
-      comment_count:      post.comments.length,
-      quality_score:      quality,
-      annotation_note:    post.aiAnnotationNote ?? null,
-      queued_at:          new Date().toISOString(),
-    },
-  };
-}
-
-/** Auto-queue a post — deduplicates so only latest version of each post is queued */
-function _pipelineQueue(postId, trigger) {
-  const post = store.posts.find(p => p.id === postId);
-  if (!post) return;
-  if (!post.comments.some(c => c.body)) return; // needs a completion pair
-  store.pipeline.queue = store.pipeline.queue.filter(r => r.post_id !== postId);
-  store.pipeline.queue.push(_buildRecord(post, trigger));
-}
-
-/** Flush queue → backend ingest (runs every 8 seconds automatically) */
-function _pipelineFlush() {
-  if (!store.pipeline.queue.length) return;
-  store.pipeline.status = 'syncing';
-  setTimeout(() => {
-    try {
-      // Production: await fetch('/api/ai/pipeline/ingest', { method:'POST', body: JSON.stringify(store.pipeline.queue) })
-      store.pipeline.synced  += store.pipeline.queue.length;
-      store.pipeline.queue    = [];
-      store.pipeline.status   = 'synced';
-      store.pipeline.lastSyncAt = new Date().toISOString();
-      setTimeout(() => { if (store.pipeline.status === 'synced') store.pipeline.status = 'idle'; }, 3000);
-    } catch {
-      store.pipeline.status = 'error';
-      store.pipeline.errors++;
-    }
-  }, 600);
-}
-
-// Start auto-flush interval
-setInterval(_pipelineFlush, 8000);
-
-// Seed pipeline on module load with all qualifying existing posts
-;(function _seed() {
-  store.posts.forEach(p => {
-    if ((p.aiAnnotated || p.accepted) && p.comments.some(c => c.body)) {
-      store.pipeline.queue.push(_buildRecord(p, 'seed'));
-    }
-  });
-  setTimeout(_pipelineFlush, 1200);
-})();
-
-/** Read-only pipeline status snapshot for UI */
-export const getPipelineStatus = () => ({
-  status:     store.pipeline.status,
-  queued:     store.pipeline.queue.length,
-  synced:     store.pipeline.synced,
-  errors:     store.pipeline.errors,
-  lastSyncAt: store.pipeline.lastSyncAt,
-});
-
-/** Community + pipeline KPIs for the sidebar health widget */
-export const getDatasetStats = () => {
-  const all = store.posts;
-  const totalPosts    = all.length;
-  const annotated     = all.filter(p => p.aiAnnotated).length;
-  const answered      = all.filter(p => p.accepted).length;
-  const answeredPct   = totalPosts ? Math.round((answered / totalPosts) * 100) : 0;
-  const verifiedPct   = totalPosts
-    ? Math.round((all.filter(p => p.author.verified).length / totalPosts) * 100) : 0;
-  const totalComments = all.reduce((s, p) => s + p.comments.length, 0);
-  const totalVotes    = all.reduce((s, p) => s + p.upvotes, 0);
-  return {
-    totalPosts, annotated, answered, answeredPct,
-    verifiedPct, totalComments, totalVotes,
-    pipelineSynced: store.pipeline.synced,
-    pipelineQueued: store.pipeline.queue.length,
-  };
-};

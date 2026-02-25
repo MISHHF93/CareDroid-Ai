@@ -9,8 +9,6 @@ import {
   createPost,
   getTrendingTags,
   getTopContributors,
-  getDatasetStats,
-  getPipelineStatus,
 } from '../../services/communityService';
 import './Community.css';
 
@@ -252,8 +250,6 @@ export default function Community() {
   const [trendingTags, setTrendingTags] = useState([]);
   const [topContributors, setTopContributors] = useState([]);
   const [showCreate, setShowCreate] = useState(false);
-  const [datasetStats, setDatasetStats] = useState(null);
-  const [pipelineStatus, setPipelineStatus] = useState(null);
   const debounceRef = useRef(null);
 
   // Debounce search input
@@ -266,19 +262,11 @@ export default function Community() {
   const reload = useCallback(() => {
     const fetched = getPosts({ category, search: debouncedSearch, tag: filterTag, sort, savedOnly });
     setPosts(fetched);
-    setDatasetStats(getDatasetStats());
-    setPipelineStatus(getPipelineStatus());
     setTrendingTags(getTrendingTags(12));
     setTopContributors(getTopContributors(5));
   }, [category, debouncedSearch, filterTag, sort, savedOnly]);
 
   useEffect(() => { reload(); }, [reload]);
-
-  // Poll pipeline status every 1.5s so the widget stays live
-  useEffect(() => {
-    const t = setInterval(() => setPipelineStatus(getPipelineStatus()), 1500);
-    return () => clearInterval(t);
-  }, []);
 
   function handleVote(id, dir) { votePost(id, dir); reload(); }
   function handleSave(id) { toggleSave(id); reload(); }
@@ -408,60 +396,6 @@ export default function Community() {
 
         {/* Right sidebar */}
         <aside className="community-sidebar">
-          {/* AI Pipeline status widget — no user actions, read-only health indicator */}
-          <div className="sidebar-widget ai-pipeline-widget">
-            <div className="pipeline-header">
-              <p className="sidebar-widget-title" style={{ margin: 0 }}>🤖 AI Pipeline</p>
-              {pipelineStatus && (
-                <span className={`pipeline-status-badge status-${pipelineStatus.status}`}>
-                  <span className="pipeline-dot" />
-                  {pipelineStatus.status === 'syncing' ? 'Syncing…'
-                    : pipelineStatus.status === 'synced'  ? 'Synced'
-                    : pipelineStatus.status === 'error'   ? 'Error'
-                    : 'Live'}
-                </span>
-              )}
-            </div>
-            <p className="pipeline-sub">Community data auto-ingested for CareDroid AI fine-tuning</p>
-
-            {pipelineStatus && (
-              <div className="pipeline-kpis">
-                <div className="pipeline-kpi">
-                  <span className="pipeline-kpi-value">{pipelineStatus.synced}</span>
-                  <span className="pipeline-kpi-label">Records synced</span>
-                </div>
-                <div className="pipeline-kpi">
-                  <span className="pipeline-kpi-value">{datasetStats?.annotated ?? 0}</span>
-                  <span className="pipeline-kpi-label">Annotated</span>
-                </div>
-                <div className="pipeline-kpi">
-                  <span className="pipeline-kpi-value">{datasetStats?.answeredPct ?? 0}%</span>
-                  <span className="pipeline-kpi-label">Answered</span>
-                </div>
-              </div>
-            )}
-
-            {pipelineStatus?.queued > 0 && (
-              <div className="pipeline-queue-bar">
-                <span className="pipeline-queue-label">⏳ {pipelineStatus.queued} queued for next sync</span>
-              </div>
-            )}
-
-            {pipelineStatus?.lastSyncAt && (
-              <p className="pipeline-last-sync">
-                Last sync: {new Date(pipelineStatus.lastSyncAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-              </p>
-            )}
-
-            {datasetStats && (
-              <div className="pipeline-meta">
-                <span>✅ {datasetStats.verifiedPct}% verified</span>
-                <span>💬 {datasetStats.totalComments} responses</span>
-                <span>⬆️ {datasetStats.totalVotes} votes</span>
-              </div>
-            )}
-          </div>
-
           {/* Departments browser */}
           <div className="sidebar-widget">
             <p className="sidebar-widget-title">🏥 Departments</p>

@@ -575,6 +575,7 @@ export const TeamManagement = () => {
     </AppShell>
   );
 };
+export default TeamManagement;
 
 // ═══════════════════════════════════════════════════
 // MEMBER CARD (Grid item)

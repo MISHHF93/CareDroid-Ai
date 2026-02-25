@@ -50,7 +50,7 @@ const ProcedureGuide = lazy(() => import('./pages/tools/ProcedureGuide'));
 const SharedToolSession = lazy(() => import('./pages/tools/SharedToolSession'));
 
 // Team Management — lazy-loaded
-const TeamManagement = lazy(() => import('./pages/team/TeamManagement').then(m => ({ default: m.TeamManagement })));
+const TeamManagement = lazy(() => import('./pages/team/TeamManagement'));
 
 // Community (MedX) — lazy-loaded
 const Community = lazy(() => import('./pages/community/Community'));

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Card } from '../ui/molecules/Card';
+import { SparklineChart } from './SparklineChart';
 
 /**
  * StatCard — Compact clinical stat tile
@@ -106,6 +107,18 @@ export const StatCard = ({
           </span>
         )}
       </div>
+
+      {/* Sparkline */}
+      {sparklineData && sparklineData.length > 1 && (
+        <div style={{ marginTop: 2 }}>
+          <SparklineChart
+            data={sparklineData}
+            width={100}
+            height={24}
+            color={accent}
+          />
+        </div>
+      )}
     </Card>
   );
 };

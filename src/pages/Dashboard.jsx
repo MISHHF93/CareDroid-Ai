@@ -6,7 +6,12 @@ import { useDashboard } from '../hooks/useDashboard';
 import AppShell from '../layout/AppShell';
 import { DashboardHeader } from '../components/dashboard/DashboardHeader';
 import { CurrentShiftSection } from '../components/dashboard/CurrentShiftSection';
+import { ClinicalFeedSection } from '../components/dashboard/ClinicalFeedSection';
+import { MedsOrdersSection } from '../components/dashboard/MedsOrdersSection';
+import { WardSection } from '../components/dashboard/WardSection';
 import { PatientOverviewSection } from '../components/dashboard/PatientOverviewSection';
+import { EmergencyModal } from '../components/dashboard/EmergencyModal';
+import { NewPatientModal } from '../components/dashboard/NewPatientModal';
 import { DashboardSkeletonLayout } from '../components/dashboard/DashboardSkeleton';
 import '../components/dashboard/Dashboard.css';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -44,6 +49,11 @@ function Dashboard() {
     criticalPatients,
     workload,
     cdsReminders,
+    activities,
+    marMedications,
+    onCallRoster,
+    bedBoard,
+    labTimeline,
     loading,
     refreshing,
     error,
@@ -52,12 +62,16 @@ function Dashboard() {
     trackToolAccess,
     toggleTask,
     refresh,
-    setPatientFilters
+    setPatientFilters,
+    placeOrder,
+    createPatient,
   } = useDashboard();
 
   const [patientSearch, setPatientSearch] = useState('');
   const [patientStatusFilter, setPatientStatusFilter] = useState('critical');
   const [expandedPatients, setExpandedPatients] = useState(new Set());
+  const [showEmergencyModal, setShowEmergencyModal] = useState(false);
+  const [showNewPatientModal, setShowNewPatientModal] = useState(false);
 
   useEffect(() => {
     const prefetchLandingRoutes = () => {
@@ -259,6 +273,8 @@ function Dashboard() {
           onMarkRead={markAsRead}
           onMarkAllRead={markAllAsRead}
           onClearAll={clearAll}
+          onNewPatient={() => setShowNewPatientModal(true)}
+          onEmergency={() => setShowEmergencyModal(true)}
         />
 
         <CurrentShiftSection
@@ -279,6 +295,27 @@ function Dashboard() {
           isMobile={isMobile}
         />
 
+        <ClinicalFeedSection
+          tr={tr}
+          activities={activities}
+          labEvents={labTimeline}
+          onActivityClick={(a) => navigate('/chat', { state: { activityId: a?.id } })}
+        />
+
+        <MedsOrdersSection
+          tr={tr}
+          medications={marMedications}
+          patients={(criticalPatients || []).map(p => ({ id: p.id, name: p.name }))}
+          onPlaceOrder={placeOrder}
+        />
+
+        <WardSection
+          tr={tr}
+          beds={bedBoard?.beds || []}
+          roster={onCallRoster}
+          activities={activities}
+        />
+
         <PatientOverviewSection
           tr={tr}
           sectionTitle={sectionTitle}
@@ -295,6 +332,17 @@ function Dashboard() {
           handleAddNote={handleAddNote}
         />
       </div>
+
+      <NewPatientModal
+        isOpen={showNewPatientModal}
+        onClose={() => setShowNewPatientModal(false)}
+        onSave={createPatient}
+      />
+      <EmergencyModal
+        isOpen={showEmergencyModal}
+        onClose={() => setShowEmergencyModal(false)}
+        patients={(criticalPatients || []).map(p => ({ id: p.id, name: p.name, room: p.room }))}
+      />
     </AppShell>
   );
 }

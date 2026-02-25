@@ -59,11 +59,13 @@ export function detectWebGLTier() {
   try {
     const canvas = document.createElement('canvas');
     const webgl2 = canvas.getContext('webgl2');
-    if (webgl2) {
+    // Validate that the context is actually functional (getContextAttributes
+    // returns null when the context was lost or is unsupported at driver level)
+    if (webgl2 && webgl2.getContextAttributes() !== null) {
       return isMobileDevice() ? 'medium' : 'high';
     }
     const webgl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-    if (webgl) {
+    if (webgl && webgl.getContextAttributes() !== null) {
       return 'medium';
     }
     return 'none';

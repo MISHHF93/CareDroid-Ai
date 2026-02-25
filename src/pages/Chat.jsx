@@ -59,7 +59,7 @@ function Chat() {
 
   const [input, setInput] = useState('');
   const [recommendedTools, setRecommendedTools] = useState([]);
-  const [show3D, setShow3D] = useState(true);
+  const [show3D, setShow3D] = useState(false);
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window === 'undefined') return false;
     return window.matchMedia('(max-width: 1100px)').matches;

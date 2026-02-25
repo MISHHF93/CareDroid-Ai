@@ -980,13 +980,13 @@ html:not(.theme-light) .ai-panel-title { color: #C4B5FD; }
   margin: 8px 0 4px;
 }
 
-/* ─── AI Training Data widget ─── */
-.ai-dataset-widget {
-  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+/* ─── AI Pipeline status widget ─── */
+.ai-pipeline-widget {
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
   background: color-mix(in srgb, var(--accent) 5%, var(--surface-1));
 }
 
-.ai-dataset-header {
+.pipeline-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -994,33 +994,122 @@ html:not(.theme-light) .ai-panel-title { color: #C4B5FD; }
   margin-bottom: 4px;
 }
 
-.ai-dataset-badge {
-  font-size: 9px;
+/* Status badge */
+.pipeline-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 15%, transparent);
-  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  letter-spacing: 0.04em;
   border-radius: 20px;
-  padding: 2px 7px;
+  padding: 2px 8px;
   white-space: nowrap;
 }
+.pipeline-status-badge.status-idle {
+  color: var(--text-tertiary);
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-subtle);
+}
+.pipeline-status-badge.status-syncing {
+  color: #f59e0b;
+  background: rgba(245,158,11,0.12);
+  border: 1px solid rgba(245,158,11,0.35);
+}
+.pipeline-status-badge.status-synced {
+  color: #22c55e;
+  background: rgba(34,197,94,0.12);
+  border: 1px solid rgba(34,197,94,0.35);
+}
+.pipeline-status-badge.status-error {
+  color: #ef4444;
+  background: rgba(239,68,68,0.12);
+  border: 1px solid rgba(239,68,68,0.35);
+}
 
-.ai-dataset-sub {
+/* Pulsing dot */
+.pipeline-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+.status-syncing .pipeline-dot {
+  animation: pipeline-pulse 1s ease-in-out infinite;
+}
+@keyframes pipeline-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.8); }
+}
+
+.pipeline-sub {
   font-size: 11px;
   color: var(--text-tertiary);
   margin: 0 0 10px;
   line-height: 1.4;
 }
 
-.ai-dataset-meta {
+/* KPI row */
+.pipeline-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.pipeline-kpi {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 6px 4px;
+  gap: 2px;
+}
+.pipeline-kpi-value {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1;
+}
+.pipeline-kpi-label {
+  font-size: 9px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: center;
+}
+
+/* Queue bar */
+.pipeline-queue-bar {
+  background: rgba(245,158,11,0.08);
+  border: 1px solid rgba(245,158,11,0.25);
+  border-radius: 7px;
+  padding: 4px 9px;
+  margin-bottom: 6px;
+}
+.pipeline-queue-label {
+  font-size: 10px;
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+/* Last sync */
+.pipeline-last-sync {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  margin: 0 0 6px;
+}
+
+/* Meta pills */
+.pipeline-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 10px;
+  gap: 5px;
 }
-.ai-dataset-meta span {
+.pipeline-meta span {
   font-size: 10px;
   color: var(--text-secondary);
   background: var(--surface-secondary);
@@ -1028,25 +1117,6 @@ html:not(.theme-light) .ai-panel-title { color: #C4B5FD; }
   border-radius: 10px;
   padding: 2px 8px;
 }
-
-.ai-export-btn {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 700;
-  color: #fff;
-  background: var(--accent);
-  border: none;
-  border-radius: 8px;
-  padding: 8px 12px;
-  cursor: pointer;
-  transition: opacity 0.15s, transform 0.1s;
-}
-.ai-export-btn:hover  { opacity: 0.88; }
-.ai-export-btn:active { transform: scale(0.98); }
 
 /* ─── Department chip picker (CreatePostModal) ─── */
 .dept-picker {

@@ -375,12 +375,11 @@ export const createPost = ({ title, body, category, tags, author }) => {
   return post;
 };
 
-/** Vote on a post */
+/** Vote on a post — auto-queues high-quality posts */
 export const votePost = (postId, vote) => {
   const post = store.posts.find(p => p.id === postId);
   if (!post) return;
   if (post.userVote === vote) {
-    // undo vote
     if (vote === 'up') post.upvotes--;
     else post.downvotes--;
     post.userVote = null;
@@ -391,6 +390,9 @@ export const votePost = (postId, vote) => {
     else post.downvotes++;
     post.userVote = vote;
   }
+  // Auto-queue when net votes crosses quality threshold
+  const net = post.upvotes - post.downvotes;
+  if (net >= 10 && post.comments.length > 0) _pipelineQueue(postId, 'high_engagement');
 };
 
 /** Add comment */
@@ -433,21 +435,28 @@ export const toggleSave = (postId) => {
   if (post) post.saved = !post.saved;
 };
 
-/** Toggle AI annotation */
+/** Toggle AI annotation — auto-queues record to training pipeline */
 export const toggleAnnotate = (postId, note = '') => {
   const post = store.posts.find(p => p.id === postId);
   if (!post) return;
   post.aiAnnotated = !post.aiAnnotated;
-  if (post.aiAnnotated) post.aiAnnotationNote = note || 'Flagged for CareDroid AI training corpus';
-  else post.aiAnnotationNote = '';
+  if (post.aiAnnotated) {
+    post.aiAnnotationNote = note || 'Flagged for CareDroid AI training corpus';
+    _pipelineQueue(postId, 'annotation');
+  } else {
+    post.aiAnnotationNote = '';
+    // remove from queue if dequeued
+    store.pipeline.queue = store.pipeline.queue.filter(r => r.postId !== postId);
+  }
 };
 
-/** Mark comment as answer */
+/** Mark comment as answer — auto-queues record to training pipeline */
 export const markAnswer = (postId, commentId) => {
   const post = store.posts.find(p => p.id === postId);
   if (!post) return;
   post.comments.forEach(c => { c.isAnswer = c.id === commentId ? !c.isAnswer : false; });
   post.accepted = post.comments.some(c => c.isAnswer);
+  if (post.accepted) _pipelineQueue(postId, 'accepted_answer');
 };
 
 /** Increment view count */
@@ -481,114 +490,128 @@ export const getTopContributors = (limit = 5) => {
 };
 
 export const SPECIALTIES_LIST = SPECIALTIES;
-export const DEPARTMENT_IDS = DEPARTMENTS.map(d => d.id);
+export const DEPARTMENT_IDS   = DEPARTMENTS.map(d => d.id);
 
 /**
- * ─── AI Training Data Pipeline ───────────────────────────────────────────────
- * The CareDroid community generates high-quality clinical Q&A from verified
- * physicians. This data is the annotation corpus for CareDroid AI — useable
- * in Scale AI, Argilla, Label Studio, or any RLHF/SFT fine-tuning pipeline.
+ * ─── Automatic AI Training Data Pipeline ─────────────────────────────────────
+ * All annotation, accepted-answer, and high-engagement events are silently
+ * captured and auto-flushed to the backend AI corpus every 8 seconds.
+ * In production this POSTs to /api/ai/pipeline/ingest (NestJS backend).
+ * No user action required — the community's activity IS the training data.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-/** Aggregate KPIs for the AI training dataset */
+// Extend store with pipeline state
+store.pipeline = {
+  queue:      [],    // records pending next flush
+  synced:     0,     // cumulative records ingested
+  status:     'idle',// 'idle' | 'syncing' | 'synced' | 'error'
+  lastSyncAt: null,
+  errors:     0,
+};
+
+/** Build a SFT-v1 training record from a post (internal) */
+function _buildRecord(post, trigger) {
+  const net         = post.upvotes - post.downvotes;
+  const acceptedCmt = post.comments.find(c => c.isAnswer);
+  const topCmt      = [...post.comments].sort((a, b) => b.upvotes - a.upvotes)[0];
+  const bestAnswer  = acceptedCmt || topCmt;
+  const quality     = +Math.min(1,
+    (net * 2 + post.views / 50 + (bestAnswer?.upvotes || 0)) / 200
+  ).toFixed(3);
+  return {
+    record_id:     `${post.id}_${Date.now()}`,
+    post_id:       post.id,
+    trigger,
+    source:        'caredroid-community',
+    schema:        'sft-v1',
+    category:      post.category,
+    departments:   post.tags.filter(t => DEPARTMENT_IDS.includes(t)),
+    clinical_tags: post.tags.filter(t => !DEPARTMENT_IDS.includes(t)),
+    prompt:        `${post.title}\n\n${post.body}`,
+    completion:    bestAnswer?.body ?? null,
+    metadata: {
+      author:             post.author.name,
+      author_specialty:   post.author.specialty,
+      author_verified:    post.author.verified,
+      answer_author:      bestAnswer?.author?.name     ?? null,
+      answer_verified:    bestAnswer?.author?.verified ?? false,
+      answer_is_accepted: !!acceptedCmt,
+      net_votes:          net,
+      views:              post.views,
+      comment_count:      post.comments.length,
+      quality_score:      quality,
+      annotation_note:    post.aiAnnotationNote ?? null,
+      queued_at:          new Date().toISOString(),
+    },
+  };
+}
+
+/** Auto-queue a post — deduplicates so only latest version of each post is queued */
+function _pipelineQueue(postId, trigger) {
+  const post = store.posts.find(p => p.id === postId);
+  if (!post) return;
+  if (!post.comments.some(c => c.body)) return; // needs a completion pair
+  store.pipeline.queue = store.pipeline.queue.filter(r => r.post_id !== postId);
+  store.pipeline.queue.push(_buildRecord(post, trigger));
+}
+
+/** Flush queue → backend ingest (runs every 8 seconds automatically) */
+function _pipelineFlush() {
+  if (!store.pipeline.queue.length) return;
+  store.pipeline.status = 'syncing';
+  setTimeout(() => {
+    try {
+      // Production: await fetch('/api/ai/pipeline/ingest', { method:'POST', body: JSON.stringify(store.pipeline.queue) })
+      store.pipeline.synced  += store.pipeline.queue.length;
+      store.pipeline.queue    = [];
+      store.pipeline.status   = 'synced';
+      store.pipeline.lastSyncAt = new Date().toISOString();
+      setTimeout(() => { if (store.pipeline.status === 'synced') store.pipeline.status = 'idle'; }, 3000);
+    } catch {
+      store.pipeline.status = 'error';
+      store.pipeline.errors++;
+    }
+  }, 600);
+}
+
+// Start auto-flush interval
+setInterval(_pipelineFlush, 8000);
+
+// Seed pipeline on module load with all qualifying existing posts
+;(function _seed() {
+  store.posts.forEach(p => {
+    if ((p.aiAnnotated || p.accepted) && p.comments.some(c => c.body)) {
+      store.pipeline.queue.push(_buildRecord(p, 'seed'));
+    }
+  });
+  setTimeout(_pipelineFlush, 1200);
+})();
+
+/** Read-only pipeline status snapshot for UI */
+export const getPipelineStatus = () => ({
+  status:     store.pipeline.status,
+  queued:     store.pipeline.queue.length,
+  synced:     store.pipeline.synced,
+  errors:     store.pipeline.errors,
+  lastSyncAt: store.pipeline.lastSyncAt,
+});
+
+/** Community + pipeline KPIs for the sidebar health widget */
 export const getDatasetStats = () => {
   const all = store.posts;
-  const annotated    = all.filter(p => p.aiAnnotated);
-  const answered     = all.filter(p => p.accepted);
-  const verifiedAuth = all.filter(p => p.author.verified);
-  const totalViews   = all.reduce((s, p) => s + p.views, 0);
-  const totalVotes   = all.reduce((s, p) => s + p.upvotes, 0);
+  const totalPosts    = all.length;
+  const annotated     = all.filter(p => p.aiAnnotated).length;
+  const answered      = all.filter(p => p.accepted).length;
+  const answeredPct   = totalPosts ? Math.round((answered / totalPosts) * 100) : 0;
+  const verifiedPct   = totalPosts
+    ? Math.round((all.filter(p => p.author.verified).length / totalPosts) * 100) : 0;
   const totalComments = all.reduce((s, p) => s + p.comments.length, 0);
-
-  // Exportable = annotated OR has an accepted answer
-  const exportable = all.filter(p =>
-    p.aiAnnotated || p.accepted
-  );
-
-  // Verified-answer count
-  const verifiedAnswers = all.filter(p =>
-    p.comments.some(c => c.isAnswer && c.author.verified)
-  ).length;
-
+  const totalVotes    = all.reduce((s, p) => s + p.upvotes, 0);
   return {
-    total:          all.length,
-    annotated:      annotated.length,
-    answered:       answered.length,
-    answeredPct:    all.length ? Math.round((answered.length / all.length) * 100) : 0,
-    verifiedPosts:  verifiedAuth.length,
-    verifiedPct:    all.length ? Math.round((verifiedAuth.length / all.length) * 100) : 0,
-    verifiedAnswers,
-    totalViews,
-    totalVotes,
-    totalComments,
-    exportable:     exportable.length,
+    totalPosts, annotated, answered, answeredPct,
+    verifiedPct, totalComments, totalVotes,
+    pipelineSynced: store.pipeline.synced,
+    pipelineQueued: store.pipeline.queue.length,
   };
-};
-
-/**
- * Export community data as Scale AI / RLHF / SFT-compatible records.
- * Each record = { prompt, completion, metadata } — ready for fine-tuning
- * or human review in annotation studios.
- * Only posts that have at least one response are exported (need prompt+completion pairs).
- */
-export const exportDataset = () => {
-  const records = [];
-
-  store.posts.forEach(post => {
-    const net            = post.upvotes - post.downvotes;
-    const acceptedCmt    = post.comments.find(c => c.isAnswer);
-    const topCmt         = [...post.comments].sort((a, b) => b.upvotes - a.upvotes)[0];
-    const bestAnswer     = acceptedCmt || topCmt;
-    if (!bestAnswer) return; // skip unanswered — no completion pair yet
-
-    // Engagement-weighted quality score [0–1]
-    const qualityScore = Math.min(
-      1,
-      (net * 2 + post.views / 50 + (bestAnswer.upvotes || 0)) / 200
-    );
-
-    records.push({
-      id:         post.id,
-      source:     'caredroid-community',
-      version:    '1.0',
-      category:   post.category,
-      tags:       post.tags,
-      prompt:     `${post.title}\n\n${post.body}`,
-      completion: bestAnswer.body,
-      metadata: {
-        author:                    post.author.name,
-        author_specialty:          post.author.specialty,
-        author_verified:           post.author.verified,
-        answer_author:             bestAnswer.author?.name   ?? null,
-        answer_author_specialty:   bestAnswer.author?.specialty ?? null,
-        answer_author_verified:    bestAnswer.author?.verified  ?? false,
-        answer_is_accepted:        !!acceptedCmt,
-        net_votes:                 net,
-        views:                     post.views,
-        comment_count:             post.comments.length,
-        quality_score:             +qualityScore.toFixed(3),
-        ai_annotated:              post.aiAnnotated,
-        annotation_note:           post.aiAnnotationNote ?? null,
-        created_at:                post.createdAt,
-      },
-    });
-  });
-
-  // Highest quality first
-  records.sort((a, b) => b.metadata.quality_score - a.metadata.quality_score);
-  return records;
-};
-
-/** Trigger a JSONL download of the training dataset in the browser */
-export const downloadDatasetJSONL = () => {
-  const records = exportDataset();
-  const jsonl   = records.map(r => JSON.stringify(r)).join('\n');
-  const blob    = new Blob([jsonl], { type: 'application/jsonl' });
-  const url     = URL.createObjectURL(blob);
-  const a       = document.createElement('a');
-  a.href        = url;
-  a.download    = `caredroid-dataset-${new Date().toISOString().slice(0, 10)}.jsonl`;
-  a.click();
-  URL.revokeObjectURL(url);
 };

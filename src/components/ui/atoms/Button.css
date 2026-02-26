@@ -283,11 +283,13 @@
   }
 }
 
-/* ===== DARK MODE ADJUSTMENTS ===== */
+/* ===== DARK / LIGHT THEME ===== */
+/* Fix: --text-inverse = #0f172a (dark navy) in dark ctx — wrong for transparent/glass bg */
 
+/* System dark mode */
 @media (prefers-color-scheme: dark) {
   .btn-outline {
-    color: var(--text-inverse);
+    color: var(--text-primary);
     border-color: var(--border-color-default);
   }
 
@@ -296,10 +298,37 @@
   }
 
   .btn-ghost {
-    color: var(--text-inverse);
+    color: var(--text-primary);
   }
 
   .btn-ghost:hover:not(:disabled):not(.btn-loading) {
     background: var(--surface-glass-dark);
   }
+}
+
+/* JS-toggled dark theme */
+html.theme-dark .btn-outline {
+  color: var(--text-primary);
+  border-color: var(--border-color-default);
+}
+html.theme-dark .btn-outline:hover:not(:disabled):not(.btn-loading) {
+  background: var(--surface-glass-dark);
+}
+html.theme-dark .btn-ghost {
+  color: var(--text-primary);
+}
+html.theme-dark .btn-ghost:hover:not(:disabled):not(.btn-loading) {
+  background: var(--surface-glass-dark);
+}
+
+/* Explicit light theme */
+html.theme-light .btn-outline {
+  color: var(--text-primary);
+  border-color: var(--border-color-default);
+}
+html.theme-light .btn-ghost {
+  color: var(--text-secondary);
+}
+html.theme-light .btn-ghost:hover:not(:disabled):not(.btn-loading) {
+  background: var(--surface-tertiary);
 }

@@ -244,21 +244,23 @@
   }
 }
 
-/* ===== DARK MODE ADJUSTMENTS ===== */
+/* ===== DARK / LIGHT THEME ===== */
+/* Fix: --text-inverse = #0f172a (dark navy) in dark ctx — wrong for dark glass input bg */
 
+/* System dark mode */
 @media (prefers-color-scheme: dark) {
   .input-label {
-    color: var(--text-inverse);
+    color: var(--text-primary);
   }
 
   .input {
     background: var(--surface-glass-dark);
     border-color: rgba(255, 255, 255, 0.2);
-    color: var(--text-inverse);
+    color: var(--text-primary);
   }
 
   .input::placeholder {
-    color: rgba(248, 250, 252, 0.6);
+    color: rgba(248, 250, 252, 0.45);
   }
 
   .input:focus {
@@ -284,9 +286,28 @@
 
   .input:disabled {
     background: rgba(0, 0, 0, 0.5);
-    color: rgba(248, 250, 252, 0.4);
+    color: rgba(248, 250, 252, 0.35);
   }
 }
+
+/* JS-toggled dark theme */
+html.theme-dark .input-label              { color: var(--text-primary); }
+html.theme-dark .input                    { background: var(--surface-glass-dark); border-color: rgba(255,255,255,0.2); color: var(--text-primary); }
+html.theme-dark .input::placeholder       { color: rgba(248,250,252,0.45); }
+html.theme-dark .input:focus              { border-color: var(--clinical-primary); box-shadow: 0 0 0 3px rgba(0,212,170,0.2); }
+html.theme-dark .input-filled             { background: var(--surface-glass-dark); }
+html.theme-dark .input-outlined           { border-color: rgba(255,255,255,0.3); }
+html.theme-dark .input-ghost              { border-bottom-color: rgba(255,255,255,0.3); }
+html.theme-dark .input-ghost:focus        { border-bottom-color: var(--clinical-primary); }
+html.theme-dark .input:disabled           { background: rgba(0,0,0,0.5); color: rgba(248,250,252,0.35); }
+
+/* Explicit light theme */
+html.theme-light .input-label             { color: var(--text-secondary); }
+html.theme-light .input                   { background: var(--surface-primary); border-color: var(--border-color-default); color: var(--text-primary); }
+html.theme-light .input::placeholder      { color: var(--text-tertiary); }
+html.theme-light .input-filled            { background: var(--surface-secondary); }
+html.theme-light .input-ghost             { border-bottom-color: var(--border-color-default); }
+html.theme-light .input:disabled          { background: var(--surface-tertiary); color: var(--text-disabled); }
 
 /* ===== ACCESSIBILITY ===== */
 

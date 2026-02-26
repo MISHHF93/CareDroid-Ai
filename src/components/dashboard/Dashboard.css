@@ -359,7 +359,8 @@
   padding: 3px 6px;
   font-size: 10px;
   font-weight: 600;
-  color: var(--text-inverse);
+  /* surface-overlay is always dark (rgba dark) in both themes — always use light text */
+  color: rgba(248, 250, 252, 0.95);
   background: var(--surface-overlay);
   border-radius: var(--radius-sm);
   white-space: nowrap;

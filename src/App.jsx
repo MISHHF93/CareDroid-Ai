@@ -73,6 +73,14 @@ import { PublicShell } from './layout/PublicShell';
 // Welcome page
 function WelcomePage() {
   const navigate = useNavigate();
+
+  // Landing page is always English — reset html dir so RTL stored languages
+  // don't flip the landing layout.
+  useEffect(() => {
+    document.documentElement.setAttribute('dir', 'ltr');
+    document.documentElement.setAttribute('lang', 'en');
+  }, []);
+
   const valuePillars = [
     'Rapid clinical reasoning at triage speed',
     'Evidence-aligned recommendations with context',
@@ -80,7 +88,7 @@ function WelcomePage() {
   ];
 
   return (
-    <section className="landing" aria-labelledby="landing-title">
+    <section className="landing" dir="ltr" aria-labelledby="landing-title">
       <div className="landing-shell">
         <header className="landing-brand" aria-label="Brand header">
           <div className="landing-brand-icon" aria-hidden="true">⚕️</div>

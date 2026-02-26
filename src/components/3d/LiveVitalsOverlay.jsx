@@ -208,12 +208,12 @@ export default function LiveVitalsOverlay({
 
       setTrend((prev) => {
         const nextTrend = {
-          hr: [...prev.hr, Number(next.vitals.heartRate.value)].slice(-96),
-          spo2: [...prev.spo2, Number(next.vitals.oxygenSat.value)].slice(-96),
-          rr: [...prev.rr, Number(next.vitals.respiratoryRate.value)].slice(-96),
-          temp: [...prev.temp, Number(next.vitals.temperature.value)].slice(-96),
-          sys: [...prev.sys, Number(next.vitals.bloodPressure.systolic)].slice(-96),
-          dia: [...prev.dia, Number(next.vitals.bloodPressure.diastolic)].slice(-96),
+          hr: [...prev.hr, Number(next.vitals?.heartRate?.value ?? 72)].slice(-96),
+          spo2: [...prev.spo2, Number(next.vitals?.oxygenSat?.value ?? 97)].slice(-96),
+          rr: [...prev.rr, Number(next.vitals?.respiratoryRate?.value ?? 16)].slice(-96),
+          temp: [...prev.temp, Number(next.vitals?.temperature?.value ?? 98.6)].slice(-96),
+          sys: [...prev.sys, Number(next.vitals?.bloodPressure?.systolic ?? 122)].slice(-96),
+          dia: [...prev.dia, Number(next.vitals?.bloodPressure?.diastolic ?? 78)].slice(-96),
         };
         setScrubIndex(nextTrend.hr.length - 1);
         return nextTrend;
@@ -239,12 +239,12 @@ export default function LiveVitalsOverlay({
   const idx = clamp(scrubIndex, 0, Math.max(0, hrSeries.length - 1));
 
   const scrubVitals = {
-    hr: hrSeries[idx] ?? packet.vitals.heartRate.value,
-    spo2: spo2Series[idx] ?? packet.vitals.oxygenSat.value,
-    rr: rrSeries[idx] ?? packet.vitals.respiratoryRate.value,
-    temp: tempSeries[idx] ?? packet.vitals.temperature.value,
-    sys: trend.sys[idx] ?? packet.vitals.bloodPressure.systolic,
-    dia: trend.dia[idx] ?? packet.vitals.bloodPressure.diastolic,
+    hr: hrSeries[idx] ?? packet.vitals?.heartRate?.value ?? 72,
+    spo2: spo2Series[idx] ?? packet.vitals?.oxygenSat?.value ?? 97,
+    rr: rrSeries[idx] ?? packet.vitals?.respiratoryRate?.value ?? 16,
+    temp: tempSeries[idx] ?? packet.vitals?.temperature?.value ?? 98.6,
+    sys: trend.sys[idx] ?? packet.vitals?.bloodPressure?.systolic ?? 122,
+    dia: trend.dia[idx] ?? packet.vitals?.bloodPressure?.diastolic ?? 78,
   };
 
   const hrColor = statusColor('hr', scrubVitals.hr);

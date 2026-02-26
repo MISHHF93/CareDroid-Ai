@@ -613,7 +613,7 @@ function Chat() {
                           const anatomyViz = Array.isArray(msg.visualizations)
                             ? msg.visualizations.find((viz) => viz?.type === 'anatomy-3d')
                             : null;
-                          const vizVitals = anatomyViz?.data?.vitals || null;
+                          const vizVitals = anatomyViz?.data?.vitals || {};
 
                           return (
                             <>

@@ -1,45 +1,35 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { VitalsInput, buildVitalsPayload } from '../clinical/VitalsInput';
 import { useLanguage } from '../../contexts/LanguageContext';
 import './NewPatientModal.css';
 
 const GENDER_OPTIONS = ['Male', 'Female', 'Non-binary', 'Other', 'Prefer not to say'];
+
 const STATUS_OPTIONS = [
-  { value: 'stable', label: 'Stable' },
-  { value: 'moderate', label: 'Moderate' },
-  { value: 'urgent', label: 'Urgent' },
-  { value: 'critical', label: 'Critical' },
+  { value: 'stable',   label: 'Stable',   desc: 'Routine care' },
+  { value: 'moderate', label: 'Moderate', desc: 'Closer monitoring' },
+  { value: 'urgent',   label: 'Urgent',   desc: 'Prompt attention' },
+  { value: 'critical', label: 'Critical', desc: 'Immediate care' },
 ];
+
 const ALERT_SEVERITIES = ['critical', 'high', 'warning', 'info'];
 
+const VITALS_FIELDS = [
+  { key: 'heartRate',   label: 'Heart Rate',   unit: 'bpm',   placeholder: '72',  min: 20,  max: 300 },
+  { key: 'systolic',    label: 'Systolic BP',  unit: 'mmHg',  placeholder: '120', min: 40,  max: 300 },
+  { key: 'diastolic',   label: 'Diastolic BP', unit: 'mmHg',  placeholder: '80',  min: 20,  max: 200 },
+  { key: 'temperature', label: 'Temperature',  unit: '°C',    placeholder: '37.0',min: 30,  max: 45  },
+  { key: 'oxygenSat',   label: 'SpO₂',         unit: '%',     placeholder: '98',  min: 50,  max: 100 },
+];
+
 const INITIAL_FORM = {
-  name: '',
-  age: '',
-  gender: '',
-  status: 'stable',
-  room: '',
-  bed: '',
-  admittingDiagnosis: '',
+  name: '', age: '', gender: '', status: 'stable',
+  room: '', bed: '', admittingDiagnosis: '',
 };
 
 const EMPTY_VITALS = {
-  heartRate: '',
-  systolic: '',
-  diastolic: '',
-  temperature: '',
-  oxygenSat: '',
+  heartRate: '', systolic: '', diastolic: '', temperature: '', oxygenSat: '',
 };
 
-/**
- * NewPatientModal
- * Full patient intake form in an overlay on the Dashboard.
- * Sections: Demographics, Clinical Status, Vitals, Medications, Alerts.
- *
- * Props:
- *  - isOpen: boolean
- *  - onClose: () => void
- *  - onSave: (data) => Promise<Object>  (createPatient from useDashboard)
- */
 export function NewPatientModal({ isOpen, onClose, onSave }) {
   const { t } = useLanguage();
   const [form, setForm] = useState(INITIAL_FORM);
@@ -49,17 +39,10 @@ export function NewPatientModal({ isOpen, onClose, onSave }) {
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const [serverError, setServerError] = useState('');
-  const [expandedSections, setExpandedSections] = useState({
-    demographics: true,
-    clinical: true,
-    vitals: false,
-    medications: false,
-    alerts: false,
-  });
   const nameRef = useRef(null);
   const overlayRef = useRef(null);
 
-  // Reset form when modal opens
+  // Reset on open
   useEffect(() => {
     if (isOpen) {
       setForm(INITIAL_FORM);
@@ -69,68 +52,42 @@ export function NewPatientModal({ isOpen, onClose, onSave }) {
       setErrors({});
       setServerError('');
       setSaving(false);
-      setExpandedSections({
-        demographics: true,
-        clinical: true,
-        vitals: false,
-        medications: false,
-        alerts: false,
-      });
       requestAnimationFrame(() => nameRef.current?.focus());
     }
   }, [isOpen]);
 
-  // Focus trap + Escape key
+  // Escape + focus trap
   useEffect(() => {
     if (!isOpen) return;
-
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        onClose();
-        return;
-      }
+      if (e.key === 'Escape') { onClose(); return; }
       if (e.key === 'Tab') {
         const modal = overlayRef.current?.querySelector('.np-modal');
         if (!modal) return;
         const focusable = modal.querySelectorAll(
           'input, select, textarea, button, [tabindex]:not([tabindex="-1"])'
         );
-        if (focusable.length === 0) return;
+        if (!focusable.length) return;
         const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
+        const last  = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
       }
     };
-
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  // Prevent body scroll while modal is open
+  // Lock body scroll
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    }
+    if (isOpen) document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
 
   // ─── Handlers ───
   const handleChange = useCallback((field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
-    setErrors((prev) => {
-      if (prev[field]) {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      }
-      return prev;
-    });
+    setErrors((prev) => { if (!prev[field]) return prev; const n = { ...prev }; delete n[field]; return n; });
     setServerError('');
   }, []);
 
@@ -138,68 +95,41 @@ export function NewPatientModal({ isOpen, onClose, onSave }) {
     setVitals((prev) => ({ ...prev, [field]: value }));
   }, []);
 
-  const toggleSection = useCallback((section) => {
-    setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
-  }, []);
+  // Medications
+  const addMedication    = useCallback(() => setMedications((p) => [...p, '']), []);
+  const updateMedication = useCallback((i, v) => setMedications((p) => { const n=[...p]; n[i]=v; return n; }), []);
+  const removeMedication = useCallback((i) => setMedications((p) => p.filter((_, x) => x !== i)), []);
 
-  // ─── Medications ───
-  const addMedication = useCallback(() => {
-    setMedications((prev) => [...prev, '']);
-  }, []);
-  const updateMedication = useCallback((index, value) => {
-    setMedications((prev) => { const next = [...prev]; next[index] = value; return next; });
-  }, []);
-  const removeMedication = useCallback((index) => {
-    setMedications((prev) => prev.filter((_, i) => i !== index));
-  }, []);
-
-  // ─── Alerts ───
-  const addAlert = useCallback(() => {
-    setAlerts((prev) => [...prev, { message: '', severity: 'warning' }]);
-  }, []);
-  const updateAlert = useCallback((index, field, value) => {
-    setAlerts((prev) => { const next = [...prev]; next[index] = { ...next[index], [field]: value }; return next; });
-  }, []);
-  const removeAlert = useCallback((index) => {
-    setAlerts((prev) => prev.filter((_, i) => i !== index));
-  }, []);
+  // Alerts
+  const addAlert    = useCallback(() => setAlerts((p) => [...p, { message: '', severity: 'warning' }]), []);
+  const updateAlert = useCallback((i, f, v) => setAlerts((p) => { const n=[...p]; n[i]={...n[i],[f]:v}; return n; }), []);
+  const removeAlert = useCallback((i) => setAlerts((p) => p.filter((_, x) => x !== i)), []);
 
   // ─── Validation ───
   const validate = useCallback(() => {
     const errs = {};
-    const trimmedName = form.name.trim();
-    if (!trimmedName) {
-      errs.name = t('widgets.newPatientModal.nameRequired');
-    } else if (trimmedName.length < 2) {
-      errs.name = t('widgets.newPatientModal.nameMinLength');
-    }
+    const trimmed = form.name.trim();
+    if (!trimmed) errs.name = t('widgets.newPatientModal.nameRequired');
+    else if (trimmed.length < 2) errs.name = t('widgets.newPatientModal.nameMinLength');
 
     const age = Number(form.age);
-    if (form.age === '' || form.age === null || form.age === undefined) {
+    if (form.age === '' || form.age === null || form.age === undefined)
       errs.age = t('widgets.newPatientModal.ageRequired');
-    } else if (isNaN(age) || !Number.isInteger(age) || age < 0 || age > 150) {
+    else if (isNaN(age) || !Number.isInteger(age) || age < 0 || age > 150)
       errs.age = t('widgets.newPatientModal.ageInvalid');
-    }
 
-    if (!form.gender) {
-      errs.gender = t('widgets.newPatientModal.genderRequired');
-    }
+    if (!form.gender) errs.gender = t('widgets.newPatientModal.genderRequired');
 
     setErrors(errs);
     return Object.keys(errs).length === 0;
-  }, [form]);
+  }, [form, t]);
 
   // ─── Submit ───
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
-    if (!validate()) {
-      setExpandedSections((prev) => ({ ...prev, demographics: true }));
-      return;
-    }
-
+    if (!validate()) return;
     setSaving(true);
     setServerError('');
-
     try {
       const payload = {
         name: form.name.trim(),
@@ -208,25 +138,24 @@ export function NewPatientModal({ isOpen, onClose, onSave }) {
         status: form.status || 'stable',
       };
       if (form.room.trim()) payload.room = form.room.trim();
-      if (form.bed.trim()) payload.bed = form.bed.trim();
+      if (form.bed.trim())  payload.bed  = form.bed.trim();
       if (form.admittingDiagnosis.trim()) payload.admittingDiagnosis = form.admittingDiagnosis.trim();
 
-      // Vitals
-      const vitalsPayload = buildVitalsPayload(vitals);
-      if (vitalsPayload) payload.vitals = vitalsPayload;
+      const vitalsPayload = {};
+      VITALS_FIELDS.forEach(({ key }) => {
+        const v = vitals[key];
+        if (v !== '' && v !== null && v !== undefined && !isNaN(Number(v))) {
+          vitalsPayload[key] = { value: Number(v) };
+        }
+      });
+      if (Object.keys(vitalsPayload).length > 0) payload.vitals = vitalsPayload;
 
-      // Medications (filter blanks)
       const meds = medications.map((m) => m.trim()).filter(Boolean);
       if (meds.length > 0) payload.medications = meds;
 
-      // Alerts (filter blanks)
       const validAlerts = alerts.filter((a) => a.message.trim());
-      if (validAlerts.length > 0) {
-        payload.alerts = validAlerts.map((a) => ({
-          message: a.message.trim(),
-          severity: a.severity,
-        }));
-      }
+      if (validAlerts.length > 0)
+        payload.alerts = validAlerts.map((a) => ({ message: a.message.trim(), severity: a.severity }));
 
       await onSave(payload);
       onClose();
@@ -235,28 +164,11 @@ export function NewPatientModal({ isOpen, onClose, onSave }) {
     } finally {
       setSaving(false);
     }
-  }, [form, vitals, medications, alerts, validate, onSave, onClose]);
+  }, [form, vitals, medications, alerts, validate, onSave, onClose, t]);
 
   const handleOverlayClick = useCallback((e) => {
-    if (e.target === overlayRef.current) {
-      onClose();
-    }
+    if (e.target === overlayRef.current) onClose();
   }, [onClose]);
-
-  // ─── Section Header helper ───
-  const SectionHeader = ({ id, title, icon, expanded }) => (
-    <button
-      type="button"
-      className="np-section-header"
-      onClick={() => toggleSection(id)}
-      aria-expanded={expanded}
-      aria-controls={`np-section-${id}`}
-    >
-      <span className="np-section-icon">{icon}</span>
-      <span className="np-section-title">{title}</span>
-      <span className={`np-chevron ${expanded ? 'np-chevron-open' : ''}`}>▾</span>
-    </button>
-  );
 
   if (!isOpen) return null;
 
@@ -269,255 +181,282 @@ export function NewPatientModal({ isOpen, onClose, onSave }) {
       aria-modal="true"
       aria-labelledby="np-title"
     >
-      <div className="np-modal np-modal-full">
-        {/* Header */}
+      <div className="np-modal">
+        {/* ── Header ── */}
         <div className="np-header">
-          <h2 id="np-title" className="np-title">{t('widgets.newPatientModal.title')}</h2>
-          <button
-            className="np-close"
-            onClick={onClose}
-            aria-label="Close"
-            type="button"
-          >
-            ✕
-          </button>
+          <div className="np-header-icon">🏥</div>
+          <div className="np-header-text">
+            <h2 id="np-title" className="np-title">
+              {t('widgets.newPatientModal.title') || 'New Patient Intake'}
+            </h2>
+            <p className="np-subtitle">Fill in the patient details below — required fields are marked *</p>
+          </div>
+          <button className="np-close" onClick={onClose} aria-label="Close" type="button">✕</button>
         </div>
 
-        {/* Form */}
+        {/* ── Scrollable Form ── */}
         <form id="np-form" className="np-body" onSubmit={handleSubmit} noValidate>
-          {/* Server error banner */}
-          {serverError && (
-            <div className="np-server-error" role="alert">
-              {serverError}
-            </div>
-          )}
+          <div className="np-form-content">
 
-          {/* ═══════ Demographics ═══════ */}
-          <section className="np-section">
-            <SectionHeader id="demographics" title={t('widgets.newPatientModal.demographics')} icon="👤" expanded={expandedSections.demographics} />
-            {expandedSections.demographics && (
-              <div className="np-section-body" id="np-section-demographics">
-                {/* Name */}
-                <div className="np-field np-field-full">
+            {/* Server error */}
+            {serverError && (
+              <div className="np-server-error" role="alert">
+                ⚠ {serverError}
+              </div>
+            )}
+
+            {/* ══ 1. Patient Identity ══ */}
+            <section className="np-section" aria-labelledby="np-sec-demo">
+              <div className="np-section-hd">
+                <div className="np-section-badge demo">👤</div>
+                <span className="np-section-label" id="np-sec-demo">Patient Identity</span>
+              </div>
+
+              <div className="np-grid">
+                {/* Full Name */}
+                <div className="np-field np-field-span">
                   <label htmlFor="np-name" className="np-label">
-                    {t('widgets.newPatientModal.fullName')} <span className="np-required">*</span>
+                    Full Name <span className="np-required">*</span>
                   </label>
                   <input
                     ref={nameRef}
                     id="np-name"
                     type="text"
-                    className={`np-input ${errors.name ? 'np-input-error' : ''}`}
+                    className={`np-input${errors.name ? ' np-input-error' : ''}`}
                     placeholder="e.g. Sarah Johnson"
                     value={form.name}
                     onChange={(e) => handleChange('name', e.target.value)}
                     maxLength={120}
                     autoComplete="off"
                   />
-                  {errors.name && <span className="np-error-msg">{errors.name}</span>}
+                  {errors.name && <span className="np-error-msg">⚠ {errors.name}</span>}
                 </div>
 
-                {/* Age + Gender row */}
-                <div className="np-row">
-                  <div className="np-field">
-                    <label htmlFor="np-age" className="np-label">
-                      {t('widgets.newPatientModal.age')} <span className="np-required">*</span>
-                    </label>
-                    <input
-                      id="np-age"
-                      type="number"
-                      className={`np-input ${errors.age ? 'np-input-error' : ''}`}
-                      placeholder="45"
-                      value={form.age}
-                      onChange={(e) => handleChange('age', e.target.value)}
-                      min={0}
-                      max={150}
-                    />
-                    {errors.age && <span className="np-error-msg">{errors.age}</span>}
-                  </div>
-                  <div className="np-field">
-                    <label htmlFor="np-gender" className="np-label">
-                      {t('widgets.newPatientModal.gender')} <span className="np-required">*</span>
-                    </label>
-                    <select
-                      id="np-gender"
-                      className={`np-select ${errors.gender ? 'np-input-error' : ''}`}
-                      value={form.gender}
-                      onChange={(e) => handleChange('gender', e.target.value)}
-                    >
-                      <option value="">{t('widgets.newPatientModal.selectPlaceholder')}</option>
-                      {GENDER_OPTIONS.map((g) => (
-                        <option key={g} value={g}>{g}</option>
-                      ))}
-                    </select>
-                    {errors.gender && <span className="np-error-msg">{errors.gender}</span>}
-                  </div>
-                </div>
-
-                {/* Room + Bed row */}
-                <div className="np-row">
-                  <div className="np-field">
-                    <label htmlFor="np-room" className="np-label">{t('widgets.newPatientModal.room')}</label>
-                    <input
-                      id="np-room"
-                      type="text"
-                      className="np-input"
-                      placeholder="312"
-                      value={form.room}
-                      onChange={(e) => handleChange('room', e.target.value)}
-                      maxLength={20}
-                    />
-                  </div>
-                  <div className="np-field">
-                    <label htmlFor="np-bed" className="np-label">{t('widgets.newPatientModal.bed')}</label>
-                    <input
-                      id="np-bed"
-                      type="text"
-                      className="np-input"
-                      placeholder="A"
-                      value={form.bed}
-                      onChange={(e) => handleChange('bed', e.target.value)}
-                      maxLength={20}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-          </section>
-
-          {/* ═══════ Clinical Status ═══════ */}
-          <section className="np-section">
-            <SectionHeader id="clinical" title={t('widgets.newPatientModal.clinicalStatus')} icon="📋" expanded={expandedSections.clinical} />
-            {expandedSections.clinical && (
-              <div className="np-section-body" id="np-section-clinical">
+                {/* Age */}
                 <div className="np-field">
-                  <label htmlFor="np-status" className="np-label">{t('widgets.newPatientModal.acuityStatus')}</label>
+                  <label htmlFor="np-age" className="np-label">
+                    Age <span className="np-required">*</span>
+                  </label>
+                  <input
+                    id="np-age"
+                    type="number"
+                    className={`np-input${errors.age ? ' np-input-error' : ''}`}
+                    placeholder="45"
+                    value={form.age}
+                    onChange={(e) => handleChange('age', e.target.value)}
+                    min={0}
+                    max={150}
+                  />
+                  {errors.age && <span className="np-error-msg">⚠ {errors.age}</span>}
+                </div>
+
+                {/* Gender */}
+                <div className="np-field">
+                  <label htmlFor="np-gender" className="np-label">
+                    Gender <span className="np-required">*</span>
+                  </label>
                   <select
-                    id="np-status"
-                    className="np-select"
-                    value={form.status}
-                    onChange={(e) => handleChange('status', e.target.value)}
+                    id="np-gender"
+                    className={`np-select${errors.gender ? ' np-input-error' : ''}`}
+                    value={form.gender}
+                    onChange={(e) => handleChange('gender', e.target.value)}
                   >
-                    {STATUS_OPTIONS.map((s) => (
-                      <option key={s.value} value={s.value}>{s.label}</option>
+                    <option value="">Select gender</option>
+                    {GENDER_OPTIONS.map((g) => (
+                      <option key={g} value={g}>{g}</option>
                     ))}
                   </select>
+                  {errors.gender && <span className="np-error-msg">⚠ {errors.gender}</span>}
                 </div>
-                <div className="np-field np-field-full">
-                  <label htmlFor="np-diagnosis" className="np-label">{t('widgets.newPatientModal.admittingDiagnosis')}</label>
-                  <textarea
-                    id="np-diagnosis"
-                    className="np-textarea"
-                    rows={2}
-                    placeholder="e.g. Acute Myocardial Infarction with cardiogenic shock"
-                    value={form.admittingDiagnosis}
-                    onChange={(e) => handleChange('admittingDiagnosis', e.target.value)}
-                    maxLength={400}
+
+                {/* Room */}
+                <div className="np-field">
+                  <label htmlFor="np-room" className="np-label">Room</label>
+                  <input
+                    id="np-room" type="text" className="np-input"
+                    placeholder="e.g. 312"
+                    value={form.room}
+                    onChange={(e) => handleChange('room', e.target.value)}
+                    maxLength={20}
+                  />
+                </div>
+
+                {/* Bed */}
+                <div className="np-field">
+                  <label htmlFor="np-bed" className="np-label">Bed</label>
+                  <input
+                    id="np-bed" type="text" className="np-input"
+                    placeholder="e.g. A"
+                    value={form.bed}
+                    onChange={(e) => handleChange('bed', e.target.value)}
+                    maxLength={20}
                   />
                 </div>
               </div>
-            )}
-          </section>
+            </section>
 
-          {/* ═══════ Vitals ═══════ */}
-          <section className="np-section">
-            <SectionHeader id="vitals" title={t('widgets.newPatientModal.vitalSigns')} icon="💓" expanded={expandedSections.vitals} />
-            {expandedSections.vitals && (
-              <div className="np-section-body" id="np-section-vitals">
-                <VitalsInput vitals={vitals} onChange={handleVitalChange} errors={{}} />
+            {/* ══ 2. Clinical Status ══ */}
+            <section className="np-section" aria-labelledby="np-sec-clin">
+              <div className="np-section-hd">
+                <div className="np-section-badge clin">📋</div>
+                <span className="np-section-label" id="np-sec-clin">Clinical Status</span>
               </div>
-            )}
-          </section>
 
-          {/* ═══════ Medications ═══════ */}
-          <section className="np-section">
-            <SectionHeader id="medications" title={t('widgets.newPatientModal.medications')} icon="💊" expanded={expandedSections.medications} />
-            {expandedSections.medications && (
-              <div className="np-section-body" id="np-section-medications">
+              {/* Acuity chips */}
+              <div>
+                <p className="np-label" style={{ marginBottom: '10px' }}>Acuity Level</p>
+                <div className="np-status-grid">
+                  {STATUS_OPTIONS.map(({ value, label }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      className={`np-status-chip${form.status === value ? ' active' : ''}`}
+                      data-status={value}
+                      onClick={() => handleChange('status', value)}
+                    >
+                      <span className="sc-dot" />
+                      <span className="sc-label">{label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Admitting Diagnosis */}
+              <div className="np-field">
+                <label htmlFor="np-diagnosis" className="np-label">Admitting Diagnosis</label>
+                <textarea
+                  id="np-diagnosis"
+                  className="np-textarea"
+                  rows={2}
+                  placeholder="e.g. Acute Myocardial Infarction with cardiogenic shock"
+                  value={form.admittingDiagnosis}
+                  onChange={(e) => handleChange('admittingDiagnosis', e.target.value)}
+                  maxLength={400}
+                />
+              </div>
+            </section>
+
+            {/* ══ 3. Vital Signs ══ */}
+            <section className="np-section" aria-labelledby="np-sec-vital">
+              <div className="np-section-hd">
+                <div className="np-section-badge vital">💓</div>
+                <span className="np-section-label" id="np-sec-vital">Vital Signs</span>
+                <span className="np-section-opt">Optional</span>
+              </div>
+
+              <div className="np-vitals-grid">
+                {VITALS_FIELDS.map(({ key, label, unit, placeholder, min, max }) => (
+                  <div className="np-vital-field" key={key}>
+                    <label className="np-vital-label">
+                      {label} <span className="np-vital-unit">{unit}</span>
+                    </label>
+                    <input
+                      type="number"
+                      className="np-input"
+                      placeholder={placeholder}
+                      value={vitals[key]}
+                      onChange={(e) => handleVitalChange(key, e.target.value)}
+                      min={min}
+                      max={max}
+                    />
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* ══ 4. Medications ══ */}
+            <section className="np-section" aria-labelledby="np-sec-meds">
+              <div className="np-section-hd">
+                <div className="np-section-badge meds">💊</div>
+                <span className="np-section-label" id="np-sec-meds">Current Medications</span>
+                <span className="np-section-opt">Optional</span>
+              </div>
+
+              <div className="np-list-rows">
                 {medications.map((med, i) => (
                   <div className="np-list-row" key={i}>
                     <input
                       type="text"
                       className="np-input"
-                      placeholder={`Medication ${i + 1}`}
+                      placeholder={`Medication ${i + 1} — e.g. Aspirin 81mg`}
                       value={med}
                       onChange={(e) => updateMedication(i, e.target.value)}
                     />
-                    <button
-                      type="button"
-                      className="np-remove-btn"
-                      onClick={() => removeMedication(i)}
-                      aria-label={`Remove medication ${i + 1}`}
-                    >
-                      ✕
-                    </button>
+                    {medications.length > 1 && (
+                      <button
+                        type="button"
+                        className="np-remove-btn"
+                        onClick={() => removeMedication(i)}
+                        aria-label={`Remove medication ${i + 1}`}
+                      >
+                        ✕
+                      </button>
+                    )}
                   </div>
                 ))}
-                <button type="button" className="np-add-btn" onClick={addMedication}>
-                  + {t('widgets.newPatientModal.addMedication')}
-                </button>
               </div>
-            )}
-          </section>
+              <button type="button" className="np-add-btn" onClick={addMedication}>
+                + Add Medication
+              </button>
+            </section>
 
-          {/* ═══════ Alerts ═══════ */}
-          <section className="np-section">
-            <SectionHeader id="alerts" title={t('widgets.newPatientModal.alerts')} icon="🔔" expanded={expandedSections.alerts} />
-            {expandedSections.alerts && (
-              <div className="np-section-body" id="np-section-alerts">
-                {alerts.map((alert, i) => (
-                  <div className="np-alert-row" key={i}>
-                    <input
-                      type="text"
-                      className="np-input"
-                      placeholder={t('widgets.newPatientModal.alertMessage')}
-                      value={alert.message}
-                      onChange={(e) => updateAlert(i, 'message', e.target.value)}
-                    />
-                    <select
-                      className="np-select np-severity-select"
-                      value={alert.severity}
-                      onChange={(e) => updateAlert(i, 'severity', e.target.value)}
-                    >
-                      {ALERT_SEVERITIES.map((s) => (
-                        <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
-                      ))}
-                    </select>
-                    <button
-                      type="button"
-                      className="np-remove-btn"
-                      onClick={() => removeAlert(i)}
-                      aria-label={`Remove alert ${i + 1}`}
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-                <button type="button" className="np-add-btn" onClick={addAlert}>
-                  + {t('widgets.newPatientModal.addAlert')}
-                </button>
+            {/* ══ 5. Alerts ══ */}
+            <section className="np-section" aria-labelledby="np-sec-alrt">
+              <div className="np-section-hd">
+                <div className="np-section-badge alrt">🔔</div>
+                <span className="np-section-label" id="np-sec-alrt">Clinical Alerts</span>
+                <span className="np-section-opt">Optional</span>
               </div>
-            )}
-          </section>
+
+              {alerts.length > 0 && (
+                <div className="np-list-rows">
+                  {alerts.map((alert, i) => (
+                    <div className="np-alert-row" key={i}>
+                      <input
+                        type="text"
+                        className="np-input"
+                        placeholder="Alert message — e.g. Allergy: Penicillin"
+                        value={alert.message}
+                        onChange={(e) => updateAlert(i, 'message', e.target.value)}
+                      />
+                      <select
+                        className="np-select np-severity-select"
+                        value={alert.severity}
+                        onChange={(e) => updateAlert(i, 'severity', e.target.value)}
+                      >
+                        {ALERT_SEVERITIES.map((s) => (
+                          <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        className="np-remove-btn"
+                        onClick={() => removeAlert(i)}
+                        aria-label={`Remove alert ${i + 1}`}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <button type="button" className="np-add-btn" onClick={addAlert}>
+                + Add Alert
+              </button>
+            </section>
+
+          </div>
         </form>
 
-        {/* ═══════ Form Actions ═══════ */}
+        {/* ── Sticky Footer ── */}
         <div className="np-footer">
+          <p className="np-footer-hint">Fields marked <span>*</span> are required</p>
           <div className="np-footer-actions">
-            <button
-              type="button"
-              className="np-btn np-btn-cancel"
-              onClick={onClose}
-              disabled={saving}
-            >
-              {t('widgets.newPatientModal.cancel')}
+            <button type="button" className="np-btn np-btn-cancel" onClick={onClose} disabled={saving}>
+              Cancel
             </button>
-            <button
-              type="submit"
-              form="np-form"
-              className="np-btn np-btn-save"
-              disabled={saving}
-            >
-              {saving ? t('widgets.newPatientModal.saving') : t('widgets.newPatientModal.savePatient')}
+            <button type="submit" form="np-form" className="np-btn np-btn-save" disabled={saving}>
+              {saving ? 'Saving…' : '✓ Save Patient'}
             </button>
           </div>
         </div>

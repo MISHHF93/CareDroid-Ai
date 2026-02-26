@@ -9,6 +9,8 @@ export default defineConfig({
     port: 5173,
     host: '0.0.0.0',
     strictPort: false, // Allow fallback to other ports if 5173 is busy
+    // Vite 7 blocks external hosts by default — allow Codespaces / dev tunnels
+    allowedHosts: 'all',
     proxy: {
       '/api': {
         target: 'http://localhost:8000',

@@ -185,280 +185,457 @@ function Halo({ color, r = 2.4, count = 80 }) {
   );
 }
 
-/* ─────────────────────────────────────────
-   ❤️  HEART MESH — Hyper-realistic v2
-   Full anatomical reconstruction:
-   4 chambers • aortic arch tube • coronary
-   tree (LAD/Cx/RCA) as TubeGeometry •
-   valve annuli • papillary muscles •
-   all great vessels • pericardium
-───────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────
+   ❤️  HEART MESH — Blueprint v3  (per HEART_3D_BLUEPRINT.md)
+   ─────────────────────────────────────────────────────────────
+   Chambers    : LV (body + apex + free-wall + trabeculae +
+                 2 papillary muscles) • RV (body + infundibulum)
+                 LA (body + LAA) • RA (body + RAA)
+   Valves      : mitral • aortic • tricuspid • pulmonary annuli
+                 + fibrous skeleton
+   Great vessels: full aortic arch (TubeGeometry CatmullRom) +
+                 aortic root sinus • brachiocephalic •
+                 L carotid • L subclavian •
+                 pulmonary trunk + L/R PA •
+                 SVC + IVC • 4 pulmonary veins
+   Coronaries  : LMCA stub • LAD + D1 + D2 + 3 septal perfs •
+                 LCx + OM1 •
+                 RCA + RV marginal + SA nodal artery
+   Extras      : pericardium shell • epicardial fat grooves
+   Animation   : two-phase systole/diastole heartbeat
+──────────────────────────────────────────────────────────────── */
 function HeartMesh({ color, severity, heartbeat = 72 }) {
   const root = useRef();
   const bpHz = heartbeat / 60;
 
-  /* ── Aortic arch – smooth S-curve tube ── */
-  const aortaArchCurve = useMemo(() => new THREE.CatmullRomCurve3([
-    new THREE.Vector3( 0.04,  0.56, -0.02),   // aortic root
-    new THREE.Vector3( 0.06,  0.78,  0.00),   // ascending
-    new THREE.Vector3( 0.08,  1.00,  0.02),   // ascending top
-    new THREE.Vector3( 0.18,  1.14,  0.02),   // arch start
-    new THREE.Vector3( 0.34,  1.18,  0.01),   // arch apex
-    new THREE.Vector3( 0.50,  1.12, -0.02),   // arch right
-    new THREE.Vector3( 0.56,  0.94, -0.06),   // descending start
-    new THREE.Vector3( 0.52,  0.70, -0.10),   // descending mid
+  /* ════════════════════════════════════════
+     VESSEL CURVES  (all CatmullRomCurve3)
+  ════════════════════════════════════════ */
+
+  /* ── Aorta: root → ascending → arch → descending stub ── */
+  const aortaCurve = useMemo(() => new THREE.CatmullRomCurve3([
+    new THREE.Vector3( 0.04,  0.56, -0.02),  // aortic root (above valve)
+    new THREE.Vector3( 0.06,  0.80,  0.00),  // ascending mid
+    new THREE.Vector3( 0.08,  1.02,  0.02),  // ascending top
+    new THREE.Vector3( 0.20,  1.16,  0.02),  // arch begins
+    new THREE.Vector3( 0.36,  1.22,  0.01),  // arch apex
+    new THREE.Vector3( 0.52,  1.16, -0.02),  // arch descends
+    new THREE.Vector3( 0.58,  0.98, -0.06),  // descending start
+    new THREE.Vector3( 0.54,  0.74, -0.10),  // descending stub
   ]), []);
 
-  /* ── Pulmonary trunk + bifurcation ── */
+  /* ── Pulmonary trunk ── */
   const ptCurve = useMemo(() => new THREE.CatmullRomCurve3([
-    new THREE.Vector3( 0.26,  0.62,  0.14),
-    new THREE.Vector3( 0.22,  0.80,  0.16),
-    new THREE.Vector3( 0.12,  0.95,  0.18),
+    new THREE.Vector3( 0.26,  0.62,  0.14),  // pulmonary valve
+    new THREE.Vector3( 0.22,  0.82,  0.16),  // trunk mid
+    new THREE.Vector3( 0.12,  0.97,  0.18),  // bifurcation
   ]), []);
+
+  /* ── Left / Right pulmonary arteries ── */
   const lPACurve = useMemo(() => new THREE.CatmullRomCurve3([
-    new THREE.Vector3( 0.12,  0.95,  0.18),
+    new THREE.Vector3( 0.12,  0.97,  0.18),
     new THREE.Vector3(-0.04,  0.96,  0.18),
-    new THREE.Vector3(-0.24,  0.93,  0.15),
+    new THREE.Vector3(-0.26,  0.93,  0.15),
   ]), []);
   const rPACurve = useMemo(() => new THREE.CatmullRomCurve3([
-    new THREE.Vector3( 0.12,  0.95,  0.18),
+    new THREE.Vector3( 0.12,  0.97,  0.18),
     new THREE.Vector3( 0.30,  0.94,  0.15),
-    new THREE.Vector3( 0.50,  0.91,  0.12),
-  ]), []);
-
-  /* ── LAD – anterior interventricular groove ── */
-  const ladCurve = useMemo(() => new THREE.CatmullRomCurve3([
-    new THREE.Vector3(-0.04,  0.52,  0.28),
-    new THREE.Vector3(-0.06,  0.30,  0.32),
-    new THREE.Vector3(-0.08,  0.04,  0.30),
-    new THREE.Vector3(-0.10, -0.22,  0.26),
-    new THREE.Vector3(-0.14, -0.50,  0.18),
-    new THREE.Vector3(-0.20, -0.72,  0.08),
-    new THREE.Vector3(-0.28, -0.84, -0.04),
-  ]), []);
-
-  /* ── LAD diagonal branch 1 ── */
-  const diag1Curve = useMemo(() => new THREE.CatmullRomCurve3([
-    new THREE.Vector3(-0.06,  0.18,  0.30),
-    new THREE.Vector3(-0.20,  0.06,  0.26),
-    new THREE.Vector3(-0.34, -0.06,  0.20),
-  ]), []);
-
-  /* ── Circumflex – left AV groove ── */
-  const cxCurve = useMemo(() => new THREE.CatmullRomCurve3([
-    new THREE.Vector3(-0.04,  0.52,  0.20),
-    new THREE.Vector3(-0.16,  0.48,  0.10),
-    new THREE.Vector3(-0.30,  0.38, -0.04),
-    new THREE.Vector3(-0.40,  0.22, -0.16),
-    new THREE.Vector3(-0.42,  0.02, -0.22),
-  ]), []);
-
-  /* ── RCA – right AV groove ── */
-  const rcaCurve = useMemo(() => new THREE.CatmullRomCurve3([
-    new THREE.Vector3( 0.04,  0.52,  0.22),
-    new THREE.Vector3( 0.28,  0.44,  0.16),
-    new THREE.Vector3( 0.46,  0.28,  0.06),
-    new THREE.Vector3( 0.52,  0.04, -0.04),
-    new THREE.Vector3( 0.48, -0.22, -0.12),
-    new THREE.Vector3( 0.36, -0.48, -0.14),
-    new THREE.Vector3( 0.18, -0.64, -0.08),   // posterior descending
+    new THREE.Vector3( 0.52,  0.91,  0.12),
   ]), []);
 
   /* ── SVC ── */
   const svcCurve = useMemo(() => new THREE.CatmullRomCurve3([
     new THREE.Vector3( 0.52,  0.62,  0.02),
     new THREE.Vector3( 0.54,  0.90,  0.00),
-    new THREE.Vector3( 0.52,  1.14, -0.02),
+    new THREE.Vector3( 0.52,  1.16, -0.02),
   ]), []);
 
+  /* ══════════════════════════════════
+     CORONARY ARTERIES
+  ══════════════════════════════════ */
+
+  /* LAD – anterior interventricular groove */
+  const ladCurve = useMemo(() => new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-0.04,  0.52,  0.28),  // LMCA bifurcation
+    new THREE.Vector3(-0.06,  0.30,  0.32),  // proximal LAD
+    new THREE.Vector3(-0.08,  0.04,  0.30),  // mid LAD
+    new THREE.Vector3(-0.10, -0.22,  0.26),  // distal LAD
+    new THREE.Vector3(-0.14, -0.50,  0.18),  // LAD wraps apex
+    new THREE.Vector3(-0.20, -0.72,  0.08),  // apical
+    new THREE.Vector3(-0.28, -0.84, -0.04),  // apex (may wrap)
+  ]), []);
+
+  /* LAD – Diagonal 1 */
+  const d1Curve = useMemo(() => new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-0.06,  0.18,  0.30),
+    new THREE.Vector3(-0.20,  0.06,  0.26),
+    new THREE.Vector3(-0.34, -0.06,  0.20),
+  ]), []);
+
+  /* LAD – Diagonal 2 */
+  const d2Curve = useMemo(() => new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-0.08, -0.04,  0.28),
+    new THREE.Vector3(-0.22, -0.16,  0.24),
+    new THREE.Vector3(-0.36, -0.24,  0.18),
+  ]), []);
+
+  /* LCx – left atrioventricular groove */
+  const cxCurve = useMemo(() => new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-0.04,  0.52,  0.20),  // LMCA bifurcation
+    new THREE.Vector3(-0.16,  0.48,  0.10),
+    new THREE.Vector3(-0.30,  0.38, -0.04),
+    new THREE.Vector3(-0.42,  0.22, -0.16),
+    new THREE.Vector3(-0.44,  0.02, -0.22),
+  ]), []);
+
+  /* LCx – Obtuse Marginal 1 */
+  const om1Curve = useMemo(() => new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-0.22,  0.42,  0.06),
+    new THREE.Vector3(-0.36,  0.30,  0.00),
+    new THREE.Vector3(-0.46,  0.14, -0.08),
+  ]), []);
+
+  /* RCA – right atrioventricular groove → PDA */
+  const rcaCurve = useMemo(() => new THREE.CatmullRomCurve3([
+    new THREE.Vector3( 0.04,  0.52,  0.22),  // right coronary sinus
+    new THREE.Vector3( 0.28,  0.44,  0.16),  // proximal RCA
+    new THREE.Vector3( 0.46,  0.28,  0.06),  // acute margin
+    new THREE.Vector3( 0.52,  0.04, -0.04),  // mid RCA
+    new THREE.Vector3( 0.48, -0.22, -0.12),  // distal RCA
+    new THREE.Vector3( 0.36, -0.48, -0.14),  // crux / PDA origin
+    new THREE.Vector3( 0.18, -0.64, -0.08),  // posterior descending
+  ]), []);
+
+  /* RCA – RV marginal branch */
+  const rvmCurve = useMemo(() => new THREE.CatmullRomCurve3([
+    new THREE.Vector3( 0.46,  0.24,  0.08),
+    new THREE.Vector3( 0.52,  0.06,  0.14),
+    new THREE.Vector3( 0.50, -0.14,  0.18),
+  ]), []);
+
+  /* RCA – SA nodal artery (back toward SVC–RA junction) */
+  const sanCurve = useMemo(() => new THREE.CatmullRomCurve3([
+    new THREE.Vector3( 0.22,  0.48,  0.14),
+    new THREE.Vector3( 0.30,  0.60,  0.06),
+    new THREE.Vector3( 0.38,  0.74, -0.02),
+  ]), []);
+
+  /* ══════════════════════════════════
+     HEARTBEAT — two-phase systole/diastole
+  ══════════════════════════════════ */
   useFrame(({ clock }) => {
     if (!root.current) return;
-    const t = clock.getElapsedTime();
-    /* two-phase heartbeat: quick systole, slower diastole */
-    const phase = (t * bpHz) % 1;
+    const phase = (clock.getElapsedTime() * bpHz) % 1;
+    /* quick systolic contraction (0–35%), passive diastolic filling (35–100%) */
     const systole = phase < 0.35
       ? Math.sin((phase / 0.35) * Math.PI) * (0.07 + severity * 0.022)
       : 0;
     root.current.scale.setScalar(1 + systole);
   });
 
-  const vColor = '#cc3333'; // darker muscle tone
-  const aColor = '#cc4444'; // atrial (slightly lighter)
+  /* ── Material shorthands (per blueprint §9) ── */
+  const LV_COL   = '#b83232';   // thick LV myocardium
+  const LV_DARK  = '#aa2828';   // papillary / trabecular
+  const RV_COL   = '#cc5050';   // thinner RV wall
+  const ATR_COL  = '#cc4444';   // atrial walls
+  const AORTA_C  = '#ef4444';   // arterial red
+  const VEIN_C   = '#7bb8ff';   // venous / pulmonary blue
+  const COR_C    = '#ffaa44';   // coronary gold-orange
+  const VALVE_C  = '#ffd580';   // valve annuli ivory-gold
+  const FAT_C    = '#f5e6a3';   // epicardial fat (pale yellow)
 
   return (
     <group ref={root} rotation={[0.06, 0, 0.22]}>
 
-      {/* ── Pericardial sac (very translucent outer shell) ── */}
+      {/* ══════════════════════════════════════════
+          PERICARDIUM  (outermost translucent sac)
+      ══════════════════════════════════════════ */}
       <mesh scale={[1.22, 1.26, 1.16]}>
         <sphereGeometry args={[0.74, 24, 24]} />
-        <M color={color} ei={0.04} rough={0.98} metal={0.0} alpha={0.06} />
+        <meshStandardMaterial
+          color={AORTA_C} emissive={AORTA_C} emissiveIntensity={0.04}
+          roughness={0.98} metalness={0.0} transparent opacity={0.06} />
       </mesh>
 
-      {/* ══════ LEFT VENTRICLE ══════ */}
-      {/* Body – conical base */}
-      <mesh position={[-0.12, -0.04, -0.02]} scale={[1.0, 1.52, 0.96]} rotation={[0.1, 0, -0.12]}>
-        <sphereGeometry args={[0.50, 48, 48]} />
-        <M color={vColor} ei={0.62} rough={0.44} />
+      {/* ══════════════════════════════════════════
+          LEFT VENTRICLE  (dominant chamber)
+      ══════════════════════════════════════════ */}
+      {/* Body – elongated oblate sphere */}
+      <mesh position={[-0.12, -0.04, -0.02]} scale={[1.0, 1.52, 0.96]} rotation={[0.10, 0, -0.12]}>
+        <sphereGeometry args={[0.50, 56, 56]} />
+        <M color={LV_COL} ei={0.62} rough={0.44} metal={0.12} />
       </mesh>
-      {/* Apex – pointed extension */}
-      <mesh position={[-0.28, -0.76, 0.02]} rotation={[0.16, 0, -0.32]}>
-        <coneGeometry args={[0.24, 0.48, 32]} />
-        <M color={vColor} ei={0.58} rough={0.46} />
+      {/* Apex – pointed cone, angled inferior-left */}
+      <mesh position={[-0.28, -0.76, 0.02]} rotation={[0.16, 0, -0.30]}>
+        <coneGeometry args={[0.24, 0.48, 36]} />
+        <M color={LV_COL} ei={0.58} rough={0.46} metal={0.12} />
       </mesh>
-      {/* LV free wall thickening */}
+      {/* LV free wall lateral thickening (8–12 mm) */}
       <mesh position={[-0.40, -0.10, 0.12]} scale={[0.46, 0.88, 0.52]}>
-        <sphereGeometry args={[0.42, 20, 20]} />
-        <M color={'#b83030'} ei={0.48} rough={0.5} />
+        <sphereGeometry args={[0.42, 22, 22]} />
+        <M color={'#b03030'} ei={0.48} rough={0.50} metal={0.12} />
       </mesh>
-      {/* Papillary muscle anterior */}
-      <mesh position={[-0.20, -0.44, 0.18]} rotation={[0.3, 0, -0.2]}>
-        <cylinderGeometry args={[0.055, 0.07, 0.24, 12]} />
-        <M color={'#aa2828'} ei={0.52} rough={0.55} />
+      {/* Interventricular septum (subtle bulge toward RV) */}
+      <mesh position={[0.06, -0.18, 0.04]} scale={[0.18, 0.96, 0.68]}>
+        <sphereGeometry args={[0.46, 16, 16]} />
+        <M color={'#9e2a2a'} ei={0.44} rough={0.52} metal={0.10} alpha={0.90} />
       </mesh>
-      {/* Papillary muscle posterior */}
-      <mesh position={[-0.28, -0.38, -0.16]} rotation={[-0.3, 0, -0.15]}>
-        <cylinderGeometry args={[0.05, 0.065, 0.22, 12]} />
-        <M color={'#aa2828'} ei={0.52} rough={0.55} />
+      {/* Papillary muscle — anterior (posteromedial) */}
+      <mesh position={[-0.20, -0.44, 0.18]} rotation={[0.30, 0, -0.20]}>
+        <cylinderGeometry args={[0.055, 0.072, 0.26, 14]} />
+        <M color={LV_DARK} ei={0.52} rough={0.55} metal={0.12} />
       </mesh>
-      {/* Trabeculae carnae ridges */}
-      {[0.12, 0.24, 0.38].map((y, i) => (
-        <mesh key={`tc-${i}`} position={[-0.18, -y, 0.24]} rotation={[0.2, i * 0.4, i * 0.3]}>
-          <torusGeometry args={[0.16 - i*0.02, 0.018, 5, 10, Math.PI * 0.7]} />
-          <M color={'#992222'} ei={0.44} rough={0.6} />
+      {/* Papillary muscle – posterolateral */}
+      <mesh position={[-0.28, -0.38, -0.16]} rotation={[-0.30, 0, -0.15]}>
+        <cylinderGeometry args={[0.050, 0.066, 0.24, 14]} />
+        <M color={LV_DARK} ei={0.52} rough={0.55} metal={0.12} />
+      </mesh>
+      {/* Trabeculae carnae – three partial torus ridges */}
+      {[
+        { y: 0.12, rr: 0.16, ry: 0.0 },
+        { y: 0.26, rr: 0.14, ry: 0.4 },
+        { y: 0.40, rr: 0.12, ry: 0.8 },
+      ].map(({ y, rr, ry }, i) => (
+        <mesh key={`tc-${i}`} position={[-0.18, -y, 0.24]} rotation={[0.20, ry, i * 0.28]}>
+          <torusGeometry args={[rr, 0.018, 5, 11, Math.PI * 0.72]} />
+          <M color={'#992424'} ei={0.44} rough={0.60} metal={0.10} />
         </mesh>
       ))}
-      {/* Mitral valve annulus */}
-      <mesh position={[-0.12, 0.38, 0.04]} rotation={[0.2, 0, 0.12]}>
-        <torusGeometry args={[0.18, 0.022, 8, 22]} />
-        <M color={'#ffddaa'} ei={0.7} rough={0.3} metal={0.22} />
+      {/* Mitral valve annulus (bicuspid, LA→LV) */}
+      <mesh position={[-0.12, 0.38, 0.04]} rotation={[0.20, 0, 0.12]}>
+        <torusGeometry args={[0.18, 0.024, 9, 26]} />
+        <M color={VALVE_C} ei={0.75} rough={0.28} metal={0.22} />
       </mesh>
 
-      {/* ══════ RIGHT VENTRICLE ══════ */}
+      {/* ══════════════════════════════════════════
+          RIGHT VENTRICLE  (crescent, anterior)
+      ══════════════════════════════════════════ */}
+      {/* Body – scaled sphere wrapping LV anteriorly */}
       <mesh position={[0.32, 0.04, 0.18]} scale={[0.72, 1.08, 0.58]}>
-        <sphereGeometry args={[0.46, 36, 36]} />
-        <M color={'#cc5050'} ei={0.46} rough={0.46} />
+        <sphereGeometry args={[0.46, 40, 40]} />
+        <M color={RV_COL} ei={0.46} rough={0.46} metal={0.10} />
       </mesh>
-      {/* RV outflow tract (infundibulum) */}
-      <mesh position={[0.26, 0.44, 0.22]} rotation={[-0.3, 0.1, 0.28]} scale={[0.72, 1.0, 0.62]}>
-        <cylinderGeometry args={[0.14, 0.18, 0.4, 16]} />
-        <M color={'#cc5050'} ei={0.44} rough={0.48} />
+      {/* Infundibulum (outflow tract) – smooth funnel to pulmonary valve */}
+      <mesh position={[0.26, 0.46, 0.22]} rotation={[-0.30, 0.10, 0.28]} scale={[0.72, 1.0, 0.62]}>
+        <cylinderGeometry args={[0.12, 0.18, 0.42, 18]} />
+        <M color={RV_COL} ei={0.44} rough={0.48} metal={0.10} />
       </mesh>
-      {/* Tricuspid valve annulus */}
-      <mesh position={[0.36, 0.36, 0.10]} rotation={[0.1, 0, -0.16]}>
-        <torusGeometry args={[0.19, 0.020, 8, 22]} />
-        <M color={'#ffddaa'} ei={0.7} rough={0.3} metal={0.22} />
+      {/* RV moderator band (septal end → free wall — distinguishing anatomical landmark) */}
+      <mesh position={[0.22, -0.10, 0.20]} rotation={[0.40, 0.30, -0.30]}>
+        <cylinderGeometry args={[0.022, 0.028, 0.28, 8]} />
+        <M color={'#bb4040'} ei={0.48} rough={0.58} metal={0.10} />
+      </mesh>
+      {/* Tricuspid valve annulus (RA→RV) */}
+      <mesh position={[0.36, 0.36, 0.10]} rotation={[0.10, 0, -0.16]}>
+        <torusGeometry args={[0.20, 0.022, 9, 26]} />
+        <M color={VALVE_C} ei={0.73} rough={0.28} metal={0.22} />
       </mesh>
 
-      {/* ══════ LEFT ATRIUM (posterior-superior) ══════ */}
+      {/* ══════════════════════════════════════════
+          LEFT ATRIUM  (most posterior chamber)
+      ══════════════════════════════════════════ */}
       <mesh position={[-0.20, 0.60, -0.24]} scale={[0.92, 0.74, 1.08]}>
-        <sphereGeometry args={[0.28, 28, 28]} />
-        <M color={aColor} ei={0.42} rough={0.48} />
+        <sphereGeometry args={[0.28, 30, 30]} />
+        <M color={ATR_COL} ei={0.42} rough={0.48} metal={0.10} />
       </mesh>
-      {/* LAA (left atrial appendage) */}
-      <mesh position={[-0.44, 0.62, -0.06]} scale={[0.46, 0.36, 0.32]} rotation={[0.2, 0.3, -0.3]}>
+      {/* LAA – left atrial appendage (thrombus hotspot in AF) */}
+      <mesh position={[-0.44, 0.62, -0.06]} scale={[0.46, 0.36, 0.32]} rotation={[0.20, 0.30, -0.30]}>
         <sphereGeometry args={[0.28, 18, 18]} />
-        <M color={aColor} ei={0.40} rough={0.52} />
+        <M color={ATR_COL} ei={0.40} rough={0.52} metal={0.10} />
       </mesh>
-      {/* 4 pulmonary veins entering LA */}
-      {[[-0.34, 0.54, -0.34], [-0.10, 0.56, -0.38], [-0.30, 0.70, -0.34], [-0.08, 0.72, -0.40]].map((p, i) => (
-        <mesh key={`pv-${i}`} position={p} rotation={[0.38, i % 2 === 0 ? 0.28 : -0.28, 0]}>
+      {/* 4 Pulmonary veins entering LA posteriorly */}
+      {/* RSPV, RIPV, LSPV, LIPV */}
+      {[
+        { p: [-0.34,  0.54, -0.34], ry:  0.28 },
+        { p: [-0.10,  0.56, -0.38], ry: -0.28 },
+        { p: [-0.30,  0.70, -0.34], ry:  0.28 },
+        { p: [-0.08,  0.72, -0.40], ry: -0.28 },
+      ].map(({ p, ry }, i) => (
+        <mesh key={`pv-${i}`} position={p} rotation={[0.38, ry, 0]}>
           <cylinderGeometry args={[0.032, 0.040, 0.20, 10]} />
-          <M color={color} rough={0.32} metal={0.30} ei={0.48} />
+          <M color={VEIN_C} rough={0.32} metal={0.30} ei={0.50} />
         </mesh>
       ))}
 
-      {/* ══════ RIGHT ATRIUM ══════ */}
+      {/* ══════════════════════════════════════════
+          RIGHT ATRIUM
+      ══════════════════════════════════════════ */}
       <mesh position={[0.46, 0.46, 0.02]} scale={[0.86, 0.72, 0.80]}>
-        <sphereGeometry args={[0.32, 28, 28]} />
-        <M color={aColor} ei={0.42} rough={0.48} />
+        <sphereGeometry args={[0.32, 30, 30]} />
+        <M color={ATR_COL} ei={0.42} rough={0.48} metal={0.10} />
       </mesh>
-      {/* RAA (right atrial appendage) */}
-      <mesh position={[0.64, 0.60, 0.10]} scale={[0.44, 0.36, 0.32]} rotation={[0.15, -0.3, 0.32]}>
+      {/* RAA – right atrial appendage (triangular, right-superior) */}
+      <mesh position={[0.64, 0.60, 0.10]} scale={[0.44, 0.36, 0.32]} rotation={[0.15, -0.30, 0.32]}>
         <sphereGeometry args={[0.26, 16, 16]} />
-        <M color={aColor} ei={0.40} rough={0.52} />
+        <M color={ATR_COL} ei={0.40} rough={0.52} metal={0.10} />
       </mesh>
 
-      {/* ══════ GREAT VESSELS ══════ */}
+      {/* ══════════════════════════════════════════
+          FIBROUS SKELETON  (central fibrous body)
+          Interconnects all 4 valve annuli
+      ══════════════════════════════════════════ */}
+      <mesh position={[0.14, 0.46, 0.04]} scale={[0.32, 0.16, 0.24]}>
+        <sphereGeometry args={[0.52, 14, 14]} />
+        <M color={'#c8a060'} ei={0.40} rough={0.55} metal={0.18} alpha={0.90} />
+      </mesh>
 
-      {/* Aortic valve ring */}
+      {/* ══════════════════════════════════════════
+          VALVE ANNULI  (4 total — torus rings)
+      ══════════════════════════════════════════ */}
+      {/* Aortic valve (LV outflow, above LV apex) */}
       <mesh position={[0.04, 0.58, -0.02]} rotation={[0.12, 0, 0.08]}>
-        <torusGeometry args={[0.10, 0.018, 8, 20]} />
-        <M color={'#ffddaa'} ei={0.75} rough={0.28} metal={0.26} />
+        <torusGeometry args={[0.105, 0.020, 9, 24]} />
+        <M color={VALVE_C} ei={0.75} rough={0.28} metal={0.26} />
       </mesh>
-      {/* Pulmonary valve ring */}
-      <mesh position={[0.24, 0.60, 0.14]} rotation={[0.3, 0.2, 0.30]}>
-        <torusGeometry args={[0.09, 0.016, 8, 18]} />
-        <M color={'#ffddaa'} ei={0.72} rough={0.28} metal={0.24} />
+      {/* Pulmonary valve (RV outflow, at infundibulum tip) */}
+      <mesh position={[0.24, 0.60, 0.14]} rotation={[0.30, 0.20, 0.30]}>
+        <torusGeometry args={[0.095, 0.018, 9, 22]} />
+        <M color={VALVE_C} ei={0.72} rough={0.28} metal={0.24} />
       </mesh>
 
-      {/* Aorta (arch) as tube */}
-      <mesh>
-        <tubeGeometry args={[aortaArchCurve, 24, 0.088, 10, false]} />
-        <M color={color} rough={0.20} metal={0.48} ei={0.72} />
+      {/* ══════════════════════════════════════════
+          GREAT VESSELS
+      ══════════════════════════════════════════ */}
+
+      {/* Aortic root / sinus of Valsalva — slightly wider than ascending */}
+      <mesh position={[0.04, 0.64, -0.02]} rotation={[0.06, 0, 0.06]}>
+        <cylinderGeometry args={[0.105, 0.092, 0.16, 22]} />
+        <M color={AORTA_C} rough={0.20} metal={0.48} ei={0.72} />
       </mesh>
+
+      {/* Full aortic arch — TubeGeometry CatmullRom (8 control points) */}
+      <mesh>
+        <tubeGeometry args={[aortaCurve, 28, 0.092, 11, false]} />
+        <M color={AORTA_C} rough={0.20} metal={0.48} ei={0.72} />
+      </mesh>
+
+      {/* Arch branches */}
       {/* Brachiocephalic trunk */}
-      <mesh position={[0.22, 1.12, 0.0]} rotation={[0.12, 0, -0.54]}>
-        <cylinderGeometry args={[0.042, 0.052, 0.24, 10]} />
-        <M color={color} rough={0.24} metal={0.40} ei={0.60} />
+      <mesh position={[0.22, 1.14, 0.00]} rotation={[0.12, 0, -0.54]}>
+        <cylinderGeometry args={[0.042, 0.052, 0.26, 11]} />
+        <M color={AORTA_C} rough={0.24} metal={0.44} ei={0.65} />
       </mesh>
       {/* L common carotid */}
-      <mesh position={[0.34, 1.18, 0.0]} rotation={[0.06, 0, -0.18]}>
-        <cylinderGeometry args={[0.028, 0.034, 0.20, 8]} />
-        <M color={color} rough={0.24} metal={0.38} ei={0.56} />
+      <mesh position={[0.34, 1.20, 0.00]} rotation={[0.06, 0, -0.18]}>
+        <cylinderGeometry args={[0.028, 0.034, 0.22, 9]} />
+        <M color={AORTA_C} rough={0.24} metal={0.42} ei={0.60} />
       </mesh>
       {/* L subclavian */}
-      <mesh position={[0.44, 1.14, 0.0]} rotation={[0.10, 0, 0.52]}>
-        <cylinderGeometry args={[0.025, 0.032, 0.18, 8]} />
-        <M color={color} rough={0.24} metal={0.38} ei={0.56} />
+      <mesh position={[0.44, 1.16, 0.00]} rotation={[0.10, 0, 0.52]}>
+        <cylinderGeometry args={[0.025, 0.032, 0.20, 8]} />
+        <M color={AORTA_C} rough={0.24} metal={0.40} ei={0.58} />
       </mesh>
 
       {/* Pulmonary trunk */}
       <mesh>
-        <tubeGeometry args={[ptCurve, 12, 0.072, 9, false]} />
-        <M color={'#7bb8ff'} rough={0.26} metal={0.38} ei={0.62} />
+        <tubeGeometry args={[ptCurve, 12, 0.075, 10, false]} />
+        <M color={VEIN_C} rough={0.26} metal={0.38} ei={0.62} />
       </mesh>
       {/* Left PA */}
       <mesh>
-        <tubeGeometry args={[lPACurve, 10, 0.050, 8, false]} />
-        <M color={'#7bb8ff'} rough={0.28} metal={0.36} ei={0.58} />
+        <tubeGeometry args={[lPACurve, 10, 0.052, 9, false]} />
+        <M color={VEIN_C} rough={0.28} metal={0.36} ei={0.58} />
       </mesh>
       {/* Right PA */}
       <mesh>
-        <tubeGeometry args={[rPACurve, 10, 0.052, 8, false]} />
-        <M color={'#7bb8ff'} rough={0.28} metal={0.36} ei={0.58} />
+        <tubeGeometry args={[rPACurve, 10, 0.054, 9, false]} />
+        <M color={VEIN_C} rough={0.28} metal={0.36} ei={0.58} />
       </mesh>
 
-      {/* SVC as tube */}
+      {/* SVC */}
       <mesh>
-        <tubeGeometry args={[svcCurve, 10, 0.060, 8, false]} />
-        <M color={'#7bb8ff'} rough={0.30} metal={0.32} ei={0.50} />
+        <tubeGeometry args={[svcCurve, 10, 0.062, 9, false]} />
+        <M color={VEIN_C} rough={0.30} metal={0.32} ei={0.52} />
       </mesh>
-      {/* IVC stub */}
-      <mesh position={[0.48, -0.44, 0.0]} rotation={[0.06, 0, 0.06]}>
-        <cylinderGeometry args={[0.058, 0.068, 0.28, 12]} />
-        <M color={'#7bb8ff'} rough={0.30} metal={0.32} ei={0.50} />
+      {/* IVC stub (enters RA from below) */}
+      <mesh position={[0.48, -0.44, 0.00]} rotation={[0.06, 0, 0.06]}>
+        <cylinderGeometry args={[0.058, 0.070, 0.28, 13]} />
+        <M color={VEIN_C} rough={0.30} metal={0.32} ei={0.52} />
       </mesh>
 
-      {/* ══════ CORONARY ARTERIES ══════ */}
-      {/* LAD – anterior interventricular */}
-      <mesh>
-        <tubeGeometry args={[ladCurve, 20, 0.028, 7, false]} />
-        <M color={'#ffaa44'} rough={0.26} metal={0.32} ei={0.80} />
+      {/* ══════════════════════════════════════════
+          CORONARY ARTERIES
+          Colour: bright orange-gold — visible against dark myocardium
+      ══════════════════════════════════════════ */}
+
+      {/* LMCA stub (very short, bifurcates into LAD + LCx) */}
+      <mesh position={[0.00,  0.50, 0.26]} rotation={[-0.40, 0, 0.10]}>
+        <cylinderGeometry args={[0.020, 0.024, 0.10, 8]} />
+        <M color={COR_C} rough={0.26} metal={0.32} ei={0.80} />
       </mesh>
-      {/* Diagonal branch 1 */}
+
+      {/* LAD — anterior interventricular groove */}
       <mesh>
-        <tubeGeometry args={[diag1Curve, 8, 0.018, 6, false]} />
-        <M color={'#ffaa44'} rough={0.28} metal={0.30} ei={0.72} />
+        <tubeGeometry args={[ladCurve, 22, 0.028, 7, false]} />
+        <M color={COR_C} rough={0.26} metal={0.32} ei={0.80} />
       </mesh>
-      {/* Circumflex */}
+      {/* D1 — first diagonal */}
+      <mesh>
+        <tubeGeometry args={[d1Curve, 9, 0.018, 6, false]} />
+        <M color={COR_C} rough={0.28} metal={0.30} ei={0.74} />
+      </mesh>
+      {/* D2 — second diagonal */}
+      <mesh>
+        <tubeGeometry args={[d2Curve, 8, 0.014, 6, false]} />
+        <M color={COR_C} rough={0.28} metal={0.30} ei={0.70} />
+      </mesh>
+      {/* Septal perforators × 3 (dive perpendicular into septum) */}
+      {[
+        { p: [-0.06,  0.06, 0.22], r: [0.00, 0, 0.92] },
+        { p: [-0.07, -0.12, 0.20], r: [0.04, 0, 0.90] },
+        { p: [-0.08, -0.28, 0.17], r: [0.06, 0, 0.88] },
+      ].map(({ p, r }, i) => (
+        <mesh key={`sp-${i}`} position={p} rotation={r}>
+          <cylinderGeometry args={[0.010, 0.012, 0.09, 6]} />
+          <M color={COR_C} rough={0.28} metal={0.28} ei={0.65} />
+        </mesh>
+      ))}
+
+      {/* LCx — left atrioventricular groove */}
       <mesh>
         <tubeGeometry args={[cxCurve, 14, 0.024, 7, false]} />
-        <M color={'#ffaa44'} rough={0.26} metal={0.32} ei={0.78} />
+        <M color={COR_C} rough={0.26} metal={0.32} ei={0.78} />
       </mesh>
-      {/* RCA */}
+      {/* OM1 — obtuse marginal 1 (off LCx) */}
       <mesh>
-        <tubeGeometry args={[rcaCurve, 20, 0.026, 7, false]} />
-        <M color={'#ffaa44'} rough={0.26} metal={0.32} ei={0.78} />
+        <tubeGeometry args={[om1Curve, 9, 0.016, 6, false]} />
+        <M color={COR_C} rough={0.28} metal={0.30} ei={0.72} />
+      </mesh>
+
+      {/* RCA — right AV groove → posterior descending */}
+      <mesh>
+        <tubeGeometry args={[rcaCurve, 22, 0.026, 7, false]} />
+        <M color={COR_C} rough={0.26} metal={0.32} ei={0.78} />
+      </mesh>
+      {/* RCA – RV marginal branch */}
+      <mesh>
+        <tubeGeometry args={[rvmCurve, 9, 0.016, 6, false]} />
+        <M color={COR_C} rough={0.28} metal={0.30} ei={0.72} />
+      </mesh>
+      {/* RCA – SA nodal artery */}
+      <mesh>
+        <tubeGeometry args={[sanCurve, 8, 0.010, 6, false]} />
+        <M color={COR_C} rough={0.28} metal={0.28} ei={0.66} />
+      </mesh>
+
+      {/* ══════════════════════════════════════════
+          EPICARDIAL FAT GROOVES
+          Pale yellow channels along coronary grooves
+      ══════════════════════════════════════════ */}
+      {/* Anterior interventricular groove (along LAD) */}
+      <mesh position={[-0.08, -0.14, 0.30]} rotation={[-0.06, 0, 0.12]} scale={[0.06, 0.76, 0.10]}>
+        <sphereGeometry args={[0.52, 10, 10]} />
+        <meshStandardMaterial color={FAT_C} roughness={0.90} transparent opacity={0.22} />
+      </mesh>
+      {/* Left AV groove (along LCx) */}
+      <mesh position={[-0.28, 0.36, -0.04]} rotation={[0.14, 0.28, 0.56]} scale={[0.06, 0.58, 0.08]}>
+        <sphereGeometry args={[0.52, 10, 10]} />
+        <meshStandardMaterial color={FAT_C} roughness={0.90} transparent opacity={0.20} />
+      </mesh>
+      {/* Right AV groove (along RCA) */}
+      <mesh position={[0.40, 0.18, 0.06]} rotation={[0.10, -0.24, -0.48]} scale={[0.06, 0.60, 0.08]}>
+        <sphereGeometry args={[0.52, 10, 10]} />
+        <meshStandardMaterial color={FAT_C} roughness={0.90} transparent opacity={0.20} />
       </mesh>
 
     </group>

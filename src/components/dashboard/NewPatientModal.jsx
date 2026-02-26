@@ -284,7 +284,7 @@ export function NewPatientModal({ isOpen, onClose, onSave }) {
         </div>
 
         {/* Form */}
-        <form className="np-body" onSubmit={handleSubmit} noValidate>
+        <form id="np-form" className="np-body" onSubmit={handleSubmit} noValidate>
           {/* Server error banner */}
           {serverError && (
             <div className="np-server-error" role="alert">
@@ -498,28 +498,29 @@ export function NewPatientModal({ isOpen, onClose, onSave }) {
               </div>
             )}
           </section>
-
-          {/* ═══════ Form Actions ═══════ */}
-          <div className="np-footer">
-            <div className="np-footer-actions">
-              <button
-                type="button"
-                className="np-btn np-btn-cancel"
-                onClick={onClose}
-                disabled={saving}
-              >
-                {t('widgets.newPatientModal.cancel')}
-              </button>
-              <button
-                type="submit"
-                className="np-btn np-btn-save"
-                disabled={saving}
-              >
-                {saving ? t('widgets.newPatientModal.saving') : t('widgets.newPatientModal.savePatient')}
-              </button>
-            </div>
-          </div>
         </form>
+
+        {/* ═══════ Form Actions ═══════ */}
+        <div className="np-footer">
+          <div className="np-footer-actions">
+            <button
+              type="button"
+              className="np-btn np-btn-cancel"
+              onClick={onClose}
+              disabled={saving}
+            >
+              {t('widgets.newPatientModal.cancel')}
+            </button>
+            <button
+              type="submit"
+              form="np-form"
+              className="np-btn np-btn-save"
+              disabled={saving}
+            >
+              {saving ? t('widgets.newPatientModal.saving') : t('widgets.newPatientModal.savePatient')}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

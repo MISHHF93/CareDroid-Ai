@@ -5,10 +5,9 @@
 
 import React, { useState, Suspense, useMemo, useRef, useEffect } from 'react';
 import { OrbitControls, Stars } from '@react-three/drei';
-import { useFrame } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import * as THREE from 'three';
-import HolographicCanvas from '../components/holographic/HolographicCanvas';
 import './ClinicalLibrary.css';
 
 /* ─────────────────────────────────────────
@@ -947,18 +946,20 @@ export default function ClinicalLibrary() {
 
           {/* Canvas area */}
           <div className="cl-canvas-wrap">
-            <HolographicCanvas
+            <Canvas
               key={selected.model}
-              ariaLabel={`3D ${selected.label}`}
+              aria-label={`3D ${selected.label}`}
+              frameloop="always"
               camera={selected.model === 'system'
                 ? { position:[0,0,10], fov:52, near:0.1, far:90 }
                 : { position:[0,0,5.2], fov:46, near:0.1, far:65 }}
-              targetFps={60}
-              style={{ width:'100%', height:'100%' }}
+              gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
+              style={{ width:'100%', height:'100%', display:'block' }}
             >
+              <color attach="background" args={['#060d18']} />
               <OrganScene organ={selected} severity={severity}
                 autoRotate={autoRotate} showStars={showStars} />
-            </HolographicCanvas>
+            </Canvas>
 
             {/* HUD chips */}
             <div className="cl-hud">

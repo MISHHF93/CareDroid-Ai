@@ -362,16 +362,115 @@
   border-color: currentColor;
 }
 
+/* ─── Prev / Next arrows ─── */
+.cl-nav-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 8;
+  width: 36px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 300;
+  line-height: 1;
+  color: rgba(248,250,252,0.7);
+  background: rgba(0,0,0,0.38);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: all 0.15s;
+  user-select: none;
+}
+.cl-nav-arrow:hover {
+  background: rgba(0,212,170,0.18);
+  border-color: rgba(0,212,170,0.5);
+  color: #00d4aa;
+}
+.cl-nav-prev { left: 10px; }
+.cl-nav-next { right: 10px; }
+
+/* ─── Organ switcher pill bar ─── */
+.cl-organ-switcher {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  z-index: 8;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 999px;
+  padding: 5px 8px;
+  max-width: calc(100% - 100px);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.cl-organ-switcher::-webkit-scrollbar { display: none; }
+
+.cl-organ-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: transparent;
+  color: rgba(248,250,252,0.6);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.14s;
+  position: relative;
+}
+.cl-organ-pill:hover {
+  background: rgba(255,255,255,0.07);
+  color: var(--text-primary, #f8fafc);
+  border-color: rgba(255,255,255,0.2);
+}
+.cl-organ-pill.active {
+  font-weight: 800;
+  box-shadow: 0 0 10px -2px currentColor;
+}
+
+.cl-organ-pill-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+.cl-organ-pill-label {
+  /* visible on wider viewers, hidden on small */
+}
+.cl-organ-pill-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
 .cl-canvas-hint {
   position: absolute;
   bottom: 10px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 10px;
-  color: rgba(248,250,252,0.25);
+  font-size: 9px;
+  color: rgba(248,250,252,0.2);
   pointer-events: none;
   white-space: nowrap;
   letter-spacing: 0.04em;
+}
+
+/* Hide pill labels on narrow viewers */
+@media (max-width: 700px) {
+  .cl-organ-pill-label { display: none; }
+  .cl-organ-pill { padding: 5px 8px; }
 }
 
 /* ─── Right info panel ─── */

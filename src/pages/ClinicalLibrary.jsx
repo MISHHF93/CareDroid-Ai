@@ -484,12 +484,18 @@ export default function ClinicalLibrary() {
   const [severity, setSeverity]     = useState(0);
   const [autoRotate, setAutoRotate] = useState(true);
   const [showStars, setShowStars]   = useState(true);
-  const [activeTab, setActiveTab]   = useState('overview'); // overview | refs | pathologies | sofa
+  const [activeTab, setActiveTab]   = useState('overview');
 
   const filteredOrgans = useMemo(() => ORGANS.filter(o =>
     (activeSystem === 'all' || o.system === activeSystem) &&
     o.label.toLowerCase().includes(search.toLowerCase())
   ), [activeSystem, search]);
+
+  // In-viewer organ navigation helpers
+  const switchOrgan = (organ) => { setSelected(organ); setSeverity(0); setActiveTab('overview'); };
+  const currentIdx  = ORGANS.findIndex(o => o.id === selected.id);
+  const prevOrgan   = () => switchOrgan(ORGANS[(currentIdx - 1 + ORGANS.length) % ORGANS.length]);
+  const nextOrgan   = () => switchOrgan(ORGANS[(currentIdx + 1) % ORGANS.length]);
 
   return (
     <div className="cl-page">
@@ -619,7 +625,36 @@ export default function ClinicalLibrary() {
               )}
             </div>
 
-            <div className="cl-canvas-hint">Drag to rotate · Scroll to zoom</div>
+            {/* ── Prev / Next arrows ── */}
+            <button className="cl-nav-arrow cl-nav-prev" onClick={prevOrgan} title="Previous organ">
+              ‹
+            </button>
+            <button className="cl-nav-arrow cl-nav-next" onClick={nextOrgan} title="Next organ">
+              ›
+            </button>
+
+            {/* ── Organ switcher pills at bottom of canvas ── */}
+            <div className="cl-organ-switcher">
+              {ORGANS.map((organ, idx) => (
+                <button
+                  key={organ.id}
+                  className={`cl-organ-pill${selected.id === organ.id ? ' active' : ''}`}
+                  style={selected.id === organ.id
+                    ? { background: organ.color + '33', borderColor: organ.color, color: organ.color }
+                    : {}}
+                  onClick={() => switchOrgan(organ)}
+                  title={organ.label}
+                >
+                  <span className="cl-organ-pill-icon">{organ.icon}</span>
+                  <span className="cl-organ-pill-label">{organ.label}</span>
+                  {selected.id === organ.id && (
+                    <span className="cl-organ-pill-dot" style={{ background: organ.color }} />
+                  )}
+                </button>
+              ))}
+            </div>
+
+            <div className="cl-canvas-hint">Drag to rotate · Scroll to zoom · Use arrows or pills to switch organ</div>
           </div>
         </div>
 

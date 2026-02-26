@@ -4,13 +4,10 @@
  * Organ catalog → full 3D viewer with live overlays → clinical info panel.
  */
 
-import React, { useState, Suspense, useMemo } from 'react';
-import { OrbitControls, Stars, Environment } from '@react-three/drei';
+import React, { useState, Suspense, useMemo, useRef } from 'react';
+import { OrbitControls, Stars } from '@react-three/drei';
+import { useFrame } from '@react-three/fiber';
 import HolographicCanvas from '../components/holographic/HolographicCanvas';
-import HeartModel from '../components/3d/medical/HeartModel';
-import BrainModel from '../components/3d/medical/BrainModel';
-import LungsModel from '../components/3d/medical/LungsModel';
-import OrganSystem from '../components/3d/medical/OrganSystem';
 import './ClinicalLibrary.css';
 
 /* ─── Clinical Data Atlas ─── */
@@ -161,38 +158,296 @@ const SYSTEMS = [
 const SEVERITY_COLORS = { 0: '#10b981', 1: '#f59e0b', 2: '#f97316', 3: '#ef4444', 4: '#dc2626' };
 const SEVERITY_LABELS = { 0: 'Normal', 1: 'Mild', 2: 'Moderate', 3: 'Severe', 4: 'Critical' };
 
+/* ═══════════════════════════════════════════
+   Self-contained 3D organ mesh components
+   (no external model deps — pure R3F primitives)
+   ═══════════════════════════════════════════ */
+
+/** Shared emissive material helper */
+function OrganMat({ color, alpha = 1, rough = 0.35, metal = 0.15 }) {
+  return (
+    <meshStandardMaterial
+      color={color}
+      emissive={color}
+      emissiveIntensity={0.45}
+      roughness={rough}
+      metalness={metal}
+      transparent={alpha < 1}
+      opacity={alpha}
+    />
+  );
+}
+
+/** Floating debris particles circling the organ */
+function OrbitParticles({ color, radius = 2.2, count = 60 }) {
+  const ref = useRef();
+  const positions = useMemo(() => {
+    const arr = [];
+    for (let i = 0; i < count; i++) {
+      const theta = (i / count) * Math.PI * 2;
+      const phi   = Math.random() * Math.PI;
+      const r     = radius + (Math.random() - 0.5) * 0.8;
+      arr.push(r * Math.sin(phi) * Math.cos(theta), r * Math.cos(phi), r * Math.sin(phi) * Math.sin(theta));
+    }
+    return new Float32Array(arr);
+  }, [count, radius]);
+
+  useFrame(({ clock }) => {
+    if (ref.current) ref.current.rotation.y = clock.getElapsedTime() * 0.18;
+  });
+
+  return (
+    <points ref={ref}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+      </bufferGeometry>
+      <pointsMaterial color={color} size={0.04} transparent opacity={0.7} sizeAttenuation />
+    </points>
+  );
+}
+
+/** ── Heart ── */
+function HeartMesh({ color, severity, heartbeat = 72 }) {
+  const groupRef = useRef();
+  const bpmHz = heartbeat / 60;
+
+  useFrame(({ clock }) => {
+    if (!groupRef.current) return;
+    const pulse = 1 + Math.sin(clock.getElapsedTime() * bpmHz * Math.PI * 2) * (0.05 + severity * 0.02);
+    groupRef.current.scale.setScalar(pulse);
+  });
+
+  return (
+    <group ref={groupRef}>
+      {/* Left ventricle */}
+      <mesh position={[-0.32, 0.12, 0]} scale={[1, 1.05, 0.9]}>
+        <sphereGeometry args={[0.52, 32, 32]} />
+        <OrganMat color={color} />
+      </mesh>
+      {/* Right ventricle */}
+      <mesh position={[0.32, 0.12, 0]} scale={[0.94, 0.98, 0.86]}>
+        <sphereGeometry args={[0.52, 32, 32]} />
+        <OrganMat color={color} />
+      </mesh>
+      {/* Apex (bottom point) */}
+      <mesh position={[0, -0.52, 0]} rotation={[Math.PI, 0, 0]}>
+        <coneGeometry args={[0.38, 0.72, 32]} />
+        <OrganMat color={color} />
+      </mesh>
+      {/* Ascending aorta */}
+      <mesh position={[0.18, 0.82, 0]} rotation={[0, 0, -0.18]}>
+        <cylinderGeometry args={[0.11, 0.13, 0.58, 20]} />
+        <OrganMat color={color} rough={0.2} metal={0.3} />
+      </mesh>
+      {/* Pulmonary artery */}
+      <mesh position={[-0.18, 0.78, 0.06]} rotation={[0.1, 0, 0.12]}>
+        <cylinderGeometry args={[0.09, 0.11, 0.46, 16]} />
+        <OrganMat color={color} rough={0.2} metal={0.3} />
+      </mesh>
+    </group>
+  );
+}
+
+/** ── Brain ── */
+function BrainMesh({ color, severity }) {
+  const groupRef = useRef();
+  useFrame(({ clock }) => {
+    if (groupRef.current) groupRef.current.rotation.y = clock.getElapsedTime() * 0.22;
+  });
+
+  return (
+    <group ref={groupRef}>
+      {/* Left hemisphere */}
+      <mesh position={[-0.42, 0.05, 0]} scale={[0.88, 0.82, 1]}>
+        <sphereGeometry args={[0.78, 32, 32]} />
+        <OrganMat color={color} rough={0.72} metal={0.04} />
+      </mesh>
+      {/* Right hemisphere */}
+      <mesh position={[0.42, 0.05, 0]} scale={[0.84, 0.78, 0.96]}>
+        <sphereGeometry args={[0.78, 32, 32]} />
+        <OrganMat color={color} rough={0.72} metal={0.04} />
+      </mesh>
+      {/* Corpus callosum bridge */}
+      <mesh position={[0, 0.05, 0]} scale={[0.32, 0.45, 0.9]}>
+        <sphereGeometry args={[0.78, 16, 16]} />
+        <OrganMat color={color} rough={0.65} metal={0.04} />
+      </mesh>
+      {/* Cerebellum */}
+      <mesh position={[0, -0.72, -0.28]} scale={[0.9, 0.55, 0.62]}>
+        <sphereGeometry args={[0.58, 24, 24]} />
+        <OrganMat color={color} rough={0.78} metal={0.04} />
+      </mesh>
+      {/* Brainstem */}
+      <mesh position={[0, -0.95, -0.1]} rotation={[0.25, 0, 0]}>
+        <cylinderGeometry args={[0.14, 0.12, 0.44, 16]} />
+        <OrganMat color={color} rough={0.65} metal={0.04} />
+      </mesh>
+      {/* Subtle wireframe gyri overlay */}
+      <mesh position={[-0.42, 0.05, 0]} scale={[0.9, 0.84, 1.02]}>
+        <sphereGeometry args={[0.78, 12, 12]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.15}
+          wireframe transparent opacity={0.22} />
+      </mesh>
+      <mesh position={[0.42, 0.05, 0]} scale={[0.86, 0.8, 0.98]}>
+        <sphereGeometry args={[0.78, 12, 12]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.15}
+          wireframe transparent opacity={0.22} />
+      </mesh>
+    </group>
+  );
+}
+
+/** ── Lungs ── */
+function LungsMesh({ color, severity }) {
+  const leftRef  = useRef();
+  const rightRef = useRef();
+  useFrame(({ clock }) => {
+    const breathe = 1 + Math.sin(clock.getElapsedTime() * 0.9 * Math.PI) * (0.07 + severity * 0.015);
+    if (leftRef.current)  leftRef.current.scale.setScalar(breathe);
+    if (rightRef.current) rightRef.current.scale.setScalar(breathe);
+  });
+
+  return (
+    <group>
+      {/* ─ Left lung (2 lobes) ─ */}
+      <group ref={leftRef} position={[-0.72, 0.08, 0]}>
+        <mesh scale={[0.66, 1.15, 0.58]}>
+          <sphereGeometry args={[0.62, 28, 28]} />
+          <OrganMat color={color} alpha={0.92} />
+        </mesh>
+        <mesh position={[0, -0.72, 0.04]} scale={[0.58, 0.88, 0.5]}>
+          <sphereGeometry args={[0.62, 24, 24]} />
+          <OrganMat color={color} alpha={0.88} />
+        </mesh>
+      </group>
+      {/* ─ Right lung (3 lobes — slightly larger) ─ */}
+      <group ref={rightRef} position={[0.72, 0.08, 0]}>
+        <mesh scale={[0.7, 1.1, 0.58]}>
+          <sphereGeometry args={[0.62, 28, 28]} />
+          <OrganMat color={color} alpha={0.92} />
+        </mesh>
+        <mesh position={[0, -0.62, 0.04]} scale={[0.62, 0.76, 0.5]}>
+          <sphereGeometry args={[0.62, 24, 24]} />
+          <OrganMat color={color} alpha={0.88} />
+        </mesh>
+        <mesh position={[0, -1.1, 0.06]} scale={[0.52, 0.58, 0.44]}>
+          <sphereGeometry args={[0.62, 20, 20]} />
+          <OrganMat color={color} alpha={0.85} />
+        </mesh>
+      </group>
+      {/* Trachea / carina */}
+      <mesh position={[0, 0.88, -0.05]}>
+        <cylinderGeometry args={[0.07, 0.07, 0.5, 14]} />
+        <OrganMat color={color} rough={0.3} metal={0.2} />
+      </mesh>
+      <mesh position={[-0.28, 0.68, -0.04]} rotation={[0, 0, 0.55]}>
+        <cylinderGeometry args={[0.055, 0.055, 0.38, 12]} />
+        <OrganMat color={color} rough={0.3} metal={0.2} />
+      </mesh>
+      <mesh position={[0.28, 0.68, -0.04]} rotation={[0, 0, -0.55]}>
+        <cylinderGeometry args={[0.055, 0.055, 0.38, 12]} />
+        <OrganMat color={color} rough={0.3} metal={0.2} />
+      </mesh>
+    </group>
+  );
+}
+
+/** ── Full anatomical system (brain + lungs + heart stacked) ── */
+function SystemMesh({ severity }) {
+  const bpHz = (60 + severity * 12) / 60;
+  const heartRef = useRef();
+  const leftLungRef  = useRef();
+  const rightLungRef = useRef();
+  const brainRef = useRef();
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    const pulse  = 1 + Math.sin(t * bpHz * Math.PI * 2) * 0.055;
+    const breath = 1 + Math.sin(t * 0.9 * Math.PI) * 0.065;
+    if (heartRef.current)     heartRef.current.scale.setScalar(pulse);
+    if (leftLungRef.current)  leftLungRef.current.scale.setScalar(breath);
+    if (rightLungRef.current) rightLungRef.current.scale.setScalar(breath);
+    if (brainRef.current)     brainRef.current.rotation.y = t * 0.12;
+  });
+
+  const hc = SEVERITY_COLORS[severity];
+  const bc = '#a855f7';
+  const lc = '#38bdf8';
+
+  return (
+    <group scale={0.72}>
+      {/* Brain */}
+      <group ref={brainRef} position={[0, 2.0, 0]}>
+        <mesh position={[-0.42, 0.05, 0]} scale={[0.88, 0.82, 1]}>
+          <sphereGeometry args={[0.78, 28, 28]} /><OrganMat color={bc} rough={0.72} metal={0.04} />
+        </mesh>
+        <mesh position={[0.42, 0.05, 0]} scale={[0.84, 0.78, 0.96]}>
+          <sphereGeometry args={[0.78, 28, 28]} /><OrganMat color={bc} rough={0.72} metal={0.04} />
+        </mesh>
+        <mesh position={[0, -0.72, -0.28]} scale={[0.9, 0.55, 0.62]}>
+          <sphereGeometry args={[0.58, 20, 20]} /><OrganMat color={bc} rough={0.78} metal={0.04} />
+        </mesh>
+      </group>
+
+      {/* Lungs */}
+      <group position={[0, 0, 0]}>
+        <group ref={leftLungRef} position={[-0.72, 0.08, 0]}>
+          <mesh scale={[0.66, 1.15, 0.58]}><sphereGeometry args={[0.62, 24, 24]} /><OrganMat color={lc} alpha={0.9} /></mesh>
+          <mesh position={[0, -0.72, 0]} scale={[0.58, 0.88, 0.5]}><sphereGeometry args={[0.62, 20, 20]} /><OrganMat color={lc} alpha={0.85} /></mesh>
+        </group>
+        <group ref={rightLungRef} position={[0.72, 0.08, 0]}>
+          <mesh scale={[0.7, 1.1, 0.58]}><sphereGeometry args={[0.62, 24, 24]} /><OrganMat color={lc} alpha={0.9} /></mesh>
+          <mesh position={[0, -0.62, 0]} scale={[0.62, 0.76, 0.5]}><sphereGeometry args={[0.62, 20, 20]} /><OrganMat color={lc} alpha={0.85} /></mesh>
+          <mesh position={[0, -1.1, 0]} scale={[0.52, 0.58, 0.44]}><sphereGeometry args={[0.62, 18, 18]} /><OrganMat color={lc} alpha={0.8} /></mesh>
+        </group>
+      </group>
+
+      {/* Heart */}
+      <group ref={heartRef} position={[0, -2.0, 0]}>
+        <mesh position={[-0.32, 0.12, 0]} scale={[1, 1.05, 0.9]}>
+          <sphereGeometry args={[0.52, 28, 28]} /><OrganMat color={hc} />
+        </mesh>
+        <mesh position={[0.32, 0.12, 0]} scale={[0.94, 0.98, 0.86]}>
+          <sphereGeometry args={[0.52, 28, 28]} /><OrganMat color={hc} />
+        </mesh>
+        <mesh position={[0, -0.52, 0]} rotation={[Math.PI, 0, 0]}>
+          <coneGeometry args={[0.38, 0.72, 28]} /><OrganMat color={hc} />
+        </mesh>
+        <mesh position={[0.18, 0.82, 0]} rotation={[0, 0, -0.18]}>
+          <cylinderGeometry args={[0.11, 0.13, 0.58, 14]} /><OrganMat color={hc} rough={0.2} metal={0.3} />
+        </mesh>
+      </group>
+
+      {/* Spine connector */}
+      <mesh position={[0, 0, -0.35]}>
+        <cylinderGeometry args={[0.055, 0.055, 4.4, 12]} />
+        <meshStandardMaterial color="#4ade80" emissive="#4ade80" emissiveIntensity={0.3} transparent opacity={0.45} />
+      </mesh>
+    </group>
+  );
+}
+
 /* ─── 3D Scene inside Canvas ─── */
 function OrganScene({ organ, severity, autoRotate, showStars }) {
-  const severityColor = SEVERITY_COLORS[severity] || organ.color;
-  const commonProps = {
-    interactive: true,
-    rotateOnHover: false,
-    showLabel: false,
-    severity,
-    heartbeat: 60 + severity * 12,
-    color: severityColor,
-  };
+  const color     = SEVERITY_COLORS[severity] || organ.color;
+  const heartbeat = 60 + severity * 12;
 
   return (
     <>
-      <ambientLight intensity={0.5} />
-      <pointLight position={[5, 5, 5]}   intensity={1.2} color={organ.color} />
-      <pointLight position={[-5, 2, -3]} intensity={0.8} color="#00d4aa" />
-      <pointLight position={[0, -5, 3]}  intensity={0.6} color="#6366f1" />
+      <ambientLight intensity={0.6} />
+      <pointLight position={[4, 4, 5]}   intensity={1.4} color={organ.color} />
+      <pointLight position={[-4, 2, -3]} intensity={0.9} color="#00d4ff" />
+      <pointLight position={[0, -4, 3]}  intensity={0.7} color="#6366f1" />
 
-      {showStars && <Stars radius={30} depth={10} count={800} factor={3} fade speed={0.4} />}
+      {showStars && <Stars radius={35} depth={12} count={900} factor={3} fade speed={0.35} />}
+
+      <OrbitParticles color={organ.color} radius={organ.model === 'system' ? 3.0 : 2.1} />
 
       <Suspense fallback={null}>
-        {organ.model === 'heart'  && <HeartModel  {...commonProps} />}
-        {organ.model === 'brain'  && <BrainModel  {...commonProps} />}
-        {organ.model === 'lungs'  && <LungsModel  {...commonProps} />}
-        {organ.model === 'system' && (
-          <OrganSystem
-            scores={{ heart: severity, brain: severity, lungs: severity }}
-            vitals={{ heartRate: { value: 60 + severity * 12 } }}
-            interactive
-          />
-        )}
+        {organ.model === 'heart'  && <HeartMesh  color={color} severity={severity} heartbeat={heartbeat} />}
+        {organ.model === 'brain'  && <BrainMesh  color={color} severity={severity} />}
+        {organ.model === 'lungs'  && <LungsMesh  color={color} severity={severity} />}
+        {organ.model === 'system' && <SystemMesh severity={severity} />}
       </Suspense>
 
       <OrbitControls
@@ -201,8 +456,8 @@ function OrganScene({ organ, severity, autoRotate, showStars }) {
         enableRotate
         autoRotate={autoRotate}
         autoRotateSpeed={0.6}
-        minDistance={2}
-        maxDistance={12}
+        minDistance={organ.model === 'system' ? 4 : 2}
+        maxDistance={organ.model === 'system' ? 16 : 10}
       />
     </>
   );
@@ -336,8 +591,11 @@ export default function ClinicalLibrary() {
           {/* Canvas */}
           <div className="cl-canvas-wrap">
             <HolographicCanvas
+              key={selected.model}
               ariaLabel={`3D holographic ${selected.label} model`}
-              camera={{ position: [0, 0, 6], fov: 50, near: 0.1, far: 60 }}
+              camera={selected.model === 'system'
+                ? { position: [0, 0, 9.5], fov: 54, near: 0.1, far: 80 }
+                : { position: [0, 0, 4.8], fov: 48, near: 0.1, far: 60 }}
               targetFps={60}
               style={{ width: '100%', height: '100%' }}
             >

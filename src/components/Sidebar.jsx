@@ -99,8 +99,7 @@ const Sidebar = ({
   const navItems = [
     { id: 'chat', icon: '💬', label: t('nav.dashboard'), path: '/dashboard' },
     { id: 'profile', icon: '👤', label: t('nav.profile'), path: '/profile' },
-    { id: 'community',        icon: '🩺', label: 'Community',        path: '/community' },
-    { id: 'clinical-library', icon: '⚕️', label: 'Clinical Library', path: '/clinical-library' },
+    { id: 'community', icon: '🩺', label: 'Community', path: '/community' },
     { id: 'team', icon: '👥', label: t('nav.team'), path: '/team', permission: Permission.MANAGE_USERS },
     { id: 'audit', icon: '📜', label: t('nav.auditLogs'), path: '/audit-logs', permission: Permission.VIEW_AUDIT_LOGS },
     { id: 'analytics', icon: '📊', label: t('nav.analytics'), path: '/analytics', permission: Permission.VIEW_ANALYTICS },
@@ -430,6 +429,53 @@ const Sidebar = ({
         >
           <span className="btn-icon">✨</span>
           {!isCollapsed && <span>{t('nav.newConversation')}</span>}
+        </button>
+
+        {/* ── 3D Clinical Library featured card ── */}
+        <button
+          onClick={() => navigate('/clinical-library')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: isCollapsed ? 0 : '10px',
+            justifyContent: isCollapsed ? 'center' : 'flex-start',
+            width: '100%',
+            margin: '4px 0 8px',
+            padding: isCollapsed ? '10px 0' : '10px 12px',
+            borderRadius: '10px',
+            border: '1px solid rgba(0,212,170,0.35)',
+            background: window.location.pathname === '/clinical-library'
+              ? 'rgba(0,212,170,0.18)'
+              : 'linear-gradient(135deg,rgba(0,212,170,0.1),rgba(99,102,241,0.08))',
+            cursor: 'pointer',
+            textAlign: 'left',
+            transition: 'all 0.15s',
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+          title={isCollapsed ? '3D Clinical Library' : ''}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,212,170,0.22)'; e.currentTarget.style.borderColor = 'rgba(0,212,170,0.6)'; }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = window.location.pathname === '/clinical-library' ? 'rgba(0,212,170,0.18)' : 'linear-gradient(135deg,rgba(0,212,170,0.1),rgba(99,102,241,0.08))';
+            e.currentTarget.style.borderColor = 'rgba(0,212,170,0.35)';
+          }}
+        >
+          {/* Animated glow line at top */}
+          <div style={{ position:'absolute', top:0, left:0, right:0, height:'1px', background:'linear-gradient(90deg,transparent,rgba(0,212,170,0.7),transparent)', pointerEvents:'none' }} />
+          <span style={{ fontSize: isCollapsed ? 18 : 22, lineHeight: 1, flexShrink: 0 }}>⚕️</span>
+          {!isCollapsed && (
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '12px', fontWeight: 800, color: '#00d4aa', letterSpacing: '0.01em', lineHeight: 1.2 }}>
+                3D Clinical Library
+              </div>
+              <div style={{ fontSize: '10px', color: 'rgba(0,212,170,0.65)', marginTop: '2px' }}>
+                Holographic organ atlas · SOFA · Pathologies
+              </div>
+            </div>
+          )}
+          {!isCollapsed && (
+            <span style={{ fontSize: '13px', color: 'rgba(0,212,170,0.5)', flexShrink: 0 }}>›</span>
+          )}
         </button>
 
         {/* Navigation */}

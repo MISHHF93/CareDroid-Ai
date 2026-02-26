@@ -534,6 +534,31 @@ function Chat() {
                   3D mode paused. Press key 3 to reactivate.
                 </div>
               )}
+              {/* Open Full Library button — always visible */}
+              <button
+                onClick={() => navigate('/clinical-library')}
+                style={{
+                  position: 'absolute',
+                  bottom: 10,
+                  right: 12,
+                  zIndex: 10,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  padding: '5px 12px',
+                  borderRadius: 999,
+                  border: '1px solid rgba(0,212,170,0.55)',
+                  background: 'rgba(0,0,0,0.55)',
+                  color: '#00d4aa',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: '0.04em',
+                  cursor: 'pointer',
+                  backdropFilter: 'blur(8px)',
+                }}
+              >
+                ⚕️ Open Full 3D Library ›
+              </button>
             </div>
           </div>
 
@@ -607,6 +632,36 @@ function Chat() {
                     }}
                   >
                     {msg.content}
+                    {/* ── 3D Library quick-access chip for organ-related assistant replies ── */}
+                    {msg.role === 'assistant' && (() => {
+                      const organ = detectAnatomyKeyword(msg.content || '');
+                      if (!organ) return null;
+                      const organMap = { heart: { label: 'Heart', icon: '❤️', color: '#ef4444' }, brain: { label: 'Brain', icon: '🧠', color: '#a855f7' }, lungs: { label: 'Lungs', icon: '🪱', color: '#38bdf8' } };
+                      const o = organMap[organ];
+                      if (!o) return null;
+                      return (
+                        <button
+                          onClick={() => navigate(`/clinical-library?organ=${organ}`)}
+                          style={{
+                            marginTop: 8,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            padding: '5px 12px',
+                            borderRadius: 999,
+                            border: `1px solid ${o.color}55`,
+                            background: `${o.color}18`,
+                            color: o.color,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            letterSpacing: '0.03em',
+                          }}
+                        >
+                          {o.icon} View {o.label} in 3D Library ›
+                        </button>
+                      );
+                    })()}
                     {msg.role === 'assistant' && webglSupported && show3D && (
                       <>
                         {(() => {

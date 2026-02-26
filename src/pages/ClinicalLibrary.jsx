@@ -4,9 +4,10 @@
  * Organ catalog → full 3D viewer with live overlays → clinical info panel.
  */
 
-import React, { useState, Suspense, useMemo, useRef } from 'react';
+import React, { useState, Suspense, useMemo, useRef, useEffect } from 'react';
 import { OrbitControls, Stars } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
+import { useSearchParams } from 'react-router-dom';
 import HolographicCanvas from '../components/holographic/HolographicCanvas';
 import './ClinicalLibrary.css';
 
@@ -478,13 +479,27 @@ function SeverityBadge({ level }) {
 
 /* ─── Main Page ─── */
 export default function ClinicalLibrary() {
+  const [searchParams] = useSearchParams();
+
   const [search, setSearch]         = useState('');
   const [activeSystem, setSystem]   = useState('all');
-  const [selected, setSelected]     = useState(ORGANS[0]);
+  const [selected, setSelected]     = useState(() => {
+    const param = searchParams.get('organ');
+    return ORGANS.find(o => o.id === param || o.model === param) || ORGANS[0];
+  });
   const [severity, setSeverity]     = useState(0);
   const [autoRotate, setAutoRotate] = useState(true);
   const [showStars, setShowStars]   = useState(true);
   const [activeTab, setActiveTab]   = useState('overview');
+
+  // Respond to ?organ= param changes (e.g. navigated from a chat message)
+  useEffect(() => {
+    const param = searchParams.get('organ');
+    if (param) {
+      const match = ORGANS.find(o => o.id === param || o.model === param);
+      if (match) { setSelected(match); setSeverity(0); setActiveTab('overview'); }
+    }
+  }, [searchParams]);
 
   const filteredOrgans = useMemo(() => ORGANS.filter(o =>
     (activeSystem === 'all' || o.system === activeSystem) &&

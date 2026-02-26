@@ -290,13 +290,16 @@ export default function Community() {
     { id: 'top',  label: '⬆️ Top' },
   ];
 
+  // Build count map once for dept strip badges
+  const deptCountMap = Object.fromEntries(trendingTags.map(t => [t.tag, t.count]));
+
   return (
     <div className="community-page">
-      {/* Top bar */}
+      {/* ── Top bar ── */}
       <div className="community-topbar">
         <h1 className="community-title">
           <span>🩺</span> MedX
-          <span className="community-title-sub">— Clinical Community</span>
+          <span className="community-title-sub">Clinical Community</span>
         </h1>
         <input
           className="community-search"
@@ -309,7 +312,7 @@ export default function Community() {
         </button>
       </div>
 
-      {/* Category Tabs */}
+      {/* ── Category tabs ── */}
       <div className="community-tabs">
         {CATEGORIES.map(cat => (
           <button
@@ -322,31 +325,52 @@ export default function Community() {
         ))}
         <button
           className={`community-tab${savedOnly ? ' active' : ''}`}
-          onClick={() => { setSavedOnly(s => !s); }}
-          title="Saved posts"
+          onClick={() => setSavedOnly(s => !s)}
         >
           🔖 Saved
         </button>
-        {filterTag && (
-          <button
-            className="community-tab active"
-            onClick={() => setFilterTag('')}
-            style={{ background: 'rgba(59,130,246,0.2)', border: '1px solid #3B82F6' }}
-          >
-            #{filterTag} ✕
-          </button>
-        )}
       </div>
 
-      {/* Main layout */}
+      {/* ── Department filter strip (horizontal scroll) ── */}
+      <div className="community-dept-strip">
+        <span className="dept-strip-label">🏥</span>
+        <button
+          className={`dept-strip-chip${!filterTag ? ' active' : ''}`}
+          onClick={() => { setFilterTag(''); setSavedOnly(false); }}
+        >
+          All Depts
+        </button>
+        {DEPARTMENTS.map(dept => {
+          const count = deptCountMap[dept.id] || 0;
+          const active = filterTag === dept.id;
+          return (
+            <button
+              key={dept.id}
+              className={`dept-strip-chip${active ? ' active' : ''}${count > 0 ? ' has-posts' : ''}`}
+              onClick={() => { setFilterTag(active ? '' : dept.id); setSavedOnly(false); }}
+              title={count ? `${dept.label} · ${count} post${count > 1 ? 's' : ''}` : dept.label}
+            >
+              {dept.icon} {dept.label}
+              {count > 0 && <span className="dept-strip-count">{count}</span>}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── Main layout: feed + sidebar ── */}
       <div className="community-inner">
+
         {/* Feed */}
         <section className="community-feed">
           {/* Sort + results bar */}
           <div className="feed-meta-bar">
             <span className="feed-results-count">
               {posts.length} {posts.length === 1 ? 'post' : 'posts'}
-              {filterTag && <span className="feed-filter-tag"> · #{filterTag}</span>}
+              {filterTag && (
+                <button className="feed-filter-tag-pill" onClick={() => setFilterTag('')}>
+                  #{filterTag} <span>✕</span>
+                </button>
+              )}
               {savedOnly && <span className="feed-filter-tag"> · saved</span>}
             </span>
             <div className="sort-tabs">
@@ -372,7 +396,7 @@ export default function Community() {
                 {savedOnly
                   ? 'Save posts to read them later.'
                   : debouncedSearch
-                  ? `Try different keywords or clear the search.`
+                  ? 'Try different keywords or clear the search.'
                   : 'Be the first to post a case or question!'}
               </p>
               {!savedOnly && !debouncedSearch && (
@@ -394,54 +418,64 @@ export default function Community() {
           )}
         </section>
 
-        {/* Right sidebar */}
+        {/* Right sidebar — Contributors only */}
         <aside className="community-sidebar">
-          {/* Departments browser */}
-          <div className="sidebar-widget">
-            <p className="sidebar-widget-title">🏥 Departments</p>
-            {(() => {
-              // Build count map from trendingTags (dept IDs are now in tags)
-              const countMap = Object.fromEntries(trendingTags.map(t => [t.tag, t.count]));
-              const groups = [...new Set(DEPARTMENTS.map(d => d.group))];
-              return groups.map(group => (
-                <div key={group} className="sidebar-dept-group">
-                  <p className="sidebar-dept-group-label">{group}</p>
-                  <div className="sidebar-dept-chips">
-                    {DEPARTMENTS.filter(d => d.group === group).map(dept => {
-                      const count = countMap[dept.id] || 0;
-                      const active = filterTag === dept.id;
-                      return (
-                        <button
-                          key={dept.id}
-                          className={`sidebar-dept-chip${active ? ' active' : ''}${count > 0 ? ' has-posts' : ''}`}
-                          onClick={() => { setFilterTag(active ? '' : dept.id); setSavedOnly(false); }}
-                          title={`${dept.label}${count ? ` · ${count} post${count > 1 ? 's' : ''}` : ''}`}
-                        >
-                          {dept.icon} {dept.label}
-                          {count > 0 && <span className="sidebar-dept-count">{count}</span>}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ));
-            })()}
-          </div>
-
-          {/* Top contributors */}
           <div className="sidebar-widget">
             <p className="sidebar-widget-title">🏆 Top Contributors</p>
-            {topContributors.map(user => (
+            {topContributors.map((user, i) => (
               <div key={user.name} className="contributor-row">
-                <AvatarChip name={user.name} size={28} />
+                <span className="contributor-rank">#{i + 1}</span>
+                <AvatarChip name={user.name} size={30} />
                 <div className="contributor-info">
                   <div className="contributor-name">{user.name}</div>
                   <div className="contributor-specialty">{user.specialty}</div>
                 </div>
-                <span className="contributor-rep">{user.reputation} rep</span>
+                <span className="contributor-rep">{user.reputation}</span>
               </div>
             ))}
           </div>
+
+          {/* Quick stats */}
+          <div className="sidebar-widget sidebar-stats-widget">
+            <p className="sidebar-widget-title">📊 Community Stats</p>
+            <div className="community-stats-grid">
+              <div className="community-stat-cell">
+                <span className="community-stat-value">{posts.length}</span>
+                <span className="community-stat-label">Posts</span>
+              </div>
+              <div className="community-stat-cell">
+                <span className="community-stat-value">{trendingTags.length}</span>
+                <span className="community-stat-label">Topics</span>
+              </div>
+              <div className="community-stat-cell">
+                <span className="community-stat-value">{topContributors.length}</span>
+                <span className="community-stat-label">Active MDs</span>
+              </div>
+              <div className="community-stat-cell">
+                <span className="community-stat-value">{DEPARTMENTS.length}</span>
+                <span className="community-stat-label">Depts</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Trending tags */}
+          {trendingTags.length > 0 && (
+            <div className="sidebar-widget">
+              <p className="sidebar-widget-title">🔥 Trending</p>
+              <div className="trending-tags-wrap">
+                {trendingTags.slice(0, 10).map(t => (
+                  <button
+                    key={t.tag}
+                    className={`trending-tag${filterTag === t.tag ? ' active' : ''}`}
+                    onClick={() => { setFilterTag(filterTag === t.tag ? '' : t.tag); setSavedOnly(false); }}
+                  >
+                    #{t.tag}
+                    <span className="trending-tag-count">{t.count}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </aside>
       </div>
 

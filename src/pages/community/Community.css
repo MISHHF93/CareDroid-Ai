@@ -142,10 +142,78 @@
   color: #fff;
 }
 
+/* ─── Department filter strip ─── */
+.community-dept-strip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 16px 8px;
+  overflow-x: auto;
+  flex-shrink: 0;
+  scrollbar-width: none;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-secondary);
+}
+.community-dept-strip::-webkit-scrollbar { display: none; }
+
+.dept-strip-label {
+  font-size: 14px;
+  flex-shrink: 0;
+  opacity: 0.7;
+  margin-right: 2px;
+}
+
+.dept-strip-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-1);
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.13s;
+}
+.dept-strip-chip:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  color: var(--text-primary);
+}
+.dept-strip-chip.active {
+  background: var(--clinical-primary, #3B82F6);
+  border-color: var(--clinical-primary, #3B82F6);
+  color: #fff;
+  font-weight: 700;
+}
+.dept-strip-chip.has-posts { color: var(--text-primary); }
+
+.dept-strip-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 15px;
+  height: 15px;
+  font-size: 9px;
+  font-weight: 800;
+  background: rgba(255,255,255,0.25);
+  border-radius: 999px;
+  padding: 0 4px;
+  line-height: 1;
+}
+.dept-strip-chip:not(.active) .dept-strip-count {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+}
+
 /* ─── Main layout ─── */
 .community-inner {
   display: grid;
-  grid-template-columns: 1fr 220px;
+  grid-template-columns: 1fr 250px;
   gap: 16px;
   padding: 14px 16px 20px;
   overflow-y: auto;
@@ -444,35 +512,29 @@ html:not(.theme-light) .ai-badge { color: #C4B5FD; }
   margin: 0;
 }
 
-.trending-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: var(--surface-tertiary);
-  color: var(--text-secondary);
-  cursor: pointer;
-  border: 1px solid var(--border-subtle);
-  margin: 0 3px 4px 0;
-  transition: all 0.12s;
-}
-.trending-tag:hover {
-  background: rgba(59,130,246,0.15);
-  color: var(--clinical-primary, #3B82F6);
-  border-color: var(--clinical-primary, #3B82F6);
-}
+/* (trending-tag styles moved to sidebar section below) */
 
 .contributor-row {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 5px 0;
+  padding: 6px 0;
   border-bottom: 1px solid var(--border-subtle);
 }
 .contributor-row:last-child { border-bottom: none; }
+
+.contributor-rank {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--text-tertiary);
+  min-width: 18px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.contributor-row:first-child .contributor-rank { color: #FBBF24; }
+.contributor-row:nth-child(2) .contributor-rank { color: #94A3B8; }
+.contributor-row:nth-child(3) .contributor-rank { color: #B45309; }
+
 .contributor-info { flex: 1; min-width: 0; }
 .contributor-name {
   font-size: 12px;
@@ -485,13 +547,85 @@ html:not(.theme-light) .ai-badge { color: #C4B5FD; }
 .contributor-specialty { font-size: 10px; color: var(--text-tertiary); }
 .contributor-rep {
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 800;
   color: #D97706;
   white-space: nowrap;
 }
 html.theme-dark .contributor-rep,
 html:not(.theme-light) .contributor-rep { color: #FCD34D; }
 html.theme-light .contributor-rep { color: #B45309; }
+
+/* ─── Community stats grid ─── */
+.community-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.community-stat-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 4px;
+  background: var(--surface-tertiary);
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+}
+.community-stat-value {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1;
+}
+.community-stat-label {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 3px;
+}
+
+/* ─── Trending tags in sidebar ─── */
+.trending-tags-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.trending-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface-tertiary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  border: 1px solid var(--border-subtle);
+  transition: all 0.12s;
+}
+.trending-tag:hover {
+  background: rgba(59,130,246,0.12);
+  color: var(--clinical-primary, #3B82F6);
+  border-color: rgba(59,130,246,0.4);
+}
+.trending-tag.active {
+  background: rgba(59,130,246,0.18);
+  color: var(--clinical-primary, #3B82F6);
+  border-color: var(--clinical-primary, #3B82F6);
+  font-weight: 700;
+}
+.trending-tag-count {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  background: var(--surface-secondary);
+  border-radius: 999px;
+  padding: 0 4px;
+  min-width: 14px;
+  text-align: center;
+}
 
 /* ─── Create Post Modal ─── */
 .modal-backdrop {
@@ -741,14 +875,14 @@ html:not(.theme-light) .answer-badge { color: #6EE7B7; }
 .comment-submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .comment-submit-btn:not(:disabled):hover { background: #2563EB; }
 
-/* ─── Mobile: sidebar → horizontal scroll strip ─── */
-@media (max-width: 820px) {
-  .community-inner,
-  .post-detail-inner {
+/* ─── Responsive: tablet (≤900px) ─── */
+@media (max-width: 900px) {
+  .community-inner {
     grid-template-columns: 1fr;
     gap: 10px;
   }
 
+  /* Sidebar becomes a horizontal scroll row of compact widgets */
   .community-sidebar {
     flex-direction: row;
     overflow-x: auto;
@@ -756,22 +890,28 @@ html:not(.theme-light) .answer-badge { color: #6EE7B7; }
     padding-bottom: 2px;
     scrollbar-width: none;
     position: static;
-    order: -1;
+    order: -1; /* above feed */
   }
   .community-sidebar::-webkit-scrollbar { display: none; }
 
   .sidebar-widget {
     flex-shrink: 0;
-    min-width: 140px;
-    max-width: 170px;
+    min-width: 160px;
+    max-width: 200px;
     padding: 9px 11px;
   }
 
-  /* Trending tags widget gets a bit more room */
-  .sidebar-widget:nth-child(2) {
-    min-width: 200px;
-    max-width: 240px;
+  /* Stats widget slightly narrower */
+  .sidebar-stats-widget {
+    min-width: 180px;
+    max-width: 210px;
   }
+}
+
+/* ─── Responsive: hide sidebar on small phones ─── */
+@media (max-width: 600px) {
+  .community-sidebar { display: none; }
+  .community-dept-strip { padding: 6px 10px 7px; }
 }
 
 @media (max-width: 639px) {
@@ -793,6 +933,9 @@ html:not(.theme-light) .answer-badge { color: #6EE7B7; }
 }
 
 .feed-results-count {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 11px;
   font-weight: 600;
   color: var(--text-tertiary);
@@ -803,6 +946,23 @@ html:not(.theme-light) .answer-badge { color: #6EE7B7; }
   color: var(--clinical-primary, #3B82F6);
   font-weight: 700;
 }
+
+.feed-filter-tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgba(59,130,246,0.15);
+  border: 1px solid rgba(59,130,246,0.4);
+  color: var(--clinical-primary, #3B82F6);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.feed-filter-tag-pill:hover { background: rgba(59,130,246,0.25); }
+.feed-filter-tag-pill span { font-size: 9px; opacity: 0.7; }
 
 .sort-tabs {
   display: flex;
@@ -1017,61 +1177,4 @@ html:not(.theme-light) .answer-badge { color: #6EE7B7; }
   font-size: 10px;
 }
 
-/* ─── Sidebar Departments widget ─── */
-.sidebar-dept-group { margin-bottom: 10px; }
-.sidebar-dept-group:last-child { margin-bottom: 0; }
-
-.sidebar-dept-group-label {
-  font-size: 9px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: var(--text-tertiary);
-  margin: 0 0 4px;
-}
-
-.sidebar-dept-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.sidebar-dept-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 10px;
-  font-weight: 500;
-  color: var(--text-tertiary);
-  background: var(--surface-secondary);
-  border: 1px solid var(--border-subtle);
-  border-radius: 14px;
-  padding: 3px 7px;
-  cursor: pointer;
-  transition: background 0.12s, color 0.12s, border-color 0.12s;
-  white-space: nowrap;
-}
-.sidebar-dept-chip.has-posts {
-  color: var(--text-secondary);
-}
-.sidebar-dept-chip:hover {
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
-  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
-  color: var(--accent);
-}
-.sidebar-dept-chip.active {
-  background: color-mix(in srgb, var(--accent) 18%, transparent);
-  border-color: var(--accent);
-  color: var(--accent);
-  font-weight: 700;
-}
-
-.sidebar-dept-count {
-  margin-left: 2px;
-  font-size: 9px;
-  font-weight: 700;
-  color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
-  border-radius: 8px;
-  padding: 0 5px;
-}
+/* (Sidebar dept widget removed — departments moved to horizontal strip above feed) */

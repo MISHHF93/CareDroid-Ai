@@ -35,6 +35,7 @@ const AnalyticsDashboard = lazy(() => import('./pages/AnalyticsDashboard'));
 const CostAnalyticsDashboard = lazy(() => import('./pages/CostAnalyticsDashboard'));
 const ClinicalAlertsPage = lazy(() => import('./pages/ClinicalAlertsPage'));
 const ClinicalDashboard = lazy(() => import('./pages/ClinicalDashboard'));
+const ClinicalLibrary   = lazy(() => import('./pages/ClinicalLibrary'));
 
 // Patient Pages — lazy-loaded
 const NewPatientPage = lazy(() => import('./pages/NewPatientPage'));
@@ -204,6 +205,7 @@ function App() {
                       <Route path="/analytics" element={<AnalyticsDashboard />} />
                       <Route path="/analytics/costs" element={<CostAnalyticsDashboard />} />
                       <Route path="/clinical-dashboard" element={<ClinicalDashboard />} />
+                      <Route path="/clinical-library"   element={<ClinicalLibrary />} />
                       <Route path="/audit-logs" element={<AuditLogs />} />
                       <Route path="/alerts" element={<ClinicalAlertsPage />} />
                       

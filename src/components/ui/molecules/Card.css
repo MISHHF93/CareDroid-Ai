@@ -242,6 +242,40 @@ button.card::after {
   }
 }
 
+/* JS-toggled dark theme */
+html.theme-dark .card-default,
+html.theme-dark .card-elevated,
+html.theme-dark .card-filled {
+  background: var(--surface-glass-dark);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+html.theme-dark .card-outlined  { border-color: rgba(255, 255, 255, 0.2); }
+
+html.theme-dark .card-glass {
+  background: var(--surface-glass-dark);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+html.theme-dark .card-loading-overlay { background: rgba(0, 0, 0, 0.8); }
+
+/* Explicit light theme */
+html.theme-light .card-default,
+html.theme-light .card-elevated,
+html.theme-light .card-filled {
+  background: var(--surface-primary);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+html.theme-light .card-outlined  { border-color: rgba(0, 0, 0, 0.15); }
+
+html.theme-light .card-glass {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+html.theme-light .card-loading-overlay { background: rgba(255, 255, 255, 0.9); }
+
 /* ===== ACCESSIBILITY ===== */
 
 @media (prefers-reduced-motion: reduce) {

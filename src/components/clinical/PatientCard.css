@@ -70,7 +70,7 @@
 .diagnosis-label {
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
-  color: var(--clinical-primary-dark);
+  color: var(--clinical-primary-dark); /* good contrast on light bg */
   margin-bottom: var(--space-1);
   display: block;
 }
@@ -264,37 +264,37 @@
   }
 }
 
-/* ===== DARK MODE ===== */
+/* ===== DARK / LIGHT THEME ===== */
+/* Fixes: --text-inverse resolves to dark navy (#0f172a) in dark ctx — wrong for dark bg text */
 
+/* System dark mode */
 @media (prefers-color-scheme: dark) {
-  .patient-name {
-    color: var(--text-inverse);
-  }
-
-  .patient-details span {
-    background: var(--surface-glass-dark);
-    color: var(--text-inverse);
-  }
-
-  .patient-diagnosis {
-    background: rgba(0, 212, 170, 0.1);
-  }
-
-  .vital-item {
-    background: var(--surface-glass-dark);
-    border-color: rgba(255, 255, 255, 0.1);
-  }
-
-  .action-btn-ghost {
-    color: var(--text-inverse);
-    border-color: rgba(255, 255, 255, 0.2);
-  }
-
-  .action-btn-ghost:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.3);
-  }
+  .patient-name         { color: var(--text-primary); }
+  .patient-details span { background: rgba(255,255,255,0.06); color: var(--text-secondary); }
+  .patient-diagnosis    { background: rgba(0,212,170,0.08); }
+  .diagnosis-label      { color: var(--clinical-primary); } /* bright teal — readable on dark */
+  .vital-item           { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.1); }
+  .action-btn-ghost     { color: var(--text-primary); border-color: rgba(255,255,255,0.15); }
+  .action-btn-ghost:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.25); }
 }
+
+/* JS-toggled dark theme class (html.theme-dark) */
+html.theme-dark .patient-name         { color: var(--text-primary); }
+html.theme-dark .patient-details span { background: rgba(255,255,255,0.06); color: var(--text-secondary); }
+html.theme-dark .patient-diagnosis    { background: rgba(0,212,170,0.08); }
+html.theme-dark .diagnosis-label      { color: var(--clinical-primary); }
+html.theme-dark .vital-item           { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.1); }
+html.theme-dark .action-btn-ghost     { color: var(--text-primary); border-color: rgba(255,255,255,0.15); }
+html.theme-dark .action-btn-ghost:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.25); }
+
+/* Explicit light theme — ensure light values even if OS is in dark mode */
+html.theme-light .patient-name         { color: var(--text-primary); }
+html.theme-light .patient-details span { background: var(--surface-tertiary); color: var(--text-secondary); }
+html.theme-light .patient-diagnosis    { background: var(--clinical-primary-light); }
+html.theme-light .diagnosis-label      { color: var(--clinical-primary-dark); }
+html.theme-light .vital-item           { background: var(--surface-secondary); border-color: var(--border-color-subtle); }
+html.theme-light .action-btn-ghost     { color: var(--text-primary); border-color: var(--border-color-default); }
+html.theme-light .action-btn-ghost:hover { background: var(--surface-tertiary); border-color: var(--border-color-strong); }
 
 /* ===== ACCESSIBILITY ===== */
 

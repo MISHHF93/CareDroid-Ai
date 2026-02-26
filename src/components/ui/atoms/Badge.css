@@ -162,22 +162,32 @@
 }
 
 /* ===== DARK MODE ADJUSTMENTS ===== */
+/* Fix: --text-inverse = #0f172a (dark navy) in dark ctx — wrong for dark-glass badge bg */
 
 @media (prefers-color-scheme: dark) {
   .badge-default {
     background: var(--surface-glass-dark);
     border-color: rgba(255, 255, 255, 0.1);
-    color: var(--text-inverse);
+    color: var(--text-primary); /* was --text-inverse: navy on dark — fixed to light text */
   }
-
-  .badge-warning {
-    color: var(--text-inverse);
-  }
-
-  .badge-moderate {
-    color: var(--text-inverse);
-  }
+  /* warning/moderate have yellow/orange bg — keep dark text for contrast */
+  .badge-warning  { color: #0f172a; }
+  .badge-moderate { color: #0f172a; }
 }
+
+/* JS-toggled dark theme */
+html.theme-dark .badge-default {
+  background: var(--surface-glass-dark);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+html.theme-dark .badge-warning  { color: #0f172a; }
+html.theme-dark .badge-moderate { color: #0f172a; }
+
+/* Explicit light theme */
+html.theme-light .badge-default  { background: var(--surface-tertiary); color: var(--text-secondary); border-color: var(--border-color-subtle); }
+html.theme-light .badge-warning  { color: var(--text-primary); }
+html.theme-light .badge-moderate { color: var(--text-primary); }
 
 /* ===== ACCESSIBILITY ===== */
 

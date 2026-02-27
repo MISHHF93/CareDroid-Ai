@@ -2,28 +2,54 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
+function getContentType(filePath) {
+  const ext = path.extname(filePath).toLowerCase();
+  return {
+    '.html': 'text/html',
+    '.css': 'text/css',
+    '.js': 'text/javascript',
+    '.json': 'application/json',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.svg': 'image/svg+xml',
+    '.glb': 'model/gltf-binary',
+    '.gltf': 'model/gltf+json',
+    '.fbx': 'application/octet-stream',
+    '.bin': 'application/octet-stream',
+    '.woff': 'font/woff',
+    '.woff2': 'font/woff2',
+  }[ext] || 'application/octet-stream';
+}
+
+function serveFile(res, filePath, data) {
+  res.writeHead(200, {
+    'Content-Type': getContentType(filePath),
+    'Access-Control-Allow-Origin': '*'
+  });
+  res.end(data);
+}
+
 const server = http.createServer((req, res) => {
-  const filePath = path.join(__dirname, req.url === '/' ? 'ai-cardiac-atlas-v7.3.4.html' : req.url);
+  const requestedPath = req.url === '/' ? 'ai-cardiac-atlas-v7.3.4.html' : req.url;
+  const filePath = path.join(__dirname, requestedPath);
+  const publicPath = path.join(__dirname, 'public', requestedPath);
   
+  // Try root first, then public/ folder
   fs.readFile(filePath, (err, data) => {
     if (err) {
-      res.writeHead(404);
-      res.end('File not found');
-      return;
+      // Fallback to public/ directory
+      return fs.readFile(publicPath, (err2, data2) => {
+        if (err2) {
+          res.writeHead(404);
+          res.end('File not found');
+          return;
+        }
+        serveFile(res, publicPath, data2);
+      });
     }
-    
-    const ext = path.extname(filePath);
-    const contentType = {
-      '.html': 'text/html',
-      '.css': 'text/css',
-      '.js': 'text/javascript'
-    }[ext] || 'text/plain';
-    
-    res.writeHead(200, {
-      'Content-Type': contentType,
-      'Access-Control-Allow-Origin': '*'
-    });
-    res.end(data);
+    serveFile(res, filePath, data);
   });
 });
 

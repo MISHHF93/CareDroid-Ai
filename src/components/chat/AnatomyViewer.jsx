@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState, Suspense, lazy } from 'react';
 import HolographicLoader from '../3d/HolographicLoader';
 
 const HolographicCanvas = lazy(() => import('../3d/HolographicCanvas'));
-const HeartModel = lazy(() => import('../3d/medical/HeartModel'));
 const BrainModel = lazy(() => import('../3d/medical/BrainModel'));
 const LungsModel = lazy(() => import('../3d/medical/LungsModel'));
 const OrganSystem = lazy(() => import('../3d/medical/OrganSystem'));
@@ -29,14 +28,12 @@ export default function AnatomyViewer({ organ, vitals, aiText = '', markers = []
     telemetry: true,
   };
   const ModelComponent = {
-    heart: HeartModel,
     brain: BrainModel,
     lungs: LungsModel,
   }[organ] || OrganSystem;
 
   const heartbeat = Number(vitals?.heartRate?.value || vitals?.heartRate || vitals?.HR || 72);
   const severityScores = {
-    heart: heartbeat >= 120 ? 4 : heartbeat >= 105 ? 3 : heartbeat >= 95 ? 2 : 1,
     brain: Number(vitals?.GCS ? (15 - Number(vitals.GCS)) / 4 : 0),
     lungs: Number(vitals?.RR || 18) >= 28 ? 4 : Number(vitals?.RR || 18) >= 22 ? 3 : 1,
   };

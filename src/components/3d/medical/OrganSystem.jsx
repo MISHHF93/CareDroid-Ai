@@ -7,7 +7,6 @@
  */
 
 import React from 'react';
-import HeartModel from './HeartModel';
 import BrainModel from './BrainModel';
 import LungsModel from './LungsModel';
 
@@ -33,7 +32,6 @@ function severityColor(score) {
 /**
  * @param {object}  props
  * @param {object}  [props.scores]                - Organ-level SOFA sub-scores
- * @param {number}  [props.scores.heart=0]
  * @param {number}  [props.scores.brain=0]
  * @param {number}  [props.scores.lungs=0]
  * @param {object}  [props.vitals]                - Live vitals for physiological animation sync
@@ -48,7 +46,7 @@ export default function OrganSystem({
   rotateOnHover = false,
   showLabel = true,
 }) {
-  const { heart = 0, brain = 0, lungs = 0 } = scores;
+  const { brain = 0, lungs = 0 } = scores;
   const heartbeat = Number(
     vitals.heartRate?.value
       || vitals.heartRate
@@ -71,15 +69,6 @@ export default function OrganSystem({
         position={[0, 0, 0]}
         color={severityColor(lungs)}
         severity={lungs}
-        heartbeat={heartbeat}
-        interactive={interactive}
-        rotateOnHover={rotateOnHover}
-        showLabel={showLabel}
-      />
-      <HeartModel
-        position={[0, -1.6, 0]}
-        color={severityColor(heart)}
-        severity={heart}
         heartbeat={heartbeat}
         interactive={interactive}
         rotateOnHover={rotateOnHover}

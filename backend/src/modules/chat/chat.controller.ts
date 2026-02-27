@@ -99,7 +99,6 @@ export class ChatController {
           vitals: { HR: 90, SpO2: '96%', RR: 20 },
         },
         metadata: {
-          modelUrl: '/models/organs/heart.glb',
           camera: { position: [0, 1.4, 5], fov: 50 },
           animation: ['rotate', 'scan'],
           lod: 'high',

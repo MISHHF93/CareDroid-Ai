@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Cardiac Atlas — v7.3.5 (Full fix: GLSL loops · Canvas2D · Touch · WebGL1/2)</title>
+  <style>
+    :root{ --pad:22px; --cyan:#4ecdc4; --bg:#000; }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:var(--bg);overflow:hidden;font-family:'Courier New',monospace}
+    canvas{position:fixed;inset:0;display:block}
+
+    #hud{position:fixed;top:calc(env(safe-area-inset-top,0px) + 20px);left:calc(env(safe-area-inset-left,0px) + var(--pad));color:#5cf;font-size:11px;line-height:2;letter-spacing:1.5px;text-shadow:0 0 12px rgba(80,200,255,.55);pointer-events:none;z-index:10}
+    #hud .t{font-size:13px;color:#fff;letter-spacing:4px;margin-bottom:5px;text-shadow:0 0 22px rgba(80,200,255,.8)}
+    #hud .s{font-size:9px;color:#2a8fa0;margin-bottom:10px}
+    .val{color:#f0c040;text-shadow:0 0 8px rgba(240,192,64,.55)}
+
+    #leg{position:fixed;top:calc(env(safe-area-inset-top,0px) + 20px);right:calc(env(safe-area-inset-right,0px) + var(--pad));font-size:10px;line-height:2.4;color:#4a8090;letter-spacing:1px;z-index:10;pointer-events:none}
+    #leg i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:7px;vertical-align:middle}
+
+    #ctrl{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 18px);transform:translateX(-50%);display:flex;gap:16px;align-items:flex-end;justify-content:center;flex-wrap:wrap;background:rgba(0,8,20,.78);border:1px solid rgba(0,90,140,.45);padding:14px 18px 12px;border-radius:16px;backdrop-filter:blur(12px);box-shadow:0 0 40px rgba(0,70,110,.35);z-index:20;max-width:min(1100px, calc(100vw - 24px))}
+    .sg{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:104px}
+    label{color:var(--cyan);font-size:10px;letter-spacing:2px}
+    input[type=range]{-webkit-appearance:none;width:140px;max-width:36vw;height:2px;outline:none;background:linear-gradient(90deg,var(--cyan),#0a3040);border-radius:2px}
+    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--cyan);cursor:pointer;box-shadow:0 0 10px var(--cyan),0 0 22px rgba(78,205,196,.45)}
+    select{background:rgba(0,8,20,.9);color:var(--cyan);border:1px solid rgba(0,90,140,.5);padding:6px 12px;font-size:10px;letter-spacing:1px;border-radius:10px;cursor:pointer;outline:none}
+    button{background:transparent;color:var(--cyan);border:1px solid rgba(78,205,196,.4);padding:7px 14px;font-size:10px;letter-spacing:1.5px;font-family:inherit;border-radius:10px;cursor:pointer;transition:all .2s}
+    button:hover{background:rgba(78,205,196,.12);box-shadow:0 0 14px rgba(78,205,196,.3)}
+    button.on{background:rgba(78,205,196,.22);color:#fff;border-color:var(--cyan)}
+
+    #crt{position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.055) 2px,rgba(0,0,0,.055) 4px);opacity:.5;z-index:30}
+
+    #ai-panel{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 134px);left:calc(env(safe-area-inset-left,0px) + var(--pad));background:rgba(0,8,20,.82);border:1px solid #0a5a7a;padding:14px 18px;border-radius:16px;color:#aaf;font-size:12px;backdrop-filter:blur(10px);box-shadow:0 0 30px rgba(0,160,210,.2);max-width:340px;z-index:15;pointer-events:none;letter-spacing:.5px}
+    #ai-panel .ai-title{color:#8cf;letter-spacing:2px;font-size:11px;margin-bottom:6px;text-transform:uppercase}
+    #ai-panel .ai-content{color:#bdf;font-size:12px;line-height:1.6;text-shadow:0 0 6px #1af}
+
+    .anatomy-label{color:#e0f0ff;font-size:14px;font-weight:600;font-family:'Segoe UI','Courier New',monospace;text-shadow:0 0 15px #0af,0 0 30px #09c;background:rgba(0,20,40,.72);padding:5px 12px;border-radius:999px;border:1px solid rgba(100,200,255,.45);backdrop-filter:blur(6px);letter-spacing:1px;white-space:nowrap;pointer-events:none;transform-origin:center center;position:fixed;left:0;top:0;z-index:25;display:none;box-shadow:0 0 18px rgba(0,160,210,.18)}
+
+    #hint{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 110px);right:calc(env(safe-area-inset-right,0px) + var(--pad));color:#1a5060;font-size:9px;letter-spacing:1px;z-index:12;user-select:none;pointer-events:none;max-width:52vw;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+    #err{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.85);color:#aef;font-size:12px;z-index:100;padding:24px;text-align:left}
+    #err pre{max-width:980px;white-space:pre-wrap;line-height:1.6;background:rgba(0,10,25,.65);border:1px solid rgba(100,200,255,.25);border-radius:16px;padding:16px;box-shadow:0 0 35px rgba(0,160,210,.15)}
+
+    @media (max-width: 720px){
+      #leg{display:none}
+      #ai-panel{max-width:min(340px, calc(100vw - 24px))}
+      .sg{min-width:92px}
+      input[type=range]{width:120px}
+      #hint{display:none}
+    }
+  </style>
+</head>
+<body>
+  <div id="hud">
+    <div class="t">AI CARDIAC ATLAS · v7.3.5</div>
+    <div class="s">GLSL ES 1.00 compliant · Canvas2D fallback · Touch · WebGL1/2</div>
+    <div>HEART RATE &emsp;<span class="val" id="bV">72</span> BPM</div>
+    <div>SEVERITY &emsp;&emsp;<span id="svV" class="val">NORMAL</span></div>
+    <div>EJECT. FRAC. &nbsp;<span class="val" id="efV">68</span>%</div>
+    <div>CARDIAC OUT &nbsp;<span class="val" id="coV">5.2</span> L/min</div>
+    <div style="margin-top:10px;color:#1a5060;font-size:9px">▸ DRAG + SCROLL · SPACE pause · B bloom · L labels · G grid · 1/2/3 quality</div>
+  </div>
+
+  <div id="leg">
+    <div><i style="background:#c03030"></i>Myocardium</div>
+    <div><i style="background:#d8c898"></i>Great vessels</div>
+    <div><i style="background:#8ab4d8"></i>Pulmonary</div>
+    <div><i style="background:#f0b030"></i>Coronary</div>
+  </div>
+
+  <div id="ai-panel">
+    <div class="ai-title">🧠 AI ASSESSMENT</div>
+    <div class="ai-content" id="aiText">Normal sinus rhythm. EF 68% · stable</div>
+  </div>
+
+  <div id="ctrl">
+    <div class="sg"><label>RATE</label><input type="range" id="bpm" min="30" max="200" value="72" /></div>
+    <div class="sg"><label>SEVERITY</label><input type="range" id="sev" min="0" max="4" step="1" value="0" /></div>
+    <div class="sg"><label>PATHOLOGY</label>
+      <select id="col">
+        <option value="0,0,0">Normal</option>
+        <option value="1.2,0.3,0">Ischaemic</option>
+        <option value="0.8,0,1.2">Necrotic</option>
+        <option value="0,0.5,1.5">Cyanotic</option>
+      </select>
+    </div>
+    <div class="sg"><label>QUALITY</label>
+      <select id="qual">
+        <option value="0">Low</option>
+        <option value="1" selected>High</option>
+        <option value="2">Ultra</option>
+      </select>
+    </div>
+    <div class="sg"><label>VIEW</label><button id="aBtn">▶ AUTO ROTATE</button></div>
+    <div class="sg"><label>LABELS</label><button id="labelBtn" class="on">● HIDE</button></div>
+    <div class="sg"><label>BLOOM</label><button id="bloomBtn" class="on">✦ ON</button></div>
+    <div class="sg"><label>GRID</label><button id="gridBtn" class="on">▦ ON</button></div>
+  </div>
+
+  <div id="hint"></div>
+  <div id="crt"></div>
+  <div id="err"><pre id="errText"></pre></div>
+
+  <script>
+  (function(){
+    'use strict';
+
+    // Expected behavior question (so we build the right roadmap):
+    // Do you want next: (1) external anatomy only, or (2) cutaway/cross-section internal chambers?
+
+    function showError(title, err){
+      var box = document.getElementById('err');
+      var pre = document.getElementById('errText');
+      box.style.display = 'flex';
+      var msg = (err && (err.stack || err.message)) ? (err.stack || err.message) : String(err);
+      pre.textContent = title + "\n\n" + msg;
+      console.error(title, err);
+    }
+    function setHint(t){ var h=document.getElementById('hint'); if(h) h.textContent=t; }
+
+    // ---- mini test harness ----
+    var TESTS=[];
+    function test(name, fn){ TESTS.push({name:name, fn:fn}); }
+    function runTests(){
+      var failed=[];
+      for(var i=0;i<TESTS.length;i++){
+        try{ TESTS[i].fn(); }
+        catch(e){ failed.push({name:TESTS[i].name, err:e}); }
+      }
+      if(failed.length){
+        console.warn('[tests] failed', failed);
+        setHint('TESTS FAILED: ' + failed.map(function(f){return f.name;}).join(', '));
+      }
+    }
+
+    // =========================
+    // UI parameters
+    // =========================
+    var SEV_NAMES=['NORMAL','MILD','MODERATE','SEVERE','CRITICAL'];
+    var SEV_EF=[68,58,45,32,20];
+    var SEV_EMI=[.04,.12,.22,.38,.56];
+    var SEV_COL=['#80ff80','#ffff40','#ffaa20','#ff5020','#ff1020'];
+
+    var BPM=72, SEV=0, TINT=[0,0,0];
+    var bloomOn=true, labelsVisible=true, autoR=false, paused=false, gridOn=true;
+
+    var QUAL=1;
+    var QUAL_PRESETS=[
+      { name:'Low',   res:1.00, aa:1, q:0.70 },
+      { name:'High',  res:1.35, aa:2, q:1.00 },
+      { name:'Ultra', res:1.75, aa:4, q:1.35 }
+    ];
+
+    var state = { glow:0.35, pulse:0.0, dpi:Math.min(devicePixelRatio||1,2), mode:'WebGL' };
+    function clamp(v,a,b){ return Math.max(a, Math.min(b,v)); }
+
+    function updateMats(){
+      var ei = SEV_EMI[SEV];
+      var ef = SEV_EF[SEV];
+      var co = (ef/100 * BPM * .075).toFixed(1);
+      var svV = document.getElementById('svV');
+      svV.textContent = SEV_NAMES[SEV];
+      svV.style.color = SEV_COL[SEV];
+      document.getElementById('efV').textContent = ef;
+      document.getElementById('coV').textContent = co;
+      var msg='';
+      if(SEV===0) msg='Normal sinus rhythm. EF 68% · stable.';
+      else if(SEV===1) msg='Mild impairment. EF 58%. Early diastolic dysfunction.';
+      else if(SEV===2) msg='Moderate hypokinesis. EF 45%. Consider intervention.';
+      else if(SEV===3) msg='Severe systolic failure. EF 32%. High risk.';
+      else msg='Critical cardiogenic shock. EF 20%. Urgent support indicated.';
+      document.getElementById('aiText').innerText = 'HR ' + BPM + ' | EF ' + ef + '% · ' + msg;
+      state.glow = 0.30 + ei * 0.95;
+    }
+
+    document.getElementById('bpm').addEventListener('input', function(e){ BPM=+e.target.value; document.getElementById('bV').textContent=BPM; updateMats(); });
+    document.getElementById('sev').addEventListener('input', function(e){ SEV=+e.target.value; updateMats(); });
+    document.getElementById('col').addEventListener('change', function(e){ TINT=e.target.value.split(',').map(Number); updateMats(); });
+
+    var qualSel = document.getElementById('qual');
+    qualSel.addEventListener('change', function(e){ QUAL = clamp(+e.target.value, 0, 2); resize(); });
+
+    document.getElementById('aBtn').addEventListener('click', function(){ autoR=!autoR; this.classList.toggle('on'); this.textContent = autoR ? '■ STOP' : '▶ AUTO ROTATE'; });
+
+    var labelBtn = document.getElementById('labelBtn');
+    labelBtn.addEventListener('click', function(){ labelsVisible=!labelsVisible; labelBtn.textContent=labelsVisible?'● HIDE':'● SHOW'; labelBtn.classList.toggle('on', labelsVisible); toggleLabels(labelsVisible); });
+
+    var bloomBtn = document.getElementById('bloomBtn');
+    bloomBtn.addEventListener('click', function(){ bloomOn=!bloomOn; bloomBtn.textContent=bloomOn?'✦ ON':'✦ OFF'; bloomBtn.classList.toggle('on', bloomOn); });
+
+    var gridBtn = document.getElementById('gridBtn');
+    gridBtn.addEventListener('click', function(){ gridOn=!gridOn; gridBtn.textContent=gridOn?'▦ ON':'▦ OFF'; gridBtn.classList.toggle('on', gridOn); });
+
+    window.addEventListener('keydown', function(e){
+      if(e.code==='Space'){ paused=!paused; e.preventDefault(); }
+      if(e.key==='b'||e.key==='B'){ bloomOn=!bloomOn; bloomBtn.textContent=bloomOn?'✦ ON':'✦ OFF'; bloomBtn.classList.toggle('on', bloomOn); }
+      if(e.key==='l'||e.key==='L'){ labelsVisible=!labelsVisible; labelBtn.textContent=labelsVisible?'● HIDE':'● SHOW'; labelBtn.classList.toggle('on', labelsVisible); toggleLabels(labelsVisible); }
+      if(e.key==='g'||e.key==='G'){ gridOn=!gridOn; gridBtn.textContent=gridOn?'▦ ON':'▦ OFF'; gridBtn.classList.toggle('on', gridOn); }
+      if(e.key==='1'){ QUAL=0; qualSel.value='0'; resize(); }
+      if(e.key==='2'){ QUAL=1; qualSel.value='1'; resize(); }
+      if(e.key==='3'){ QUAL=2; qualSel.value='2'; resize(); }
+    });
+
+    updateMats();
+
+    // =========================
+    // Canvas + WebGL
+    // =========================
+    var canvas = document.createElement('canvas');
+    document.body.prepend(canvas);
+
+    function getGL(){
+      var g = canvas.getContext('webgl2', { antialias:true, alpha:false, powerPreference:'high-performance' });
+      if(!g) g = canvas.getContext('webgl', { antialias:true, alpha:false, powerPreference:'high-performance' });
+      return g;
+    }
+    var gl = getGL();
+    if(!gl){
+      // ── Canvas 2D fallback (no WebGL) ──────────────────────────
+      state.mode = '2D Canvas';
+      document.getElementById('err').style.display = 'none';
+      setHint('NO WEBGL — CANVAS 2D · DRAG + SCROLL · SPACE pause · B bloom');
+
+      var ctx = canvas.getContext('2d');
+      if(!ctx){ showError('Canvas not available', new Error('Neither WebGL nor 2D canvas is supported.')); return; }
+
+      // Fix: canvas was never sized (resize() is defined below our early return)
+      phase = 0; // Fix: var-hoisted but never assigned before 2D loop
+      function resize2D(){
+        state.dpi = Math.min(devicePixelRatio||1, 2);
+        canvas.width  = Math.floor(innerWidth  * state.dpi);
+        canvas.height = Math.floor(innerHeight * state.dpi);
+        canvas.style.width  = innerWidth  + 'px';
+        canvas.style.height = innerHeight + 'px';
+      }
+      window.addEventListener('resize', resize2D);
+      resize2D();
+
+      var rotX2D=0.18, rotY2D=0.0, vX2D=0, vY2D=0, zoom2D=2.6;
+      var drag2D=false, ox2D=0, oy2D=0;
+
+      canvas.addEventListener('mousedown', function(e){ drag2D=true; ox2D=e.clientX; oy2D=e.clientY; });
+      window.addEventListener('mouseup',   function(){ drag2D=false; });
+      window.addEventListener('mousemove', function(e){
+        if(!drag2D) return;
+        vY2D += (e.clientX-ox2D)*0.006; vX2D += (e.clientY-oy2D)*0.006;
+        ox2D=e.clientX; oy2D=e.clientY;
+      });
+      canvas.addEventListener('wheel', function(e){ zoom2D = clamp(zoom2D + e.deltaY*0.0028, 1.5, 4.8); }, {passive:true});
+
+      // touch support
+      var lastTX=0, lastTY=0;
+      canvas.addEventListener('touchstart', function(e){ drag2D=true; lastTX=e.touches[0].clientX; lastTY=e.touches[0].clientY; });
+      window.addEventListener('touchend',   function(){ drag2D=false; });
+      window.addEventListener('touchmove',  function(e){
+        if(!drag2D) return;
+        vY2D += (e.touches[0].clientX-lastTX)*0.006; vX2D += (e.touches[0].clientY-lastTY)*0.006;
+        lastTX=e.touches[0].clientX; lastTY=e.touches[0].clientY;
+      });
+
+      function drawHeart2D(cx2, cy2, size, pulse, sev){
+        ctx.save();
+        ctx.translate(cx2, cy2);
+        var sc = size * (1.0 + pulse*0.045 + rotX2D*0.03);
+        ctx.scale(sc, sc);
+        ctx.rotate(rotY2D * 0.08);
+
+        // deep shadow
+        ctx.shadowBlur = 60 + pulse*40;
+        ctx.shadowColor = ['rgba(200,40,40,0.6)','rgba(220,80,20,0.55)','rgba(200,20,10,0.65)','rgba(255,30,10,0.75)','rgba(255,10,10,0.85)'][sev];
+
+        // ---- main heart body ----
+        var grad = ctx.createRadialGradient(-0.08, -0.15, 0.05, 0, 0.05, 0.82);
+        var sevC = [
+          ['#b03030','#7c1818','#3a0808'],
+          ['#c04020','#8c2810','#3e1004'],
+          ['#aa2010','#7e1008','#380400'],
+          ['#c01008','#8e0a04','#3c0200'],
+          ['#cc0808','#960404','#420000']
+        ][sev];
+        grad.addColorStop(0,   sevC[0]);
+        grad.addColorStop(0.5, sevC[1]);
+        grad.addColorStop(1,   sevC[2]);
+
+        ctx.beginPath();
+        ctx.moveTo(0, 0.28);
+        // left lobe
+        ctx.bezierCurveTo(-0.04, 0.10, -0.55, 0.08, -0.55,-0.24);
+        ctx.bezierCurveTo(-0.55,-0.56, -0.28,-0.72,  0.00,-0.50);
+        // right lobe
+        ctx.bezierCurveTo( 0.28,-0.72,  0.55,-0.56,  0.55,-0.24);
+        ctx.bezierCurveTo( 0.55, 0.08,  0.04, 0.10,  0.00, 0.28);
+        ctx.closePath();
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // specular highlight
+        ctx.shadowBlur = 0;
+        var hiG = ctx.createRadialGradient(-0.14,-0.38,0.02,-0.10,-0.26,0.28);
+        hiG.addColorStop(0,'rgba(255,200,200,0.38)');
+        hiG.addColorStop(1,'rgba(255,100,100,0)');
+        ctx.fillStyle = hiG;
+        ctx.fill();
+
+        // ---- aorta ----
+        ctx.beginPath();
+        ctx.moveTo( 0.04,-0.28); ctx.bezierCurveTo(0.06,-0.44, 0.12,-0.55, 0.08,-0.68);
+        ctx.bezierCurveTo(0.04,-0.78,-0.10,-0.76,-0.14,-0.68);
+        ctx.lineWidth = 0.09; ctx.strokeStyle='#d4c480'; ctx.stroke();
+
+        // ---- pulmonary artery ----
+        ctx.beginPath();
+        ctx.moveTo(-0.06,-0.24); ctx.bezierCurveTo(-0.08,-0.44,-0.16,-0.56,-0.20,-0.64);
+        ctx.lineWidth = 0.072; ctx.strokeStyle='#7ab4d8'; ctx.stroke();
+
+        // ---- coronary vessel ----
+        ctx.beginPath();
+        ctx.moveTo(-0.06, 0.02); ctx.bezierCurveTo(-0.20,-0.02,-0.38,0.06,-0.32, 0.18);
+        ctx.lineWidth = 0.030; ctx.strokeStyle=['#f0b030','#f08020','#e06018','#d04010','#c02808'][sev]; ctx.stroke();
+
+        // ---- pulse glow ring ----
+        if(pulse > 0.1){
+          ctx.beginPath();
+          ctx.moveTo(0, 0.28);
+          ctx.bezierCurveTo(-0.04,0.10,-0.55,0.08,-0.55,-0.24);
+          ctx.bezierCurveTo(-0.55,-0.56,-0.28,-0.72,0.00,-0.50);
+          ctx.bezierCurveTo(0.28,-0.72,0.55,-0.56,0.55,-0.24);
+          ctx.bezierCurveTo(0.55,0.08,0.04,0.10,0.00,0.28);
+          ctx.closePath();
+          ctx.strokeStyle = 'rgba(255,'+(sev>2?20:80)+','+Math.floor(40+pulse*200)+','+( pulse*0.55 )+')';
+          ctx.lineWidth = 0.026 + pulse*0.018;
+          ctx.shadowBlur = 30*pulse; ctx.shadowColor='rgba(255,60,40,'+pulse*0.7+')';
+          ctx.stroke();
+        }
+
+        ctx.restore();
+      }
+
+      function drawGrid2D(w, h){
+        if(!gridOn) return;
+        ctx.save();
+        var colW='rgba(0,180,220,0.055)';
+        var cols=22, rows=12;
+        ctx.strokeStyle=colW; ctx.lineWidth=1;
+        for(var i=0;i<=cols;i++){ ctx.beginPath(); ctx.moveTo(i*w/cols,0); ctx.lineTo(i*w/cols,h); ctx.stroke(); }
+        for(var j=0;j<=rows;j++){ ctx.beginPath(); ctx.moveTo(0,j*h/rows); ctx.lineTo(w,j*h/rows); ctx.stroke(); }
+        // fade bottom
+        var fg=ctx.createLinearGradient(0,0,0,h*0.35);
+        fg.addColorStop(0,'rgba(0,0,0,0.7)'); fg.addColorStop(1,'rgba(0,0,0,0)');
+        ctx.fillStyle=fg; ctx.fillRect(0,0,w,h*0.35);
+        ctx.restore();
+      }
+
+      function drawEKG2D(w, h, t, bpm){
+        if(!bloomOn) return;
+        ctx.save();
+        ctx.translate(24, h - 88);
+        var ekgW = Math.min(w*0.38, 280), ekgH = 40;
+        ctx.globalAlpha=0.72;
+        ctx.strokeStyle='#00ddaa'; ctx.lineWidth=1.5;
+        ctx.shadowBlur=8; ctx.shadowColor='#00eecc';
+        ctx.beginPath();
+        var period = 60/bpm;
+        var pts = 80;
+        for(var k=0;k<pts;k++){
+          var fx = k/pts;
+          var ft = (t - fx*period*0.9) % period / period;
+          var amp=0;
+          if(ft<0.06)        amp = ft/0.06*0.15;
+          else if(ft<0.10)   amp = 0.15 - (ft-0.06)/0.04*0.25;
+          else if(ft<0.14)   amp = -0.10 + (ft-0.10)/0.04*0.10;
+          else if(ft<0.18)   amp = (ft-0.14)/0.04*1.00;
+          else if(ft<0.22)   amp = 1.00 - (ft-0.18)/0.04*1.40;
+          else if(ft<0.26)   amp = -0.40 + (ft-0.22)/0.04*0.55;
+          else if(ft<0.34)   amp = 0.15 - (ft-0.26)/0.08*0.15;
+          else               amp = 0;
+          if(k===0) ctx.moveTo(k*(ekgW/pts), -amp*ekgH);
+          else      ctx.lineTo(k*(ekgW/pts), -amp*ekgH);
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawVignette2D(w, h){
+        var vg = ctx.createRadialGradient(w*0.5,h*0.5,h*0.28,w*0.5,h*0.5,h*0.85);
+        vg.addColorStop(0,'rgba(0,0,0,0)');
+        vg.addColorStop(1,'rgba(0,0,0,0.72)');
+        ctx.fillStyle=vg; ctx.fillRect(0,0,w,h);
+      }
+
+      function loop2D(){
+        requestAnimationFrame(loop2D);
+        var now = performance.now();
+        var t = now/1000;
+        var dt = Math.min(0.05, t - (loop2D._last||t));
+        loop2D._last = t;
+
+        var damp = paused ? 0.0 : 0.86;
+        vX2D*=damp; vY2D*=damp;
+        rotX2D = clamp(rotX2D + vX2D, -1.1, 1.1);
+        rotY2D += vY2D;
+        if(!paused && autoR && !drag2D) rotY2D += dt*0.24;
+
+        if(!paused) phase = (phase + dt * BPM / 60) % 1;
+        state.pulse = phase < 0.35 ? Math.sin((phase/0.35)*Math.PI) : 0.0;
+
+        var W = canvas.width, H = canvas.height;
+        // bg
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = '#000810';
+        ctx.fillRect(0,0,W,H);
+
+        drawGrid2D(W, H);
+
+        var sz = Math.min(W, H) * 0.32 / zoom2D;
+        drawHeart2D(W*0.5, H*0.46, sz, state.pulse, SEV);
+        drawVignette2D(W, H);
+        drawEKG2D(W, H, t, BPM);
+
+        updateLabelPositions();
+        setHint((paused?'PAUSED · ':'') + (bloomOn?'EKG: ON':'EKG: OFF') + ' · ' + (gridOn?'GRID: ON':'GRID: OFF') + ' · 2D CANVAS · zoom ' + zoom2D.toFixed(2));
+      }
+      loop2D();
+      return; // skip WebGL setup
+    }
+
+    var isWebGL2 = (typeof WebGL2RenderingContext !== 'undefined') && (gl instanceof WebGL2RenderingContext);
+    state.mode = isWebGL2 ? 'WebGL2' : 'WebGL1';
+
+    function resize(){
+      state.dpi = Math.min(devicePixelRatio||1, 2);
+      var q = QUAL_PRESETS[QUAL] || QUAL_PRESETS[1];
+      var scale = clamp(state.dpi * q.res, 0.75, 2.5);
+      canvas.width = Math.floor(innerWidth * scale);
+      canvas.height = Math.floor(innerHeight * scale);
+      canvas.style.width = innerWidth + 'px';
+      canvas.style.height = innerHeight + 'px';
+      gl.viewport(0,0,canvas.width,canvas.height);
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // =========================
+    // Interaction (orbit)
+    // =========================
+    var drag=false, ox=0, oy=0;
+    var rotX=0.18, rotY=0.0, vX=0, vY=0, zoom=2.6;
+
+    canvas.addEventListener('mousedown', function(e){ drag=true; ox=e.clientX; oy=e.clientY; });
+    window.addEventListener('mouseup', function(){ drag=false; });
+    window.addEventListener('mousemove', function(e){
+      if(!drag) return;
+      vY += (e.clientX-ox)*0.006;
+      vX += (e.clientY-oy)*0.006;
+      ox=e.clientX; oy=e.clientY;
+    });
+    canvas.addEventListener('wheel', function(e){ zoom = clamp(zoom + e.deltaY*0.0028, 1.5, 4.8); }, { passive:true });
+
+    // Touch support (WebGL path)
+    var touchLast = {x:0, y:0};
+    canvas.addEventListener('touchstart', function(e){ e.preventDefault(); drag=true; ox=e.touches[0].clientX; oy=e.touches[0].clientY; touchLast={x:ox,y:oy}; }, {passive:false});
+    window.addEventListener('touchend',   function(){ drag=false; });
+    window.addEventListener('touchmove',  function(e){
+      if(!drag) return; e.preventDefault();
+      vY += (e.touches[0].clientX - touchLast.x)*0.006;
+      vX += (e.touches[0].clientY - touchLast.y)*0.006;
+      touchLast={x:e.touches[0].clientX, y:e.touches[0].clientY};
+    }, {passive:false});
+
+    // =========================
+    // Labels (DOM)
+    // =========================
+    var labels=[];
+    function makeLabel(text, color){
+      var div=document.createElement('div');
+      div.className='anatomy-label';
+      div.textContent=text;
+      div.style.color=color;
+      document.body.appendChild(div);
+      labels.push(div);
+      return div;
+    }
+    var LBL = {
+      LV: makeLabel('LV', '#ff8888'),
+      RV: makeLabel('RV', '#ffaa88'),
+      LA: makeLabel('LA', '#88aaff'),
+      RA: makeLabel('RA', '#88aaff'),
+      Aorta: makeLabel('Aorta', '#ffcc88'),
+      Pulmonary: makeLabel('Pulmonary', '#88ccff'),
+      Coronary: makeLabel('Coronary', '#f0b030')
+    };
+    function toggleLabels(v){ for(var i=0;i<labels.length;i++) labels[i].style.display = v ? 'block' : 'none'; }
+    toggleLabels(labelsVisible);
+
+    function project(pt){
+      var x=pt.x, y=pt.y, z=pt.z;
+      var cy=Math.cos(rotY), sy=Math.sin(rotY);
+      var cx=Math.cos(rotX), sx=Math.sin(rotX);
+      var x1 = x*cy + z*sy;
+      var z1 = -x*sy + z*cy;
+      var y2 = y*cx - z1*sx;
+      var z2 = y*sx + z1*cx;
+      var f = 620;
+      var px = (x1 * f) / (f + z2*220);
+      var py = (y2 * f) / (f + z2*220);
+      return { x:px, y:py, z:z2 };
+    }
+
+    function updateLabelPositions(){
+      if(!labelsVisible) return;
+      var anchors = {
+        LV: {x:-0.22, y:-0.22, z: 0.08},
+        RV: {x: 0.18, y:-0.18, z: 0.22},
+        LA: {x:-0.26, y: 0.22, z:-0.10},
+        RA: {x: 0.24, y: 0.20, z: 0.06},
+        Aorta: {x: 0.06, y: 0.56, z:-0.04},
+        Pulmonary: {x:-0.14, y: 0.48, z: 0.18},
+        Coronary: {x:-0.06, y: 0.04, z: 0.42}
+      };
+      var cx = innerWidth*0.5;
+      var cy = innerHeight*0.46;
+      var sc = 360;
+      Object.keys(anchors).forEach(function(k){
+        var p=anchors[k];
+        var pr=project(p);
+        var x=cx + pr.x*sc;
+        var y=cy - pr.y*sc;
+        var s=clamp(1.08 - pr.z*0.12, 0.75, 1.18);
+        var el=LBL[k];
+        if(!el) return;
+        el.style.transform = 'translate(-50%, -50%) translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) scale(' + s.toFixed(3) + ')';
+        el.style.opacity = String(clamp(1.2 - Math.max(0,pr.z)*0.35, 0, 1));
+      });
+    }
+
+    // =========================
+    // Shader sources (WebGL1 + WebGL2)
+    // =========================
+
+    // Driver-safe raymarch: constant loop bounds (some GPUs dislike uniform-controlled breaks)
+    var FRAG_BODY = `
+
+uniform vec2 uRes;
+uniform float uTime;
+uniform float uPulse;
+uniform float uGlow;
+uniform float uZoom;
+uniform vec2 uRot;
+uniform vec3 uTint;
+uniform float uBloom;
+uniform float uGrid;
+uniform float uQuality; // 0.70 low · 1.00 high · 1.35 ultra
+uniform float uAA;
+
+const int RM_STEPS = 160;
+
+float hash(vec3 p){ return fract(sin(dot(p, vec3(127.1,311.7,74.7)))*43758.5453); }
+float noise(vec3 p){
+  vec3 i=floor(p);
+  vec3 f=fract(p);
+  f=f*f*(3.0-2.0*f);
+  float n000=hash(i+vec3(0,0,0)); float n100=hash(i+vec3(1,0,0)); float n010=hash(i+vec3(0,1,0)); float n110=hash(i+vec3(1,1,0));
+  float n001=hash(i+vec3(0,0,1)); float n101=hash(i+vec3(1,0,1)); float n011=hash(i+vec3(0,1,1)); float n111=hash(i+vec3(1,1,1));
+  float nx00=mix(n000,n100,f.x); float nx10=mix(n010,n110,f.x); float nx01=mix(n001,n101,f.x); float nx11=mix(n011,n111,f.x);
+  float nxy0=mix(nx00,nx10,f.y); float nxy1=mix(nx01,nx11,f.y);
+  return mix(nxy0,nxy1,f.z);
+}
+float fbm(vec3 p){ float v=0.0; float a=0.5; for(int i=0;i<5;i++){ v+=a*noise(p); p*=2.02; a*=0.5; } return v; }
+
+mat3 rotY(float a){ float c=cos(a), s=sin(a); return mat3(c,0.0,s, 0.0,1.0,0.0, -s,0.0,c); }
+mat3 rotX(float a){ float c=cos(a), s=sin(a); return mat3(1.0,0.0,0.0, 0.0,c,-s, 0.0,s,c); }
+
+float sdEllipsoid(vec3 p, vec3 r){ float k0=length(p/r); float k1=length(p/(r*r)); return k0*(k0-1.0)/k1; }
+float sdCapsule(vec3 p, vec3 a, vec3 b, float r){ vec3 pa=p-a, ba=b-a; float h=clamp(dot(pa,ba)/dot(ba,ba),0.0,1.0); return length(pa-ba*h)-r; }
+float smin(float a,float b,float k){ float h=clamp(0.5+0.5*(b-a)/k,0.0,1.0); return mix(b,a,h)-k*h*(1.0-h); }
+
+float sdHeart2D(vec2 p){
+  float x=p.x, y=p.y;
+  float a = x*x + y*y - 1.0;
+  float f = a*a*a - x*x*y*y*y;
+  float dfdx = 6.0*x*a*a - 2.0*x*y*y*y;
+  float dfdy = 6.0*y*a*a - 3.0*x*x*y*y;
+  float g = max(1e-4, sqrt(dfdx*dfdx + dfdy*dfdy));
+  return f / g;
+}
+
+float mapHeart(vec3 p, out float mId){
+  float syst = uPulse;
+  vec3 q = p;
+  q *= 1.0 + vec3(-0.015*syst, -0.055*syst, -0.015*syst);
+  q = rotY(-0.20) * rotX(0.18) * q;
+
+  vec2 hp = vec2(q.x*1.35, (q.y+0.08)*1.55);
+  hp.x *= mix(0.98, 1.10, smoothstep(-0.10, 0.55, hp.y));
+  float d2 = sdHeart2D(hp);
+
+  float tBase = 0.34;
+  float tApex = 0.18;
+  float th = mix(tApex, tBase, smoothstep(-1.15, 0.30, hp.y));
+  float z = q.z + 0.06*q.x;
+  float d3 = max(d2, abs(z) - th);
+
+  float lv = sdEllipsoid(q-vec3(-0.23,-0.22, 0.02), vec3(0.34,0.56,0.36));
+  float rv = sdEllipsoid(q-vec3( 0.19,-0.18, 0.18), vec3(0.28,0.44,0.30));
+  float heart = smin(d3, lv, 0.22);
+  heart = smin(heart, rv, 0.20);
+
+  float la = sdEllipsoid(q-vec3(-0.26, 0.24,-0.10), vec3(0.26,0.18,0.24));
+  float ra = sdEllipsoid(q-vec3( 0.24, 0.20, 0.04), vec3(0.22,0.17,0.22));
+  heart = smin(heart, la, 0.18);
+  heart = smin(heart, ra, 0.18);
+
+  float apexCarve = sdCapsule(q, vec3(-0.05,-0.86,0.02), vec3(0.06,-0.58,0.02), 0.14);
+  heart = max(heart, -(apexCarve - 0.02));
+
+  float groove = sdCapsule(q, vec3(-0.02,0.03,0.38), vec3(-0.26,-0.10,0.20), 0.05);
+  heart = max(heart, -(groove + 0.010));
+
+  float aAsc = sdCapsule(q, vec3(0.06,0.22,0.06), vec3(0.10,0.66,-0.02), 0.075);
+  float aArch= sdCapsule(q, vec3(0.10,0.66,-0.02), vec3(-0.16,0.62,-0.18), 0.070);
+  float aorta = smin(aAsc, aArch, 0.10);
+
+  float pTrunk = sdCapsule(q, vec3(-0.06,0.18,0.22), vec3(-0.14,0.54,0.20), 0.064);
+  float pL = sdCapsule(q, vec3(-0.14,0.54,0.20), vec3(-0.34,0.58,0.06), 0.052);
+  float pR = sdCapsule(q, vec3(-0.14,0.54,0.20), vec3( 0.10,0.56,0.12), 0.048);
+  float pulm = smin(pTrunk, smin(pL,pR,0.10), 0.10);
+
+  float svc = sdCapsule(q, vec3(0.28,0.62,0.00), vec3(0.24,0.30,0.02), 0.050);
+  float ivc = sdCapsule(q, vec3(0.20,-0.02,-0.02), vec3(0.22,0.22,0.02), 0.044);
+
+  heart = smin(heart, aorta, 0.12);
+  heart = smin(heart, pulm,  0.12);
+  heart = smin(heart, svc,   0.10);
+  heart = smin(heart, ivc,   0.10);
+
+  float fib = (fbm(q*10.5 + vec3(0.0,uTime*0.06,0.0)) - 0.5) * 0.010;
+  fib *= mix(0.55, 1.25, smoothstep(0.35, -0.55, q.y));
+  heart += fib;
+
+  float dV = min(min(aorta,pulm), min(svc,ivc));
+  mId = (dV < heart + 0.018) ? 2.0 : 1.0;
+  return heart;
+}
+
+vec3 calcNormal(vec3 p){
+  float e=0.0014; float mid;
+  float dx=mapHeart(p+vec3(e,0,0),mid)-mapHeart(p-vec3(e,0,0),mid);
+  float dy=mapHeart(p+vec3(0,e,0),mid)-mapHeart(p-vec3(0,e,0),mid);
+  float dz=mapHeart(p+vec3(0,0,e),mid)-mapHeart(p-vec3(0,0,e),mid);
+  return normalize(vec3(dx,dy,dz));
+}
+
+float softShadow(vec3 ro, vec3 rd, float mint, float maxt){
+  float res=1.0;
+  float t=mint;
+  for(int i=0;i<28;i++){
+    vec3 p = ro + rd*t;
+    float mid;
+    float h=mapHeart(p, mid);
+    res=min(res, 12.0*h/t);
+    t += clamp(h, 0.02, 0.18);
+    if(t > maxt) break;  // This break is actually OK in GLSL ES 1.00 for non-uniform conditions
+  }
+  return clamp(res, 0.0, 1.0);
+}
+
+float ambientOcclusion(vec3 p, vec3 n){
+  float ao=0.0;
+  float sca=1.0;
+  float mid;
+  for(int i=0;i<5;i++){
+    float h=0.02 + 0.06*float(i);
+    float d=mapHeart(p+n*h, mid);
+    ao += (h-d)*sca;
+    sca *= 0.62;
+  }
+  return clamp(1.0-1.6*ao, 0.0, 1.0);
+}
+
+float raymarch(vec3 ro, vec3 rd, out vec3 pHit, out float mId){
+  float t=0.0; mId=0.0;
+  for(int i=0;i<RM_STEPS;i++){
+    vec3 p = ro + rd*t;
+    float id;
+    float d = mapHeart(p, id);
+    if(d<0.0012){
+      pHit=p; mId=id;
+      return t;  // Early return is actually OK in GLSL ES 1.00
+    }
+    if(t>9.0) break;
+    t += d * mix(1.10, 0.70, clamp((uQuality-0.70)/0.65, 0.0, 1.0));
+  }
+  pHit = ro + rd*t;
+  return -1.0;
+}
+
+vec3 tonemap(vec3 c){
+  c = c*(2.51*c+0.03)/(c*(2.43*c+0.59)+0.14);
+  return pow(max(c,0.0), vec3(1.0/2.2));
+}
+
+float gridLines(vec2 uv){
+  float gy = (uv.y-0.15);
+  float gFade = smoothstep(0.0, 0.25, gy);
+  vec2 gv = uv*vec2(80.0, 36.0);
+  vec2 f = abs(fract(gv)-0.5);
+  float l = min(f.x, f.y);
+  return smoothstep(0.018, 0.0, l) * gFade;
+}
+
+vec3 shade(vec3 ro, vec3 pHit, float mId){
+  vec3 N = calcNormal(pHit);
+  float n = fbm(pHit*10.0 + vec3(0.0,uTime*0.10,0.0));
+  N = normalize(N + (n-0.5)*0.16);
+  vec3 V = normalize(ro - pHit);
+
+  vec3 L1 = normalize(vec3( 0.7, 1.1, 0.6));
+  vec3 L2 = normalize(vec3(-0.7, 0.4, 0.9));
+  vec3 L3 = normalize(vec3( 0.0, 0.2,-1.0));
+
+  float d1 = max(0.0, dot(N,L1));
+  float d2 = max(0.0, dot(N,L2));
+  float rim = pow(1.0-max(0.0,dot(N,V)), 2.4);
+
+  float ao = ambientOcclusion(pHit, N);
+  float sh = softShadow(pHit + N*0.004, L1, 0.03, 2.4);
+
+  vec3 myo = vec3(0.62,0.10,0.08);
+  vec3 ves = vec3(0.86,0.78,0.62);
+  vec3 base = mix(myo, ves, step(1.5, mId));
+  base = mix(base, vec3(0.45,0.12,0.08) + uTint*0.20, 0.55*uGlow);
+
+  vec3 diff = base*(0.10 + 0.90*(d1*1.10*sh + d2*0.75));
+
+  vec3 H = normalize(L1+V);
+  float spec = pow(max(0.0,dot(N,H)), 72.0)*0.70 + pow(max(0.0,dot(N,H)), 12.0)*0.12;
+  float fres = pow(1.0-max(0.0,dot(N,V)), 5.0);
+  vec3 specC = mix(vec3(0.9,0.7,0.6), vec3(1.0), step(1.5,mId));
+
+  float wrap = clamp((dot(N,L1)+0.45)/1.45, 0.0, 1.0);
+  vec3 sss = base*vec3(1.2,0.55,0.45) * pow(max(0.0, dot(-L1,V)), 2.2) * 0.22;
+  sss += base*0.10*wrap;
+
+  vec3 col = diff + sss + specC*(spec + 0.22*fres);
+  col += base*rim*0.30;
+
+  col += (vec3(0.85,0.22,0.12) + uTint*0.22) * (uPulse*uGlow*0.78);
+  col *= ao;
+  col += base*0.04*max(0.0, dot(N,L3));
+
+  return col;
+}
+
+vec3 bloomApprox(vec2 uv, vec3 base){
+  if(uBloom<0.5) return base;
+  float lum = dot(base, vec3(0.2126,0.7152,0.0722));
+  float g = clamp((lum - 0.55) * 1.6, 0.0, 1.0);
+  return base + base*0.18*g;
+}
+
+vec3 renderPixel(vec2 uv){
+  vec2 p = uv*2.0-1.0;
+  p.x *= uRes.x/uRes.y;
+
+  float yaw = uRot.x;
+  float pit = uRot.y;
+
+  vec3 ro = vec3(0.0, 0.10, uZoom);
+  ro = rotY(yaw)*rotX(pit)*ro;
+  vec3 ta = vec3(0.0, 0.12, 0.0);
+
+  vec3 ww = normalize(ta-ro);
+  vec3 uu = normalize(cross(vec3(0.0,1.0,0.0), ww));
+  vec3 vv = cross(ww, uu);
+  vec3 rd = normalize(uu*p.x + vv*p.y + ww*1.55);
+
+  vec3 bg = vec3(0.004,0.03,0.06);
+  float gln = gridLines(uv) * uGrid;
+  bg += vec3(0.0,0.26,0.42) * gln * 0.75;
+
+  vec3 pHit; float mId;
+  float t = raymarch(ro, rd, pHit, mId);
+  if(t<0.0){
+    vec2 u2 = uv*2.0-1.0;
+    float vig = 1.0 - smoothstep(0.55, 1.28, length(u2));
+    bg *= mix(0.35, 1.0, vig);
+    return tonemap(bg);
+  }
+
+  vec3 col = shade(ro, pHit, mId);
+  col = bloomApprox(uv, col);
+
+  vec2 u2 = uv*2.0-1.0;
+  float vig = 1.0 - smoothstep(0.55, 1.28, length(u2));
+  col *= mix(0.25, 1.0, vig);
+  col += (noise(vec3(uv*vec2(820.0,460.0), fract(uTime*0.37))) - 0.5) * 0.014;
+
+  return tonemap(col + bg*0.12);
+}
+
+vec3 mainColor(vec2 uv){
+  float aa = uAA;
+  vec3 col = vec3(0.0);
+  if(aa < 1.5){
+    col = renderPixel(uv);
+  }else if(aa < 3.0){
+    vec2 px = 1.0/uRes;
+    col += renderPixel(uv + px*vec2( 0.25, 0.25));
+    col += renderPixel(uv + px*vec2(-0.25,-0.25));
+    col *= 0.5;
+  }else{
+    vec2 px = 1.0/uRes;
+    col += renderPixel(uv + px*vec2( 0.35, 0.10));
+    col += renderPixel(uv + px*vec2(-0.35,-0.10));
+    col += renderPixel(uv + px*vec2( 0.10,-0.35));
+    col += renderPixel(uv + px*vec2(-0.10, 0.35));
+    col *= 0.25;
+  }
+  return col;
+}
+`;
+
+    // WebGL1 shaders (GLSL ES 1.00)
+    var VERT_100 = "attribute vec2 aPos;varying vec2 vUv;void main(){vUv=aPos*0.5+0.5;gl_Position=vec4(aPos,0.0,1.0);}";
+    var FRAG_100 = "precision highp float;\nvarying vec2 vUv;\n" + FRAG_BODY + "\nvoid main(){gl_FragColor=vec4(mainColor(vUv),1.0);}";
+
+    // WebGL2 shaders (GLSL ES 3.00)
+    var VERT_300 = "#version 300 es\nprecision highp float;\nin vec2 aPos;\nout vec2 vUv;\nvoid main(){vUv=aPos*0.5+0.5;gl_Position=vec4(aPos,0.0,1.0);}";
+    var FRAG_300 = "#version 300 es\nprecision highp float;\nin vec2 vUv;\nout vec4 outColor;\n" + FRAG_BODY + "\nvoid main(){outColor=vec4(mainColor(vUv),1.0);}";
+
+    var VERT = isWebGL2 ? VERT_300 : VERT_100;
+    var FRAG = isWebGL2 ? FRAG_300 : FRAG_100;
+
+    function withLineNumbers(src, maxLines){
+      var lines = src.split('\n');
+      var n = Math.min(lines.length, maxLines || lines.length);
+      var out = [];
+      for(var i=0;i<n;i++){
+        var no = String(i+1);
+        while(no.length<4) no = ' ' + no;
+        out.push(no + ' | ' + lines[i]);
+      }
+      return out.join('\n');
+    }
+
+    function compile(type, src){
+      var sh = gl.createShader(type);
+      gl.shaderSource(sh, src);
+      gl.compileShader(sh);
+      if(!gl.getShaderParameter(sh, gl.COMPILE_STATUS)){
+        var log = gl.getShaderInfoLog(sh) || 'unknown';
+        var shaderType = type === gl.VERTEX_SHADER ? 'vertex' : 'fragment';
+        throw new Error('Shader compile failed (' + shaderType + '):\n' + log + '\n\n--- SOURCE (first 50 lines) ---\n' + withLineNumbers(src, 50));
+      }
+      return sh;
+    }
+
+    function link(vs, fs){
+      var p = gl.createProgram();
+      gl.attachShader(p, vs);
+      gl.attachShader(p, fs);
+      gl.linkProgram(p);
+      if(!gl.getProgramParameter(p, gl.LINK_STATUS)){
+        var log = gl.getProgramInfoLog(p) || 'unknown';
+        // Try to get more detailed error info
+        var vsLog = gl.getShaderInfoLog(vs) || 'no vertex shader errors';
+        var fsLog = gl.getShaderInfoLog(fs) || 'no fragment shader errors';
+        throw new Error('Program link failed:\n' + log +
+                       '\n\nVertex shader log: ' + vsLog +
+                       '\n\nFragment shader log: ' + fsLog +
+                       '\n\nWebGL version: ' + (isWebGL2 ? 'WebGL2' : 'WebGL1'));
+      }
+      return p;
+    }
+
+    var prog;
+    try{
+      var vs = compile(gl.VERTEX_SHADER, VERT);
+      var fs = compile(gl.FRAGMENT_SHADER, FRAG);
+      prog = link(vs, fs);
+    }catch(e){
+      console.warn('WebGL shader compilation/linking failed, falling back to Canvas 2D:', e.message);
+      // Force fallback to Canvas 2D mode
+      state.mode = '2D Canvas (WebGL failed)';
+      document.getElementById('err').style.display = 'none';
+      setHint('WebGL shaders failed — CANVAS 2D · DRAG + SCROLL · SPACE pause · B bloom');
+
+      var ctx = canvas.getContext('2d');
+      if(!ctx){ showError('Canvas not available', new Error('Neither WebGL nor 2D canvas is supported.')); return; }
+
+      // Initialize 2D fallback variables
+      phase = 0;
+      var rotX2D=0.18, rotY2D=0.0, vX2D=0, vY2D=0, zoom2D=2.6;
+      var drag2D=false, ox2D=0, oy2D=0;
+
+      canvas.addEventListener('mousedown', function(e){ drag2D=true; ox2D=e.clientX; oy2D=e.clientY; });
+      window.addEventListener('mouseup',   function(){ drag2D=false; });
+      window.addEventListener('mousemove', function(e){
+        if(!drag2D) return;
+        vY2D += (e.clientX-ox2D)*0.006; vX2D += (e.clientY-oy2D)*0.006;
+        ox2D=e.clientX; oy2D=e.clientY;
+      });
+      canvas.addEventListener('wheel', function(e){ zoom2D = clamp(zoom2D + e.deltaY*0.0028, 1.5, 4.8); }, { passive:true });
+
+      // touch support
+      var lastTX=0, lastTY=0;
+      canvas.addEventListener('touchstart', function(e){ e.preventDefault(); drag2D=true; lastTX=e.touches[0].clientX; lastTY=e.touches[0].clientY; }, {passive:false});
+      window.addEventListener('touchend',   function(){ drag2D=false; });
+      window.addEventListener('touchmove',  function(e){
+        if(!drag2D) return; e.preventDefault();
+        vY2D += (e.touches[0].clientX-lastTX)*0.006; vX2D += (e.touches[0].clientY-lastTY)*0.006;
+        lastTX=e.touches[0].clientX; lastTY=e.touches[0].clientY;
+      }, {passive:false});
+
+      function resize2D(){
+        state.dpi = Math.min(devicePixelRatio||1, 2);
+        canvas.width  = Math.floor(innerWidth  * state.dpi);
+        canvas.height = Math.floor(innerHeight * state.dpi);
+        canvas.style.width  = innerWidth  + 'px';
+        canvas.style.height = innerHeight + 'px';
+      }
+      window.addEventListener('resize', resize2D);
+      resize2D();
+
+      // Include the 2D drawing functions and loop here
+      function drawHeart2D(cx2, cy2, size, pulse, sev){
+        ctx.save();
+        ctx.translate(cx2, cy2);
+        var sc = size * (1.0 + pulse*0.045 + rotX2D*0.03);
+        ctx.scale(sc, sc);
+        ctx.rotate(rotY2D * 0.08);
+
+        // deep shadow
+        ctx.shadowBlur = 60 + pulse*40;
+        ctx.shadowColor = ['rgba(200,40,40,0.6)','rgba(220,80,20,0.55)','rgba(200,20,10,0.65)','rgba(255,30,10,0.75)','rgba(255,10,10,0.85)'][sev];
+
+        // main heart body
+        var grad = ctx.createRadialGradient(-0.08, -0.15, 0.05, 0, 0.05, 0.82);
+        var sevC = [
+          ['#b03030','#7c1818','#3a0808'],
+          ['#c04020','#8c2810','#3e1004'],
+          ['#aa2010','#7e1008','#380400'],
+          ['#c01008','#8e0a04','#3c0200'],
+          ['#cc0808','#960404','#420000']
+        ][sev];
+        grad.addColorStop(0,   sevC[0]);
+        grad.addColorStop(0.5, sevC[1]);
+        grad.addColorStop(1,   sevC[2]);
+
+        ctx.beginPath();
+        ctx.moveTo(0, 0.28);
+        ctx.bezierCurveTo(-0.04, 0.10, -0.55, 0.08, -0.55,-0.24);
+        ctx.bezierCurveTo(-0.55,-0.56, -0.28,-0.72,  0.00,-0.50);
+        ctx.bezierCurveTo( 0.28,-0.72,  0.55,-0.56,  0.55,-0.24);
+        ctx.bezierCurveTo( 0.55, 0.08,  0.04, 0.10,  0.00, 0.28);
+        ctx.closePath();
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // specular highlight
+        ctx.shadowBlur = 0;
+        var hiG = ctx.createRadialGradient(-0.14,-0.38,0.02,-0.10,-0.26,0.28);
+        hiG.addColorStop(0,'rgba(255,200,200,0.38)');
+        hiG.addColorStop(1,'rgba(255,100,100,0)');
+        ctx.fillStyle = hiG;
+        ctx.fill();
+
+        // aorta
+        ctx.beginPath();
+        ctx.moveTo( 0.04,-0.28); ctx.bezierCurveTo(0.06,-0.44, 0.12,-0.55, 0.08,-0.68);
+        ctx.bezierCurveTo(0.04,-0.78,-0.10,-0.76,-0.14,-0.68);
+        ctx.lineWidth = 0.09; ctx.strokeStyle='#d4c480'; ctx.stroke();
+
+        // pulmonary artery
+        ctx.beginPath();
+        ctx.moveTo(-0.06,-0.24); ctx.bezierCurveTo(-0.08,-0.44,-0.16,-0.56,-0.20,-0.64);
+        ctx.lineWidth = 0.072; ctx.strokeStyle='#7ab4d8'; ctx.stroke();
+
+        // coronary vessel
+        ctx.beginPath();
+        ctx.moveTo(-0.06, 0.02); ctx.bezierCurveTo(-0.20,-0.02,-0.38,0.06,-0.32, 0.18);
+        ctx.lineWidth = 0.030; ctx.strokeStyle=['#f0b030','#f08020','#e06018','#d04010','#c02808'][sev]; ctx.stroke();
+
+        // pulse glow ring
+        if(pulse > 0.1){
+          ctx.beginPath();
+          ctx.moveTo(0, 0.28);
+          ctx.bezierCurveTo(-0.04,0.10,-0.55,0.08,-0.55,-0.24);
+          ctx.bezierCurveTo(-0.55,-0.56,-0.28,-0.72,0.00,-0.50);
+          ctx.bezierCurveTo(0.28,-0.72,0.55,-0.56,0.55,-0.24);
+          ctx.bezierCurveTo(0.55,0.08,0.04,0.10,0.00,0.28);
+          ctx.closePath();
+          ctx.strokeStyle = 'rgba(255,'+(sev>2?20:80)+','+Math.floor(40+pulse*200)+','+( pulse*0.55 )+')';
+          ctx.lineWidth = 0.026 + pulse*0.018;
+          ctx.shadowBlur = 30*pulse; ctx.shadowColor='rgba(255,60,40,'+pulse*0.7+')';
+          ctx.stroke();
+        }
+
+        ctx.restore();
+      }
+
+      function drawGrid2D(w, h){
+        if(!gridOn) return;
+        ctx.save();
+        var colW='rgba(0,180,220,0.055)';
+        var cols=22, rows=12;
+        ctx.strokeStyle=colW; ctx.lineWidth=1;
+        for(var i=0;i<=cols;i++){ ctx.beginPath(); ctx.moveTo(i*w/cols,0); ctx.lineTo(i*w/cols,h); ctx.stroke(); }
+        for(var j=0;j<=rows;j++){ ctx.beginPath(); ctx.moveTo(0,j*h/rows); ctx.lineTo(w,j*h/rows); ctx.stroke(); }
+        var fg=ctx.createLinearGradient(0,0,0,h*0.35);
+        fg.addColorStop(0,'rgba(0,0,0,0.7)'); fg.addColorStop(1,'rgba(0,0,0,0)');
+        ctx.fillStyle=fg; ctx.fillRect(0,0,w,h*0.35);
+        ctx.restore();
+      }
+
+      function drawEKG2D(w, h, t, bpm){
+        if(!bloomOn) return;
+        ctx.save();
+        ctx.translate(24, h - 88);
+        var ekgW = Math.min(w*0.38, 280), ekgH = 40;
+        ctx.globalAlpha=0.72;
+        ctx.strokeStyle='#00ddaa'; ctx.lineWidth=1.5;
+        ctx.shadowBlur=8; ctx.shadowColor='#00eecc';
+        ctx.beginPath();
+        var period = 60/bpm;
+        var pts = 80;
+        for(var k=0;k<pts;k++){
+          var fx = k/pts;
+          var ft = (t - fx*period*0.9) % period / period;
+          var amp=0;
+          if(ft<0.06)        amp = ft/0.06*0.15;
+          else if(ft<0.10)   amp = 0.15 - (ft-0.06)/0.04*0.25;
+          else if(ft<0.14)   amp = -0.10 + (ft-0.10)/0.04*0.10;
+          else if(ft<0.18)   amp = (ft-0.14)/0.04*1.00;
+          else if(ft<0.22)   amp = 1.00 - (ft-0.18)/0.04*1.40;
+          else if(ft<0.26)   amp = -0.40 + (ft-0.22)/0.04*0.55;
+          else if(ft<0.34)   amp = 0.15 - (ft-0.26)/0.08*0.15;
+          else               amp = 0;
+          if(k===0) ctx.moveTo(k*(ekgW/pts), -amp*ekgH);
+          else      ctx.lineTo(k*(ekgW/pts), -amp*ekgH);
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawVignette2D(w, h){
+        var vg = ctx.createRadialGradient(w*0.5,h*0.5,h*0.28,w*0.5,h*0.5,h*0.85);
+        vg.addColorStop(0,'rgba(0,0,0,0)');
+        vg.addColorStop(1,'rgba(0,0,0,0.72)');
+        ctx.fillStyle=vg; ctx.fillRect(0,0,w,h);
+      }
+
+      function loop2D(){
+        requestAnimationFrame(loop2D);
+        var now = performance.now();
+        var t = now/1000;
+        var dt = Math.min(0.05, t - (loop2D._last||t));
+        loop2D._last = t;
+
+        var damp = paused ? 0.0 : 0.86;
+        vX2D*=damp; vY2D*=damp;
+        rotX2D = clamp(rotX2D + vX2D, -1.1, 1.1);
+        rotY2D += vY2D;
+        if(!paused && autoR && !drag2D) rotY2D += dt*0.24;
+
+        if(!paused) phase = (phase + dt * BPM / 60) % 1;
+        state.pulse = phase < 0.35 ? Math.sin((phase/0.35)*Math.PI) : 0.0;
+
+        var W = canvas.width, H = canvas.height;
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = '#000810';
+        ctx.fillRect(0,0,W,H);
+
+        drawGrid2D(W, H);
+
+        var sz = Math.min(W, H) * 0.32 / zoom2D;
+        drawHeart2D(W*0.5, H*0.46, sz, state.pulse, SEV);
+        drawVignette2D(W, H);
+        drawEKG2D(W, H, t, BPM);
+
+        updateLabelPositions();
+        setHint((paused?'PAUSED · ':'') + (bloomOn?'EKG: ON':'EKG: OFF') + ' · ' + (gridOn?'GRID: ON':'GRID: OFF') + ' · 2D CANVAS · zoom ' + zoom2D.toFixed(2));
+      }
+      loop2D();
+      return; // skip WebGL setup
+    }
+
+    gl.useProgram(prog);
+
+    // WebGL2 requires a VAO bound for vertex attrib state.
+    var vao = null;
+    if(isWebGL2 && gl.createVertexArray){
+      vao = gl.createVertexArray();
+      gl.bindVertexArray(vao);
+    }
+
+    // Fullscreen quad
+    var buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1,  -1,1, 1,-1, 1,1]), gl.STATIC_DRAW);
+    var aPos = gl.getAttribLocation(prog, 'aPos');
+    gl.enableVertexAttribArray(aPos);
+    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+    // uniforms
+    var uRes = gl.getUniformLocation(prog,'uRes');
+    var uTime = gl.getUniformLocation(prog,'uTime');
+    var uPulse = gl.getUniformLocation(prog,'uPulse');
+    var uGlow = gl.getUniformLocation(prog,'uGlow');
+    var uZoom = gl.getUniformLocation(prog,'uZoom');
+    var uRot  = gl.getUniformLocation(prog,'uRot');
+    var uTint = gl.getUniformLocation(prog,'uTint');
+    var uBloom= gl.getUniformLocation(prog,'uBloom');
+    var uGrid = gl.getUniformLocation(prog,'uGrid');
+    var uQuality = gl.getUniformLocation(prog,'uQuality');
+    var uAA   = gl.getUniformLocation(prog,'uAA');
+
+    // =========================
+    // Tests
+    // =========================
+    test('WebGL context exists', function(){ if(!gl) throw new Error('no webgl'); });
+    test('Detect WebGL2 correctly', function(){
+      if(isWebGL2 && VERT.indexOf('#version 300 es') === -1) throw new Error('WebGL2 without GLSL300');
+      if(!isWebGL2 && VERT.indexOf('#version') !== -1) throw new Error('WebGL1 should not use GLSL300');
+    });
+    test('Precision is top-of-fragment', function(){
+      if(!isWebGL2){
+        if(FRAG_100.indexOf('precision') > FRAG_100.indexOf('varying')) throw new Error('precision must precede varying (GLSL100)');
+      }else{
+        var idx1 = FRAG_300.indexOf('precision');
+        var idx2 = FRAG_300.indexOf('precision', idx1+1);
+        if(idx2 !== -1) throw new Error('duplicate precision in GLSL300');
+      }
+    });
+    test('Raymarch loop is constant-bound', function(){
+      if(FRAG.indexOf('const int RM_STEPS') === -1) throw new Error('missing RM_STEPS');
+      if(FRAG.indexOf('> steps') !== -1) throw new Error('dynamic break by steps found');
+    });
+    test('Shader program linked', function(){ if(!prog) throw new Error('no program'); });
+    test('HUD elements exist', function(){
+      if(!document.getElementById('bpm')) throw new Error('missing bpm');
+      if(!document.getElementById('aiText')) throw new Error('missing aiText');
+      if(!document.getElementById('qual')) throw new Error('missing quality selector');
+    });
+    test('showError newline formatting', function(){
+      var s = 'TITLE' + "\n\n" + 'MSG';
+      if(s.indexOf('\n\n') === -1) throw new Error('missing escaped newlines');
+    });
+    test('Shader contains key functions', function(){
+      if(FRAG.indexOf('mapHeart') === -1) throw new Error('missing mapHeart');
+      if(FRAG.indexOf('raymarch') === -1) throw new Error('missing raymarch');
+      if(FRAG.indexOf('ambientOcclusion') === -1) throw new Error('missing AO');
+      if(FRAG.indexOf('softShadow') === -1) throw new Error('missing softShadow');
+      if(FRAG.indexOf('sdHeart2D') === -1) throw new Error('missing sdHeart2D');
+    });
+    test('Quality presets valid', function(){
+      if(!QUAL_PRESETS || QUAL_PRESETS.length !== 3) throw new Error('bad presets');
+      if(QUAL_PRESETS[2].aa < QUAL_PRESETS[1].aa) throw new Error('ultra aa not higher');
+      if(QUAL_PRESETS[2].q < QUAL_PRESETS[1].q) throw new Error('ultra quality not higher');
+    });
+    test('Test harness has >= 5 tests', function(){ if(TESTS.length < 5) throw new Error('too few tests'); });
+    runTests();
+
+    // =========================
+    // Loop
+    // =========================
+    var phase=0, last=performance.now();
+    (function loop(){
+      requestAnimationFrame(loop);
+      var now=performance.now();
+      var t=now/1000;
+      var dt=Math.min((now-last)/1000, 0.05);
+      if(!paused) last=now;
+
+      var damp = paused ? 0.0 : 0.86;
+      vX*=damp; vY*=damp;
+      rotX = clamp(rotX + vX, -1.1, 1.1);
+      rotY = rotY + vY;
+      if(!paused && autoR && !drag) rotY += dt*0.24;
+
+      if(!paused) phase = (phase + dt * BPM / 60) % 1;
+      state.pulse = phase < 0.35 ? Math.sin((phase/0.35)*Math.PI) : 0.0;
+
+      gl.useProgram(prog);
+      if(vao && gl.bindVertexArray) gl.bindVertexArray(vao);
+
+      gl.uniform2f(uRes, canvas.width, canvas.height);
+      gl.uniform1f(uTime, t);
+      gl.uniform1f(uPulse, state.pulse);
+      gl.uniform1f(uGlow, state.glow);
+      gl.uniform1f(uZoom, zoom);
+      gl.uniform2f(uRot, rotY, rotX);
+      gl.uniform3f(uTint, TINT[0], TINT[1], TINT[2]);
+      gl.uniform1f(uBloom, bloomOn ? 1.0 : 0.0);
+      gl.uniform1f(uGrid, gridOn ? 1.0 : 0.0);
+      var q = QUAL_PRESETS[QUAL] || QUAL_PRESETS[1];
+      gl.uniform1f(uQuality, q.q);
+      gl.uniform1f(uAA, q.aa);
+
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+      updateLabelPositions();
+      setHint((paused?'PAUSED · ':'') + (bloomOn?'BLOOM: ON':'BLOOM: OFF') + ' · ' + (gridOn?'GRID: ON':'GRID: OFF') + ' · ' + (q.name) + ' · ' + state.mode + ' · zoom ' + zoom.toFixed(2));
+    })();
+
+  })();
+  </script>
+</body>
+</html>

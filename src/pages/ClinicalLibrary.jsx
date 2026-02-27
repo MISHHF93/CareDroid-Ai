@@ -4,7 +4,7 @@
  */
 
 import React, { useState, Suspense, useMemo, useRef, useEffect } from 'react';
-import { OrbitControls, Stars, useGLTF } from '@react-three/drei';
+import { OrbitControls, Stars } from '@react-three/drei';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import * as THREE from 'three';
@@ -186,24 +186,112 @@ function Halo({ color, r = 2.4, count = 80 }) {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   ❤️  HEART MESH — GLB v4  (public/models/heart.glb)
-   51-part anatomical scene generated from HEART_3D_BLUEPRINT.md:
-   4 chambers • 4 valve annuli • fibrous skeleton • aortic arch •
-   3 arch branches • PT + L/R PA • SVC + IVC • 4 pulm veins •
-   LMCA + LAD + D1 + D2 + 3 septal perfs • LCx + OM1 •
-   RCA + RV marginal + SA nodal artery • epicardial fat grooves
-   Animation: two-phase systole (0–35 % cycle) heartbeat
+   ❤️  HEART MESH — v5 procedural
+   Pure JSX / Three.js primitives — no GLB dependency.
+   All colours, geometry and animation inline.
 ──────────────────────────────────────────────────────────────── */
-function HeartMesh({ severity = 0, heartbeat = 72 }) {
-  const root  = useRef();
-  const bpHz  = heartbeat / 60;
-  const { scene } = useGLTF('/models/heart.glb');
 
-  /* Clone once so multiple mounts never share the same Three.js node.
-     The GLB now carries full PBR materials (baseColorFactor + emissiveFactor)
-     so no material patching is required. */
-  const cloned = useMemo(() => scene.clone(true), [scene]);
+/* Shared material shorthand */
+function HM({ color, ei = 0.4, rough = 0.48, metal = 0.12, alpha }) {
+  return (
+    <meshStandardMaterial
+      color={color}
+      emissive={color}
+      emissiveIntensity={ei}
+      roughness={rough}
+      metalness={metal}
+      {...(alpha !== undefined ? { transparent: true, opacity: alpha } : {})}
+    />
+  );
+}
 
+function HeartMesh({ color, severity = 0, heartbeat = 72 }) {
+  const root = useRef();
+  const bpHz = heartbeat / 60;
+
+  /* ── Vessel curves ── */
+  const aortaCurve = useMemo(() => new THREE.CatmullRomCurve3([
+    new THREE.Vector3( 0.04,  0.56, -0.02),
+    new THREE.Vector3( 0.06,  0.80,  0.00),
+    new THREE.Vector3( 0.08,  1.02,  0.02),
+    new THREE.Vector3( 0.20,  1.16,  0.02),
+    new THREE.Vector3( 0.36,  1.22,  0.01),
+    new THREE.Vector3( 0.52,  1.16, -0.02),
+    new THREE.Vector3( 0.58,  0.98, -0.06),
+    new THREE.Vector3( 0.54,  0.74, -0.10),
+  ]), []);
+  const ptCurve   = useMemo(() => new THREE.CatmullRomCurve3([
+    new THREE.Vector3( 0.26,  0.62,  0.14),
+    new THREE.Vector3( 0.22,  0.82,  0.16),
+    new THREE.Vector3( 0.12,  0.97,  0.18),
+  ]), []);
+  const lPACurve  = useMemo(() => new THREE.CatmullRomCurve3([
+    new THREE.Vector3( 0.12,  0.97,  0.18),
+    new THREE.Vector3(-0.04,  0.96,  0.18),
+    new THREE.Vector3(-0.26,  0.93,  0.15),
+  ]), []);
+  const rPACurve  = useMemo(() => new THREE.CatmullRomCurve3([
+    new THREE.Vector3( 0.12,  0.97,  0.18),
+    new THREE.Vector3( 0.30,  0.94,  0.15),
+    new THREE.Vector3( 0.52,  0.91,  0.12),
+  ]), []);
+  const svcCurve  = useMemo(() => new THREE.CatmullRomCurve3([
+    new THREE.Vector3( 0.52,  0.62,  0.02),
+    new THREE.Vector3( 0.54,  0.90,  0.00),
+    new THREE.Vector3( 0.52,  1.16, -0.02),
+  ]), []);
+  const ladCurve  = useMemo(() => new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-0.04,  0.52,  0.28),
+    new THREE.Vector3(-0.06,  0.30,  0.32),
+    new THREE.Vector3(-0.08,  0.04,  0.30),
+    new THREE.Vector3(-0.10, -0.22,  0.26),
+    new THREE.Vector3(-0.14, -0.50,  0.18),
+    new THREE.Vector3(-0.20, -0.72,  0.08),
+    new THREE.Vector3(-0.28, -0.84, -0.04),
+  ]), []);
+  const d1Curve   = useMemo(() => new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-0.06,  0.18,  0.30),
+    new THREE.Vector3(-0.20,  0.06,  0.26),
+    new THREE.Vector3(-0.34, -0.06,  0.20),
+  ]), []);
+  const d2Curve   = useMemo(() => new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-0.08, -0.04,  0.28),
+    new THREE.Vector3(-0.22, -0.16,  0.24),
+    new THREE.Vector3(-0.36, -0.24,  0.18),
+  ]), []);
+  const cxCurve   = useMemo(() => new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-0.04,  0.52,  0.20),
+    new THREE.Vector3(-0.16,  0.48,  0.10),
+    new THREE.Vector3(-0.30,  0.38, -0.04),
+    new THREE.Vector3(-0.42,  0.22, -0.16),
+    new THREE.Vector3(-0.44,  0.02, -0.22),
+  ]), []);
+  const om1Curve  = useMemo(() => new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-0.22,  0.42,  0.06),
+    new THREE.Vector3(-0.36,  0.30,  0.00),
+    new THREE.Vector3(-0.46,  0.14, -0.08),
+  ]), []);
+  const rcaCurve  = useMemo(() => new THREE.CatmullRomCurve3([
+    new THREE.Vector3( 0.04,  0.52,  0.22),
+    new THREE.Vector3( 0.28,  0.44,  0.16),
+    new THREE.Vector3( 0.46,  0.28,  0.06),
+    new THREE.Vector3( 0.52,  0.04, -0.04),
+    new THREE.Vector3( 0.48, -0.22, -0.12),
+    new THREE.Vector3( 0.36, -0.48, -0.14),
+    new THREE.Vector3( 0.18, -0.64, -0.08),
+  ]), []);
+  const rvmCurve  = useMemo(() => new THREE.CatmullRomCurve3([
+    new THREE.Vector3( 0.46,  0.24,  0.08),
+    new THREE.Vector3( 0.52,  0.06,  0.14),
+    new THREE.Vector3( 0.50, -0.14,  0.18),
+  ]), []);
+  const sanCurve  = useMemo(() => new THREE.CatmullRomCurve3([
+    new THREE.Vector3( 0.22,  0.48,  0.14),
+    new THREE.Vector3( 0.30,  0.60,  0.06),
+    new THREE.Vector3( 0.38,  0.74, -0.02),
+  ]), []);
+
+  /* ── Two-phase heartbeat ── */
   useFrame(({ clock }) => {
     if (!root.current) return;
     const phase = (clock.getElapsedTime() * bpHz) % 1;
@@ -213,13 +301,171 @@ function HeartMesh({ severity = 0, heartbeat = 72 }) {
     root.current.scale.setScalar(1 + beat);
   });
 
+  const LV  = '#b83232';
+  const LVD = '#aa2828';
+  const RV  = '#cc5050';
+  const AT  = '#cc4444';
+  const AO  = '#ef4444';
+  const VN  = '#7bb8ff';
+  const CO  = '#ffaa44';
+  const VL  = '#ffd580';
+
   return (
     <group ref={root} rotation={[0.06, 0, 0.22]}>
-      <primitive object={cloned} />
+
+      {/* ═══ LEFT VENTRICLE ═══ */}
+      <mesh position={[-0.12,-0.04,-0.02]} scale={[1.0,1.52,0.96]}>
+        <sphereGeometry args={[0.50, 48, 48]} />
+        <HM color={LV} ei={0.50} rough={0.44} />
+      </mesh>
+      <mesh position={[-0.28,-0.76,0.02]} rotation={[0.16,0,-0.30]}>
+        <coneGeometry args={[0.24, 0.48, 32]} />
+        <HM color={LV} ei={0.48} rough={0.46} />
+      </mesh>
+      <mesh position={[-0.40,-0.10,0.12]} scale={[0.46,0.88,0.52]}>
+        <sphereGeometry args={[0.42, 20, 20]} />
+        <HM color={'#b03030'} ei={0.44} />
+      </mesh>
+      {/* LV papillary muscles */}
+      <mesh position={[-0.20,-0.44,0.18]} rotation={[0.30,0,-0.20]}>
+        <cylinderGeometry args={[0.055,0.072,0.26,14]} />
+        <HM color={LVD} ei={0.46} />
+      </mesh>
+      <mesh position={[-0.28,-0.38,-0.16]} rotation={[-0.30,0,-0.15]}>
+        <cylinderGeometry args={[0.050,0.066,0.24,14]} />
+        <HM color={LVD} ei={0.46} />
+      </mesh>
+      {/* Trabeculae */}
+      {[{y:0.12,r:0.16},{y:0.26,r:0.14},{y:0.40,r:0.12}].map(({y,r},i) => (
+        <mesh key={i} position={[-0.18,-y,0.24]} rotation={[0.20,i*0.4,i*0.28]}>
+          <torusGeometry args={[r,0.018,5,11,Math.PI*0.72]} />
+          <HM color={'#992424'} ei={0.38} />
+        </mesh>
+      ))}
+      {/* Mitral valve */}
+      <mesh position={[-0.12,0.38,0.04]} rotation={[0.20,0,0.12]}>
+        <torusGeometry args={[0.18,0.024,9,26]} />
+        <HM color={VL} ei={0.65} rough={0.28} metal={0.22} />
+      </mesh>
+
+      {/* ═══ RIGHT VENTRICLE ═══ */}
+      <mesh position={[0.32,0.04,0.18]} scale={[0.72,1.08,0.58]}>
+        <sphereGeometry args={[0.46, 40, 40]} />
+        <HM color={RV} ei={0.44} />
+      </mesh>
+      <mesh position={[0.26,0.46,0.22]} rotation={[-0.30,0.10,0.28]} scale={[0.72,1.0,0.62]}>
+        <cylinderGeometry args={[0.12,0.18,0.42,18]} />
+        <HM color={RV} ei={0.42} />
+      </mesh>
+      {/* Moderator band */}
+      <mesh position={[0.22,-0.10,0.20]} rotation={[0.40,0.30,-0.30]}>
+        <cylinderGeometry args={[0.022,0.028,0.28,8]} />
+        <HM color={'#bb4040'} ei={0.40} />
+      </mesh>
+      {/* Tricuspid valve */}
+      <mesh position={[0.36,0.36,0.10]} rotation={[0.10,0,-0.16]}>
+        <torusGeometry args={[0.20,0.022,9,26]} />
+        <HM color={VL} ei={0.65} rough={0.28} metal={0.22} />
+      </mesh>
+
+      {/* ═══ LEFT ATRIUM ═══ */}
+      <mesh position={[-0.20,0.60,-0.24]} scale={[0.92,0.74,1.08]}>
+        <sphereGeometry args={[0.28,30,30]} />
+        <HM color={AT} ei={0.42} />
+      </mesh>
+      <mesh position={[-0.44,0.62,-0.06]} scale={[0.46,0.36,0.32]}>
+        <sphereGeometry args={[0.28,18,18]} />
+        <HM color={AT} ei={0.40} />
+      </mesh>
+      {/* 4 Pulmonary veins */}
+      {[[-0.34,0.54,-0.34],[-0.10,0.56,-0.38],[-0.30,0.70,-0.34],[-0.08,0.72,-0.40]].map((p,i) => (
+        <mesh key={i} position={p} rotation={[0.38,i%2===0?0.28:-0.28,0]}>
+          <cylinderGeometry args={[0.032,0.040,0.20,10]} />
+          <HM color={VN} ei={0.45} rough={0.30} metal={0.30} />
+        </mesh>
+      ))}
+
+      {/* ═══ RIGHT ATRIUM ═══ */}
+      <mesh position={[0.46,0.46,0.02]} scale={[0.86,0.72,0.80]}>
+        <sphereGeometry args={[0.32,30,30]} />
+        <HM color={AT} ei={0.42} />
+      </mesh>
+      <mesh position={[0.64,0.60,0.10]} scale={[0.44,0.36,0.32]}>
+        <sphereGeometry args={[0.26,16,16]} />
+        <HM color={AT} ei={0.40} />
+      </mesh>
+
+      {/* ═══ FIBROUS SKELETON ═══ */}
+      <mesh position={[0.14,0.46,0.04]} scale={[0.32,0.16,0.24]}>
+        <sphereGeometry args={[0.52,14,14]} />
+        <HM color={'#c8a060'} ei={0.38} rough={0.55} metal={0.18} />
+      </mesh>
+
+      {/* ═══ VALVE ANNULI ═══ */}
+      <mesh position={[0.04,0.58,-0.02]} rotation={[0.12,0,0.08]}>
+        <torusGeometry args={[0.105,0.020,9,24]} />
+        <HM color={VL} ei={0.68} rough={0.28} metal={0.26} />
+      </mesh>
+      <mesh position={[0.24,0.60,0.14]} rotation={[0.30,0.20,0.30]}>
+        <torusGeometry args={[0.095,0.018,9,22]} />
+        <HM color={VL} ei={0.65} rough={0.28} metal={0.24} />
+      </mesh>
+
+      {/* ═══ AORTIC ROOT + ARCH ═══ */}
+      <mesh position={[0.04,0.64,-0.02]}>
+        <cylinderGeometry args={[0.105,0.092,0.16,22]} />
+        <HM color={AO} ei={0.60} rough={0.20} metal={0.48} />
+      </mesh>
+      <mesh>
+        <tubeGeometry args={[aortaCurve,28,0.092,11,false]} />
+        <HM color={AO} ei={0.60} rough={0.20} metal={0.48} />
+      </mesh>
+      {/* Arch branches */}
+      <mesh position={[0.22,1.14,0.00]} rotation={[0.12,0,-0.54]}>
+        <cylinderGeometry args={[0.042,0.052,0.26,11]} />
+        <HM color={AO} ei={0.55} rough={0.24} metal={0.44} />
+      </mesh>
+      <mesh position={[0.34,1.20,0.00]} rotation={[0.06,0,-0.18]}>
+        <cylinderGeometry args={[0.028,0.034,0.22,9]} />
+        <HM color={AO} ei={0.52} rough={0.24} metal={0.42} />
+      </mesh>
+      <mesh position={[0.44,1.16,0.00]} rotation={[0.10,0,0.52]}>
+        <cylinderGeometry args={[0.025,0.032,0.20,8]} />
+        <HM color={AO} ei={0.52} rough={0.24} metal={0.40} />
+      </mesh>
+
+      {/* ═══ PULMONARY VESSELS ═══ */}
+      <mesh><tubeGeometry args={[ptCurve,12,0.075,10,false]} /><HM color={VN} ei={0.50} rough={0.26} metal={0.38} /></mesh>
+      <mesh><tubeGeometry args={[lPACurve,10,0.052,9,false]} /><HM color={VN} ei={0.48} rough={0.28} metal={0.36} /></mesh>
+      <mesh><tubeGeometry args={[rPACurve,10,0.054,9,false]} /><HM color={VN} ei={0.48} rough={0.28} metal={0.36} /></mesh>
+      <mesh><tubeGeometry args={[svcCurve,10,0.062,9,false]} /><HM color={VN} ei={0.46} rough={0.30} metal={0.32} /></mesh>
+      <mesh position={[0.48,-0.44,0.00]}>
+        <cylinderGeometry args={[0.058,0.070,0.28,13]} />
+        <HM color={VN} ei={0.46} rough={0.30} metal={0.32} />
+      </mesh>
+
+      {/* ═══ CORONARY ARTERIES ═══ */}
+      {/* LMCA stub */}
+      <mesh position={[0.00,0.50,0.26]} rotation={[-0.40,0,0.10]}>
+        <cylinderGeometry args={[0.020,0.024,0.10,8]} />
+        <HM color={CO} ei={0.70} rough={0.26} metal={0.32} />
+      </mesh>
+      <mesh><tubeGeometry args={[ladCurve,22,0.028,7,false]} /><HM color={CO} ei={0.70} rough={0.26} metal={0.32} /></mesh>
+      <mesh><tubeGeometry args={[d1Curve,9,0.018,6,false]}  /><HM color={CO} ei={0.65} rough={0.28} metal={0.30} /></mesh>
+      <mesh><tubeGeometry args={[d2Curve,8,0.014,6,false]}  /><HM color={CO} ei={0.62} rough={0.28} metal={0.30} /></mesh>
+      {/* Septal perforators */}
+      {[[-0.06,0.06,0.22],[-0.07,-0.12,0.20],[-0.08,-0.28,0.17]].map((p,i) => (
+        <mesh key={i} position={p}><cylinderGeometry args={[0.010,0.012,0.09,6]} /><HM color={CO} ei={0.58} rough={0.28} metal={0.28} /></mesh>
+      ))}
+      <mesh><tubeGeometry args={[cxCurve,14,0.024,7,false]}  /><HM color={CO} ei={0.68} rough={0.26} metal={0.32} /></mesh>
+      <mesh><tubeGeometry args={[om1Curve,9,0.016,6,false]}  /><HM color={CO} ei={0.62} rough={0.28} metal={0.30} /></mesh>
+      <mesh><tubeGeometry args={[rcaCurve,22,0.026,7,false]} /><HM color={CO} ei={0.68} rough={0.26} metal={0.32} /></mesh>
+      <mesh><tubeGeometry args={[rvmCurve,9,0.016,6,false]}  /><HM color={CO} ei={0.62} rough={0.28} metal={0.30} /></mesh>
+      <mesh><tubeGeometry args={[sanCurve,8,0.010,6,false]}  /><HM color={CO} ei={0.56} rough={0.28} metal={0.28} /></mesh>
+
     </group>
   );
 }
-useGLTF.preload('/models/heart.glb');
 
 /* ─────────────────────────────────────────
    🧠  BRAIN MESH — Hyper-realistic v2

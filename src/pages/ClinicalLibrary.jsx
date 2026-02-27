@@ -195,9 +195,14 @@ function Halo({ color, r = 2.4, count = 80 }) {
    Animation: two-phase systole (0–35 % cycle) heartbeat
 ──────────────────────────────────────────────────────────────── */
 function HeartMesh({ severity = 0, heartbeat = 72 }) {
-  const root = useRef();
-  const bpHz = heartbeat / 60;
+  const root  = useRef();
+  const bpHz  = heartbeat / 60;
   const { scene } = useGLTF('/models/heart.glb');
+
+  /* Clone once so multiple mounts never share the same Three.js node.
+     The GLB now carries full PBR materials (baseColorFactor + emissiveFactor)
+     so no material patching is required. */
+  const cloned = useMemo(() => scene.clone(true), [scene]);
 
   useFrame(({ clock }) => {
     if (!root.current) return;
@@ -210,7 +215,7 @@ function HeartMesh({ severity = 0, heartbeat = 72 }) {
 
   return (
     <group ref={root} rotation={[0.06, 0, 0.22]}>
-      <primitive object={scene} />
+      <primitive object={cloned} />
     </group>
   );
 }
